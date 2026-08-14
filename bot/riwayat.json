@@ -1,0 +1,107 @@
+{
+ "channel": {
+  "1535091272937766964": {
+   "sentuh": "2026-08-11T23:43:30.559220+00:00",
+   "pesan": [
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "amat: oy"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "oy mat, paan?"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "amat: loh kok bisa jawab?? kukira cuma bisa ngobrol di server aja"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "lah kan notifnya masuk mat, ya gua bales lah. emang kenapa?"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "amat: gpp"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "dih gajelas lu mat"
+      }
+     ]
+    }
+   ]
+  },
+  "1453703811607826596": {
+   "sentuh": "2026-08-12T02:30:50.181270+00:00",
+   "pesan": [
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! 𝓰𝓲𝓼𝓮𝓵𝓵𝓮: ngape lu"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! 𝓰𝓲𝓼𝓮𝓵𝓵𝓮: ngape lu"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "lah lu yang kenapa dah, gajelas amat nge-spam gituan. mentang-mentang xp lu paling banyak minggu ini jadi nyolot lu ya"
+      }
+     ]
+    }
+   ]
+  },
+  "1532236816986669056": {
+   "sentuh": "2026-08-12T07:30:07.067552+00:00",
+   "pesan": [
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: (ngirim gambar)"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: (ngirim gambar)"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

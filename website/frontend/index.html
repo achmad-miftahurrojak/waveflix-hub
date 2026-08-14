@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summer Tide | Nonton Bebas Hambatan</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-left">
+            <h1 class="logo">Summer<span>Tide</span></h1>
+            <ul class="nav-links">
+                <li><a href="#" class="active">Beranda</a></li>
+                <li><a href="#">Film</a></li>
+                <li><a href="#">Series</a></li>
+                <li><a href="#">Daftar Saya</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Cari film atau series...">
+            </div>
+            <div class="profile">
+                <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="Profile">
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="hero-section">
+        <!-- Background Image set via JS -->
+        <div class="hero-vignette"></div>
+        <div class="hero-content">
+            <h2 id="hero-title" class="hero-title">Oppenheimer</h2>
+            <div class="hero-meta">
+                <span class="match">98% Match</span>
+                <span class="year">2023</span>
+                <span class="rating">R</span>
+                <span class="duration">3h</span>
+                <span class="quality">HD</span>
+            </div>
+            <p id="hero-desc" class="hero-desc">Kisah fisikawan Amerika J. Robert Oppenheimer, yang memimpin upaya untuk membangun senjata pemusnah massal untuk mengakhiri Perang Dunia II.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="playHeroMovie()"><i class="fas fa-play"></i> Putar</button>
+                <button class="btn btn-secondary"><i class="fas fa-info-circle"></i> Info Selengkapnya</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Row 1 -->
+        <section class="movie-row">
+            <h3 class="row-title">Sedang Hangat (Trending)</h3>
+            <div class="row-container" id="trending-row">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+        <!-- Row 2 -->
+        <section class="movie-row">
+            <h3 class="row-title">Film Action Pilihan</h3>
+            <div class="row-container" id="action-row">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Video Player Modal -->
+    <div class="player-modal" id="player-modal">
+        <div class="player-close" onclick="closePlayer()"><i class="fas fa-times"></i></div>
+        <div class="player-container">
+            <iframe id="video-frame" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Summer Tide. Bukan web streaming biasa.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
