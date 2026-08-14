@@ -18,9 +18,9 @@ GROQ_KEY = os.getenv('GROQ_API_KEY')
 CEREBRAS_KEY = os.getenv('CEREBRAS_API_KEY')
 OPENROUTER_KEY = os.getenv('OPENROUTER_API_KEY')
 SINI = os.path.dirname(os.path.abspath(__file__))
-CHANNEL_NGOBROL_ID = 1532236708039622736
-CHANNEL_REVIVE_ID = 1453703811607826596
-ROLE_REVIVE = 'Tourist'
+CHANNEL_NGOBROL_ID = int(os.getenv('DIRGA_CHANNEL_NGOBROL_ID', '1532236708039622736'))
+CHANNEL_REVIVE_ID = int(os.getenv('DIRGA_CHANNEL_REVIVE_ID', '1453703811607826596'))
+ROLE_REVIVE = os.getenv('DIRGA_ROLE_REVIVE', 'Tourist')
 SEPI_JAM = 10
 JEDA_REVIVE_JAM = 20
 CEK_TIAP_MENIT = 30
@@ -832,6 +832,11 @@ async def cmd_revive(interaction: discord.Interaction):
 @bot.tree.command(name='ajakmabar', description='Suruh Dirga nge-tag dan ngajak orang mabar')
 @app_commands.describe(siapa1='Siapa yang mau lu ajak? (Wajib pilih orang/role)', siapa2='Ada lagi yang mau diajak? (Opsional)', siapa3='Satu lagi deh? (Opsional)', game='Game apa nih? (Opsional)', pesan_tambahan='Ada pesan khusus dari lu? (Opsional)')
 async def ajakmabar(interaction: discord.Interaction, siapa1: discord.Member, siapa2: discord.Member=None, siapa3: discord.Member=None, game: str='', pesan_tambahan: str=''):
+    # [BUG FIX] Menambahkan proteksi rate-limit (anti-spam) untuk mencegah pengurasan kuota API
+    boleh, alasan = boleh_manggil(interaction.user.id)
+    if not boleh:
+        await interaction.response.send_message(alasan, ephemeral=True)
+        return
     await interaction.response.defer()
     targets = [t.mention for t in (siapa1, siapa2, siapa3) if t is not None]
     mentions_str = ' '.join(targets)

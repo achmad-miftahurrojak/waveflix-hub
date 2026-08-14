@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 import aiohttp
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import acara as papan
 import penyimpanan
 from .config import *
@@ -20,6 +20,7 @@ data = {'orang': {}, 'cuaca': {}}
 jeda_terakhir = {}
 sesi_tebak = {}
 loop_udah_jalan = False
+_data_berubah = False
 
 def muat():
     """Load player data dari file. Raise SystemExit jika corrupt."""
@@ -30,9 +31,17 @@ def muat():
     if not isinstance(data['orang'], dict):
         raise SystemExit(f"[arka] data['orang'] harus dict, dapat {type(data['orang']).__name__}")
     print(f"[arka] data dimuat, {len(data['orang'])} orang tercatat")
+    if not loop_simpan.is_running():
+        loop_simpan.start()
 
+# [BUG FIX] Mengubah simpan() menjadi batcher (penunda) untuk mencegah I/O blocking
 def simpan():
+    global _data_berubah
+    _data_berubah = True
+
+def simpan_paksa():
     """Simpan data pemain. Tolak jika data kosong tapi file asli punya data."""
+    global _data_berubah
     if not data.get('orang'):
         lama, aman = penyimpanan.baca(BERKAS, {})
         if aman and lama.get('orang'):
@@ -41,10 +50,16 @@ def simpan():
             return False
     try:
         penyimpanan.tulis(BERKAS, data)
+        _data_berubah = False
         return True
     except Exception as e:
         print(f'[arka] ERROR simpan data: {e}')
         return False
+
+@tasks.loop(minutes=2)
+async def loop_simpan():
+    if _data_berubah:
+        simpan_paksa()
 
 def _validasi_uid(uid):
     """Validasi UID format. Raise ValueError jika invalid."""

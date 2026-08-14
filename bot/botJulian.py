@@ -28,10 +28,11 @@ except Exception as e:
     tanya_ai = None
 load_dotenv()
 TOKEN = os.getenv('JULIAN_TOKEN')
-CHANNEL_SAMBUTAN_ID = 1535071902312169492
-ROLE_OTOMATIS = 'Tourist'
+# [REFACTOR] Memindahkan Hardcoded ID ke .env untuk deployment fleksibel
+CHANNEL_SAMBUTAN_ID = int(os.getenv('JULIAN_CHANNEL_SAMBUTAN_ID', '1535071902312169492'))
+ROLE_OTOMATIS = os.getenv('JULIAN_ROLE_OTOMATIS', 'Tourist')
 KARTU_SAMBUTAN = True
-CHANNEL_LOG_ID = 1535070933583405169
+CHANNEL_LOG_ID = int(os.getenv('JULIAN_CHANNEL_LOG_ID', '1535070933583405169'))
 LOG_PESAN_DIHAPUS = True
 LOG_KELUAR_MASUK = True
 REACTION_ROLE = {}
@@ -46,7 +47,7 @@ RAID_DETIK = 60
 AKUN_BARU_HARI = 7
 RAID_AUTO_KUNCI = True
 RAID_KUNCI_MENIT = 10
-ROLE_SIAGA = 'Island Owner'
+ROLE_SIAGA = os.getenv('JULIAN_ROLE_SIAGA', 'Island Owner')
 ANTI_NUKE = True
 NUKE_JUMLAH = 3
 NUKE_DETIK = 30
@@ -55,15 +56,15 @@ PANTAU_ROLE_ADMIN = True
 LACAK_UNDANGAN = True
 CATATAN_UNDANGAN = 'undangan.json'
 STARBOARD_AKTIF = True
-CHANNEL_STARBOARD_ID = 1532236816986669056
+CHANNEL_STARBOARD_ID = int(os.getenv('JULIAN_CHANNEL_STARBOARD_ID', '1532236816986669056'))
 STARBOARD_EMOJI = '⭐'
 STARBOARD_AMBANG = 4
 CATATAN_STARBOARD = 'starboard.json'
-ROLE_PENJAGA_TIKET = 'Island Owner'
+ROLE_PENJAGA_TIKET = os.getenv('JULIAN_ROLE_PENJAGA_TIKET', 'Island Owner')
 CATATAN_TIKET = 'tiket.json'
 TIKET_MAKS_PER_ORANG = 2
 DM_SAMBUTAN = True
-CHANNEL_ATURAN_ID = 1531955366269681784
+CHANNEL_ATURAN_ID = int(os.getenv('JULIAN_CHANNEL_ATURAN_ID', '1531955366269681784'))
 AUTOMOD_AKTIF = True
 AUTOMOD_BEBAS = []
 FILTER_KATA = True
@@ -85,11 +86,11 @@ KAPITAL_MINIMAL = 12
 MAX_MENTION = 5
 STRIKE_SEBELUM_TIMEOUT = 3
 TIMEOUT_OTOMATIS_MENIT = 10
-CHANNEL_RESOURCES_ID = 1532241897265828122
+CHANNEL_RESOURCES_ID = int(os.getenv('JULIAN_CHANNEL_RESOURCES_ID', '1532241897265828122'))
 CATATAN_LINK = 'resources.json'
-CHANNEL_NOTIF_VOICE_ID = 1453703811607826596
+CHANNEL_NOTIF_VOICE_ID = int(os.getenv('JULIAN_CHANNEL_NOTIF_VOICE_ID', '1453703811607826596'))
 JEDA_SESI_MENIT = 20
-CHANNEL_LAPORAN_AFK_ID = 1535214549765197834
+CHANNEL_LAPORAN_AFK_ID = int(os.getenv('JULIAN_CHANNEL_LAPORAN_AFK_ID', '1535214549765197834'))
 AUTO_AFK = True
 AFK_WARN_DETIK = 300
 AFK_ROLE_BEBAS = []
@@ -100,7 +101,7 @@ AFK_TOMBOL_DETIK = 60
 AFK_KEBAL_MENIT = 15
 AFK_MAKS_KONFIRMASI = 3
 PESAN_AFK = ['lo kelamaan diem di {asal}, jadi kelempar ke {afk}. balik aja kalo mau lanjut', 'ketauan afk di {asal} wkwk. udah dipindah, santai bukan ditendang kok', 'mic lo sepi mulu di {asal}, sistem ngira lo ketiduran. sekarang lo di {afk}', 'dari {asal} pindah ke {afk}, soalnya ga ada suara daritadi. tinggal join lagi', 'gua ga ngapa ngapain ya, discord sendiri yang mindahin lo dari {asal} ke {afk}']
-CHANNEL_PENGUMUMAN_ID = 1532238760874348554
+CHANNEL_PENGUMUMAN_ID = int(os.getenv('JULIAN_CHANNEL_PENGUMUMAN_ID', '1532238760874348554'))
 JAM_KIRIM = 7
 CATATAN_UMUM = 'pengumuman.json'
 FOLDER_GAMBAR = 'gambar'
@@ -2273,6 +2274,23 @@ async def editlink(interaction: discord.Interaction, nomor: int, judul: str='', 
 async def _tolak_baru(interaction: discord.Interaction, error):
     await tolak(interaction, error)
 
+# [BUG FIX] Background task untuk membersihkan memory leak pada dict automod
+@tasks.loop(minutes=30)
+async def bersih_memori_automod():
+    sekarang = datetime.now(timezone.utc)
+    for uid in list(_riwayat_chat.keys()):
+        _riwayat_chat[uid] = [w for w in _riwayat_chat[uid] if sekarang - w < timedelta(seconds=SPAM_DETIK)]
+        if not _riwayat_chat[uid]:
+            _riwayat_chat.pop(uid, None)
+    for uid in list(_strike.keys()):
+        _strike[uid] = [w for w in _strike[uid] if sekarang - w < timedelta(minutes=10)]
+        if not _strike[uid]:
+            _strike.pop(uid, None)
+
+@bersih_memori_automod.before_loop
+async def sebelum_bersih_memori():
+    await bot.wait_until_ready()
+
 @tasks.loop(seconds=10)
 async def jaga_status_julian():
     if bot.is_closed():
@@ -2309,6 +2327,8 @@ async def on_ready():
         lepas_slowmode.start()
     if not jaga_tempban.is_running():
         jaga_tempban.start()
+    if not bersih_memori_automod.is_running():
+        bersih_memori_automod.start()
     for g in bot.guilds:
         await segarkan_undangan(g)
     print(f"[setup] anti nuke={('nyala' if ANTI_NUKE else 'mati')} | {NUKE_JUMLAH} hapus / {NUKE_DETIK} detik | cabut role={('ya' if NUKE_CABUT_ROLE else 'engga')}")

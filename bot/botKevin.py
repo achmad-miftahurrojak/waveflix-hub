@@ -7,10 +7,11 @@ from discord import app_commands
 from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv('KEVIN_TOKEN')
-CHANNEL_STUDIO_ID = 1536889743013314570
-KEVIN_RADIO_URL = 'http://ice1.somafm.com/groovesalad-128-mp3'
-KEVIN_YT_URL = 'ytsearch1:lofi hip hop radio - beats to relax/study to live'
-VOLUME = 0.4
+CHANNEL_STUDIO_ID = int(os.getenv('KEVIN_CHANNEL_STUDIO_ID', '1536889743013314570'))
+KEVIN_RADIO_URL = os.getenv('KEVIN_RADIO_URL', 'http://ice1.somafm.com/groovesalad-128-mp3')
+KEVIN_YT_URL = os.getenv('KEVIN_YT_URL', 'ytsearch1:lofi hip hop radio - beats to relax/study to live')
+VOLUME = float(os.getenv('KEVIN_VOLUME', '0.4'))
+KEVIN_GUILD_ID = os.getenv('KEVIN_GUILD_ID') # Pengaman agar tidak nyasar ke server lain
 WATCHDOG_DETIK = 120
 YT_RENEW_JAM = 5
 intents = discord.Intents.default()
@@ -87,6 +88,9 @@ async def _join_dan_putar(guild: discord.Guild) -> bool:
         print(f'[kevin] ClientException saat join: {e}')
         try:
             if guild.voice_client:
+                # [BUG FIX] Pastikan FFMPEG mati sebelum disconnect untuk mencegah zombie processes
+                if guild.voice_client.is_playing():
+                    guild.voice_client.stop()
                 await guild.voice_client.disconnect(force=True)
             _voice_client = None
             await asyncio.sleep(2)
@@ -109,7 +113,7 @@ async def watchdog():
         if not _stream_aktif:
             continue
         try:
-            guild = next(iter(bot.guilds), None)
+            guild = bot.get_guild(int(KEVIN_GUILD_ID)) if KEVIN_GUILD_ID else next(iter(bot.guilds), None)
             if not guild:
                 continue
             perlu_reconnect = _voice_client is None or not _voice_client.is_connected() or (not _voice_client.is_playing() and (not _voice_client.is_paused()))
@@ -133,7 +137,7 @@ async def renew_yt_loop():
         if _stream_aktif and _voice_client and _voice_client.is_connected():
             print('[kevin] renew YouTube URL...')
             try:
-                guild = next(iter(bot.guilds), None)
+                guild = bot.get_guild(int(KEVIN_GUILD_ID)) if KEVIN_GUILD_ID else next(iter(bot.guilds), None)
                 if guild:
                     await _join_dan_putar(guild)
             except Exception as e:
@@ -165,7 +169,7 @@ async def on_ready():
         await pohon.sync()
     except Exception as e:
         print(f'[kevin] sync command error: {e}')
-    guild = next(iter(bot.guilds), None)
+    guild = bot.get_guild(int(KEVIN_GUILD_ID)) if KEVIN_GUILD_ID else next(iter(bot.guilds), None)
     if guild:
         oke = await _join_dan_putar(guild)
         if oke:
@@ -202,6 +206,9 @@ async def stop(inter: discord.Interaction):
     global _stream_aktif, _voice_client
     _stream_aktif = False
     if _voice_client and _voice_client.is_connected():
+        # [BUG FIX] Stop FFMPEG sebelum disconnect
+        if _voice_client.is_playing():
+            _voice_client.stop()
         await _voice_client.disconnect(force=True)
         _voice_client = None
     await inter.response.send_message('Lofi radio dihentikan. Pakai `/play` buat nyalain lagi.', ephemeral=True)
@@ -251,6 +258,15 @@ async def help_cmd(inter: discord.Interaction):
     embed.add_field(name='`/settings`', value='Atur volume radio (Admin)', inline=False)
     embed.add_field(name='Info', value='Bot akan otomatis reconnect jika koneksi terputus.', inline=False)
     await inter.response.send_message(embed=embed, ephemeral=True)
+
+# [BUG FIX] Penanganan error saat user bukan admin mengetik command
+@pohon.error
+async def on_app_command_error(inter: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.MissingPermissions):
+        await inter.response.send_message("Lo ga punya izin (harus Admin) buat pakai perintah ini.", ephemeral=True)
+    else:
+        print(f"[kevin] Command error: {error}")
+
 if __name__ == '__main__':
     if not TOKEN:
         print('[kevin] KEVIN_TOKEN belum diisi di .env')
