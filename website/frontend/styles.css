@@ -20,6 +20,18 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.modal-open {
+    overflow: hidden;
+    padding-right: 17px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--secondary-color);
+    outline-offset: 4px;
 }
 
 /* Navbar */
@@ -242,6 +254,7 @@ body {
     overflow-x: auto;
     padding-bottom: 20px;
     scroll-behavior: smooth;
+    scrollbar-width: none;
 }
 
 .row-container::-webkit-scrollbar {
@@ -387,4 +400,198 @@ footer {
     padding: 30px;
     color: #737373;
     font-size: 0.9rem;
+}
+
+/* Details Modal */
+.details-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1500;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 50px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow-y: auto;
+}
+
+.details-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.details-content {
+    background: var(--bg-color);
+    width: 90%;
+    max-width: 850px;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 50px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+}
+
+.details-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10;
+    background: rgba(0,0,0,0.5);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+}
+
+.details-hero {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 30px;
+}
+
+.details-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    z-index: 2;
+}
+
+.details-actions {
+    display: flex;
+    gap: 15px;
+    z-index: 2;
+}
+
+.details-info {
+    padding: 30px;
+}
+
+.details-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.episode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.episode-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.episode-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.episode-item img {
+    width: 120px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.episode-info h4 {
+    margin-bottom: 5px;
+}
+
+.episode-info span {
+    font-size: 0.8rem;
+    color: #a3a3a3;
+}
+
+#season-selector {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    padding: 8px 15px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Loading Spinner Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.loading-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255,255,255,0.1);
+    border-top-color: #E50914;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
+#loading-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Responsiveness Fixes */
+@media (max-width: 768px) {
+    .nav-links { display: none; } /* Sembunyikan navigasi karena masih kosong */
+    .details-hero { 
+        height: 250px; 
+        padding: 20px; 
+    }
+    .details-title { 
+        font-size: 2rem; 
+        margin-bottom: 10px;
+    }
+    .details-info {
+        padding: 20px;
+    }
+}
+#season-selector option {
+    background: var(--bg-color);
 }

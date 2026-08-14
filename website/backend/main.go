@@ -34,8 +34,120 @@ type CacheItem struct {
 type PlayResponse struct {
 	Title     string `json:"title"`
 	Year      string `json:"year"`
+	Type      string `json:"type,omitempty"`
+	Season    string `json:"season,omitempty"`
+	Episode   string `json:"episode,omitempty"`
 	IframeUrl string `json:"iframeUrl"`
 	Error     string `json:"error,omitempty"`
+}
+
+type ListResponse struct {
+	Titles []string `json:"titles"`
+}
+
+var (
+	homepageCache     []string
+	homepageCacheTime time.Time
+	homepageMutex     sync.RWMutex
+)
+
+func handleHomepage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	homepageMutex.RLock()
+	if len(homepageCache) > 0 && time.Since(homepageCacheTime) < 1*time.Hour {
+		titles := homepageCache
+		homepageMutex.RUnlock()
+		json.NewEncoder(w).Encode(ListResponse{Titles: titles})
+		return
+	}
+	homepageMutex.RUnlock()
+
+	titles, err := scrapeList("") // empty means homepage
+	if err != nil {
+		log.Printf("Gagal scrape homepage: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	homepageMutex.Lock()
+	homepageCache = titles
+	homepageCacheTime = time.Now()
+	homepageMutex.Unlock()
+
+	json.NewEncoder(w).Encode(ListResponse{Titles: titles})
+}
+
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	w.Header().Set("Content-Type", "application/json")
+
+	if query == "" {
+		json.NewEncoder(w).Encode(ListResponse{Titles: []string{}})
+		return
+	}
+
+	titles, err := scrapeList(query)
+	if err != nil {
+		log.Printf("Gagal scrape search %s: %v", query, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(ListResponse{Titles: titles})
+}
+
+func scrapeList(query string) ([]string, error) {
+	if globalBrowser == nil {
+		return nil, fmt.Errorf("browser global belum siap")
+	}
+
+	page := stealth.MustPage(globalBrowser)
+	defer page.MustClose()
+
+	domain := os.Getenv("IDLIX_DOMAIN")
+	if domain == "" {
+		domain = "z2.idlixku.com"
+	}
+
+	var targetUrl string
+	if query == "" {
+		targetUrl = fmt.Sprintf("https://%s/", domain)
+	} else {
+		searchQuery := url.QueryEscape(query)
+		targetUrl = fmt.Sprintf("https://%s/?s=%s", domain, searchQuery)
+	}
+
+	log.Printf("[SCRAPING LIST] Membuka URL: %s", targetUrl)
+	err := page.Timeout(15 * time.Second).Navigate(targetUrl)
+	if err != nil {
+		return nil, fmt.Errorf("gagal navigasi: %v", err)
+	}
+
+	page.MustWaitLoad()
+	time.Sleep(3 * time.Second) // Tunggu Cloudflare
+
+	var titles []string
+	elements, err := page.Timeout(10 * time.Second).Elements("article.item, .result-item, .item")
+	if err != nil {
+		log.Printf("Tidak ada item ditemukan (mungkin kosong atau diblokir)")
+		return titles, nil
+	}
+
+	for _, el := range elements {
+		titleEl, err := el.Element("h3, .title, h2")
+		if err == nil {
+			txt, err := titleEl.Text()
+			if err == nil && txt != "" {
+				titles = append(titles, strings.TrimSpace(txt))
+			}
+		}
+	}
+
+	if len(titles) > 15 {
+		titles = titles[:15]
+	}
+	return titles, nil
 }
 
 func main() {
@@ -55,6 +167,11 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/play", handlePlay)
+	mux.HandleFunc("/api/homepage", handleHomepage)
+	mux.HandleFunc("/api/search", handleSearch)
+
+	// [FEATURE] Serve file Frontend statis agar tidak 404 saat buka root URL
+	mux.Handle("/", http.FileServer(http.Dir("../frontend")))
 
 	handler := enableCORS(mux)
 
@@ -70,9 +187,34 @@ func main() {
 
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// [SECURITY FIX] Hanya izinkan origin tertentu (atau origin request jika sesuai)
+		origin := r.Header.Get("Origin")
+		allowedOrigins := []string{
+			"http://localhost:8080",
+			"http://127.0.0.1:8080",
+			// Tambahkan domain production Anda di sini nantinya
+		}
+		
+		isAllowed := false
+		for _, o := range allowedOrigins {
+			if o == origin {
+				isAllowed = true
+				break
+			}
+		}
+
+		if isAllowed || origin == "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			// Fallback aman
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080")
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		
+		// [SECURITY FIX] Menambahkan header CSP untuk mencegah XSS & iframe injection
+		w.Header().Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' https://api.themoviedb.org https://image.tmdb.org https://ui-avatars.com https://images.unsplash.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; frame-src *;")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -85,6 +227,13 @@ func enableCORS(next http.Handler) http.Handler {
 func handlePlay(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 	year := r.URL.Query().Get("year")
+	mediaType := r.URL.Query().Get("type") // "movie" or "tv"
+	season := r.URL.Query().Get("season")
+	episode := r.URL.Query().Get("episode")
+
+	if mediaType == "" {
+		mediaType = "movie"
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -94,7 +243,7 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cacheKey := fmt.Sprintf("%s-%s", strings.ToLower(title), year)
+	cacheKey := fmt.Sprintf("%s-%s-%s-%s-%s", strings.ToLower(title), year, mediaType, season, episode)
 
 	// Cek Cache
 	cacheMutex.RLock()
@@ -107,6 +256,9 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(PlayResponse{
 				Title:     title,
 				Year:      year,
+				Type:      mediaType,
+				Season:    season,
+				Episode:   episode,
 				IframeUrl: item.IframeURL,
 			})
 			return
@@ -119,9 +271,9 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Printf("[SCRAPING START] Mencari video: %s (%s)", title, year)
+	log.Printf("[SCRAPING START] Mencari video: %s (%s) Type: %s", title, year, mediaType)
 	
-	iframeUrl, err := scrapeIdlix(title, year)
+	iframeUrl, err := scrapeIdlix(title, year, mediaType, season, episode)
 	
 	if err != nil || iframeUrl == "" {
 		log.Printf("[SCRAPING FAILED] %s: %v", title, err)
@@ -141,63 +293,137 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(PlayResponse{
 		Title:     title,
 		Year:      year,
+		Type:      mediaType,
+		Season:    season,
+		Episode:   episode,
 		IframeUrl: iframeUrl,
 	})
 }
 
-func scrapeIdlix(title, year string) (string, error) {
+// Fungsi helper membersihkan judul menjadi slug (contoh: "Deadpool & Wolverine" -> "deadpool-wolverine")
+func createSlug(title string) string {
+	slug := strings.ToLower(title)
+	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.ReplaceAll(slug, "&", "")
+	slug = strings.ReplaceAll(slug, ":", "")
+	slug = strings.ReplaceAll(slug, "'", "")
+	slug = strings.ReplaceAll(slug, ".", "")
+	slug = strings.ReplaceAll(slug, "--", "-")
+	return strings.Trim(slug, "-")
+}
+
+func scrapeIdlix(title, year, mediaType, season, episode string) (string, error) {
 	if globalBrowser == nil {
 		return "", fmt.Errorf("browser global belum siap")
 	}
 
-	// [BUG FIX] Buat tab (Page) baru dari instance browser global yang sudah ada
-	// Jauh lebih ringan di RAM daripada membuka browser baru
 	page := stealth.MustPage(globalBrowser)
 	defer page.MustClose()
 
-	// [BUG FIX] Pindahkan domain hardcode ke Environment Variable
 	domain := os.Getenv("IDLIX_DOMAIN")
 	if domain == "" {
-		domain = "tv.idlixofficial.co"
+		domain = "z2.idlixku.com"
 	}
+
+	// [FEATURE] Smart Direct URL Navigation
+	// Mencoba navigasi langsung tanpa lewat kolom pencarian (jauh lebih cepat dan akurat)
+	slug := createSlug(title)
+	var directUrl string
+
+	if mediaType == "tv" {
+		directUrl = fmt.Sprintf("https://%s/episode/%s-season-%s-episode-%s/", domain, slug, season, episode)
+	} else {
+		directUrl = fmt.Sprintf("https://%s/movie/%s-%s/", domain, slug, year)
+	}
+
+	log.Printf("[SCRAPING] Mencoba Direct URL: %s", directUrl)
+	
+	err := page.Timeout(15 * time.Second).Navigate(directUrl)
+	if err != nil {
+		return "", fmt.Errorf("gagal membuka direct URL: %v", err)
+	}
+
+	page.MustWaitLoad()
+	time.Sleep(5 * time.Second) // Tunggu Cloudflare
+
+	// Cek apakah halaman 404 (Not Found). Jika bukan 404, kita bisa langsung ambil iframe.
+	pageTitle := ""
+	if res, err := page.Eval("() => document.title"); err == nil {
+		pageTitle = res.Value.Str()
+	}
+	if !strings.Contains(strings.ToLower(pageTitle), "page not found") && !strings.Contains(strings.ToLower(pageTitle), "error 404") {
+		// Halaman ada! Langsung cari iframe.
+		iframeElement, err := page.Timeout(5 * time.Second).Element("iframe")
+		if err == nil {
+			iframeSrc, err := iframeElement.Attribute("src")
+			if err == nil && iframeSrc != nil {
+				return *iframeSrc, nil
+			}
+		}
+	}
+
+	// [FALLBACK] Jika Direct URL gagal (404), gunakan Search Bar
+	log.Printf("[SCRAPING FALLBACK] Direct URL gagal. Menggunakan pencarian web untuk: %s", title)
+	
 	searchQuery := url.QueryEscape(title)
 	searchUrl := fmt.Sprintf("https://%s/?s=%s", domain, searchQuery)
 
-	log.Printf("[SCRAPING] Membuka URL: %s", searchUrl)
-
-	// Timeout 15 detik agar tidak menggantung selamanya jika terkena Cloudflare Captcha
-	err := page.Timeout(15 * time.Second).Navigate(searchUrl)
+	err = page.Timeout(15 * time.Second).Navigate(searchUrl)
 	if err != nil {
 		return "", fmt.Errorf("gagal membuka situs pencarian: %v", err)
 	}
 
 	page.MustWaitLoad()
-	
-	// Tunggu Cloudflare challenge (bisa memakan waktu)
-	time.Sleep(5 * time.Second)
+	time.Sleep(5 * time.Second) // Tunggu Cloudflare lagi
 
-	// 1. Cari elemen hasil film pertama (tunggu lebih lama karena Cloudflare)
+	// 1. Cari elemen hasil pencarian pertama
 	resultItem, err := page.Timeout(15 * time.Second).Element("article a, .result-item a, .item a")
 	if err != nil {
-		html, _ := page.HTML()
-		log.Printf("=== DEBUG HTML Awal ===\n%.500s\n=======================", html)
 		return "", fmt.Errorf("gagal menemukan hasil pencarian untuk %s: %v", title, err)
 	}
 
-	// 2. Klik dan tunggu halaman load
+	// 2. Klik hasil pencarian (Ini akan menuju halaman Movie, atau halaman utama Series)
 	err = resultItem.Click(proto.InputMouseButtonLeft, 1)
 	if err != nil {
 		return "", fmt.Errorf("gagal mengeklik film: %v", err)
 	}
 	page.MustWaitLoad()
 
-	// 3. Cari elemen iframe
+	// Jika ini adalah TV Series, kita saat ini berada di halaman Series Utama.
+	// Kita harus mengklik Season dan Episode yang benar.
+	if mediaType == "tv" {
+		log.Printf("[SCRAPING TV] Mencari tombol episode %s season %s...", episode, season)
+		// Struktur episode idlix biasanya ada di dalam <ul><li> dengan class 'episodiotitle' atau link berisi nomor episode.
+		// Sangat sulit mencari tombol dinamis tanpa klik langsung, jadi kita akan mencoba extract semua link di halaman ini,
+		// dan mencari URL yang cocok dengan pola /episode/judul-season-x-episode-y/
+		
+		links, err := page.Elements("a")
+		if err == nil {
+			targetPattern := fmt.Sprintf("season-%s-episode-%s", season, episode)
+			found := false
+			for _, link := range links {
+				href, err := link.Attribute("href")
+				if err == nil && href != nil && strings.Contains(*href, targetPattern) {
+					log.Printf("[SCRAPING TV] Ditemukan link episode yang cocok: %s", *href)
+					link.Click(proto.InputMouseButtonLeft, 1)
+					page.MustWaitLoad()
+					time.Sleep(3 * time.Second)
+					found = true
+					break
+				}
+			}
+			if !found {
+				return "", fmt.Errorf("gagal menemukan tombol season %s episode %s di halaman series", season, episode)
+			}
+		}
+	}
+
+	// 3. Halaman video seharusnya sudah terbuka (baik movie maupun episode series). Cari elemen iframe
 	iframeElement, err := page.Timeout(5 * time.Second).Element("iframe")
 	if err != nil {
 		return "", fmt.Errorf("gagal menemukan iframe video: %v", err)
 	}
 
-	// 4. Ekstrak src
 	iframeSrc, err := iframeElement.Attribute("src")
 	if err != nil || iframeSrc == nil {
 		return "", fmt.Errorf("gagal mengekstrak src dari iframe")

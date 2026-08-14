@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Summer Tide | Nonton Bebas Hambatan</title>
+    <!-- SEO & Open Graph Meta Tags -->
+    <meta name="description" content="Summer Tide - Nonton Film dan Series Tanpa Hambatan.">
+    <meta property="og:title" content="Summer Tide | Streaming Kualitas HD">
+    <meta property="og:description" content="Tonton film dan TV series favorit Anda tanpa hambatan dan iklan berlapis.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
@@ -49,7 +54,7 @@
             <p id="hero-desc" class="hero-desc">Kisah fisikawan Amerika J. Robert Oppenheimer, yang memimpin upaya untuk membangun senjata pemusnah massal untuk mengakhiri Perang Dunia II.</p>
             <div class="hero-buttons">
                 <button class="btn btn-primary" onclick="playHeroMovie()"><i class="fas fa-play"></i> Putar</button>
-                <button class="btn btn-secondary" onclick="alert('Fitur Info Selengkapnya akan segera hadir!')"><i class="fas fa-info-circle"></i> Info Selengkapnya</button>
+                <button class="btn btn-secondary" onclick="if(currentHeroMovie) openDetails(currentHeroMovie)"><i class="fas fa-info-circle"></i> Info Selengkapnya</button>
             </div>
         </div>
     </header>
@@ -73,9 +78,51 @@
         </section>
     </main>
 
+    <!-- Details Modal (Netflix Style) -->
+    <div class="details-modal" id="details-modal">
+        <div class="details-content">
+            <div class="details-close" onclick="closeDetails()" tabindex="0" aria-label="Tutup Modal" onkeydown="if(event.key==='Enter') closeDetails()"><i class="fas fa-times"></i></div>
+            <div class="details-hero" id="details-hero">
+                <div class="hero-vignette"></div>
+                <h2 id="details-title" class="details-title">Title</h2>
+                <div class="details-actions">
+                    <button class="btn btn-primary" id="details-play-btn"><i class="fas fa-play"></i> Putar</button>
+                    <button class="btn btn-secondary" id="details-mylist-btn"><i class="fas fa-plus"></i> Daftar Saya</button>
+                </div>
+            </div>
+            <div class="details-info">
+                <div class="details-meta">
+                    <span class="match" id="details-match">98% Match</span>
+                    <span class="year" id="details-year">2023</span>
+                    <span class="quality">HD</span>
+                </div>
+                <p id="details-desc">Description</p>
+                
+                <!-- TV Series Episodes Section (Hidden by default) -->
+                <div id="series-section" style="display: none; margin-top: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>Episodes</h3>
+                        <select id="season-selector" onchange="loadEpisodes(this.value)">
+                            <!-- Seasons injected via JS -->
+                        </select>
+                    </div>
+                    <div class="episode-list" id="episode-list">
+                        <!-- Episodes injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Loading Spinner -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Mencari video menembus proteksi Cloudflare...</p>
+    </div>
+
     <!-- Video Player Modal -->
     <div class="player-modal" id="player-modal">
-        <div class="player-close" onclick="closePlayer()"><i class="fas fa-times"></i></div>
+        <div class="player-close" onclick="closePlayer()" tabindex="0" aria-label="Tutup Player" onkeydown="if(event.key==='Enter') closePlayer()"><i class="fas fa-times"></i></div>
         <div class="player-container">
             <iframe id="video-frame" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
         </div>
