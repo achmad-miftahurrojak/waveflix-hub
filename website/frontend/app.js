@@ -5,7 +5,9 @@ const TMDB_API_KEY = "cff0f315183dd0830f0ef2ef924ae25c";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/original";
 const TMDB_POSTER_URL = "https://image.tmdb.org/t/p/w500";
-const BACKEND_URL = "http://localhost:8080"; // URL Golang Backend
+// [BUG FIX] Dinamisasi URL Backend agar jalan di VPS (Localhost Trap)
+const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "";
+const BACKEND_URL = isLocal ? "http://localhost:8080" : "http://IP_VPS_ANDA:8080"; // Ganti tulisan IP_VPS_ANDA saat hosting
 
 // ============================================================================
 // UI LOGIC
@@ -94,7 +96,11 @@ function setHeroMovie(movie) {
     currentHeroMovie = movie;
     
     const heroSection = document.getElementById('hero-section');
-    heroSection.style.backgroundImage = `url('${TMDB_IMAGE_URL}${movie.backdrop_path}')`;
+    // [BUG FIX] Cegah gambar blank jika backdrop_path null dari TMDB
+    const bgUrl = movie.backdrop_path 
+        ? `${TMDB_IMAGE_URL}${movie.backdrop_path}` 
+        : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070';
+    heroSection.style.backgroundImage = `url('${bgUrl}')`;
     
     document.getElementById('hero-title').textContent = movie.title || movie.original_title;
     
@@ -111,9 +117,19 @@ function setHeroMovie(movie) {
     document.querySelector('.hero-meta .match').textContent = match;
 }
 
+// Utilitas Sanitasi XSS sederhana
+function escapeHTML(str) {
+    const p = document.createElement('p');
+    p.appendChild(document.createTextNode(str));
+    return p.innerHTML;
+}
+
 function renderMovieRow(containerId, movies) {
     const container = document.getElementById(containerId);
     container.innerHTML = ""; // Bersihkan kontainer
+    
+    // [BUG FIX] Gunakan DocumentFragment agar Browser tidak nge-lag saat merender banyak item
+    const fragment = document.createDocumentFragment();
     
     movies.forEach(movie => {
         if (!movie.poster_path) return; // Skip jika tidak ada poster
@@ -123,24 +139,28 @@ function renderMovieRow(containerId, movies) {
         
         const year = movie.release_date ? movie.release_date.substring(0, 4) : "";
         const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
+        // [BUG FIX] Sanitasi XSS untuk judul film
+        const safeTitle = escapeHTML(movie.title || "Tanpa Judul");
         
         // Ketika di-klik, panggil Golang untuk mencari videonya
         card.onclick = () => playMovie(movie.title, year);
         
         card.innerHTML = `
             <div class="poster-container">
-                <img src="${TMDB_POSTER_URL}${movie.poster_path}" alt="${movie.title}">
+                <img src="${TMDB_POSTER_URL}${movie.poster_path}" alt="${safeTitle}">
                 <span class="quality-badge">HD</span>
                 <span class="rating-badge"><i class="fas fa-star"></i> ${rating}</span>
             </div>
             <div class="movie-info">
-                <h4>${movie.title}</h4>
+                <h4>${safeTitle}</h4>
                 <span class="year-text">${year}</span>
             </div>
         `;
         
-        container.appendChild(card);
+        fragment.appendChild(card);
     });
+    
+    container.appendChild(fragment); // Render 1 kali saja di akhir
 }
 
 // ============================================================================

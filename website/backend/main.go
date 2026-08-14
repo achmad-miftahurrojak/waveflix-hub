@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,9 @@ import (
 var (
 	videoCache = make(map[string]CacheItem)
 	cacheMutex sync.RWMutex
+	
+	// Global Browser Pool untuk mencegah Memory Leak / OOM
+	globalBrowser *rod.Browser
 )
 
 type CacheItem struct {
@@ -35,13 +39,31 @@ type PlayResponse struct {
 }
 
 func main() {
+	// [BUG FIX] Luncurkan 1 Browser Global saja agar tidak OOM
+	l := launcher.New().
+		Leakless(false).
+		Headless(true).
+		Set("disable-blink-features", "AutomationControlled")
+	urlLauncher, err := l.Launch()
+	if err != nil {
+		log.Fatalf("Gagal meluncurkan browser: %v", err)
+	}
+	defer l.Cleanup()
+
+	globalBrowser = rod.New().ControlURL(urlLauncher).MustConnect()
+	defer globalBrowser.MustClose()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/play", handlePlay)
 
 	handler := enableCORS(mux)
 
-	log.Println("Summer Tide Backend berjalan di http://localhost:8080")
-	if err := http.ListenAndServe(":8080", handler); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Summer Tide Backend berjalan di http://localhost:%s\n", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Server gagal: %v", err)
 	}
 }
@@ -76,17 +98,26 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 
 	// Cek Cache
 	cacheMutex.RLock()
-	if item, found := videoCache[cacheKey]; found && time.Now().Before(item.ExpiresAt) {
-		cacheMutex.RUnlock()
-		log.Printf("[CACHE HIT] %s", title)
-		json.NewEncoder(w).Encode(PlayResponse{
-			Title:     title,
-			Year:      year,
-			IframeUrl: item.IframeURL,
-		})
-		return
-	}
+	item, found := videoCache[cacheKey]
 	cacheMutex.RUnlock()
+
+	if found {
+		if time.Now().Before(item.ExpiresAt) {
+			log.Printf("[CACHE HIT] %s", title)
+			json.NewEncoder(w).Encode(PlayResponse{
+				Title:     title,
+				Year:      year,
+				IframeUrl: item.IframeURL,
+			})
+			return
+		} else {
+			// [BUG FIX] Hapus item yang sudah expired dari map (Garbage Collection)
+			cacheMutex.Lock()
+			delete(videoCache, cacheKey)
+			cacheMutex.Unlock()
+			log.Printf("[CACHE EXPIRED] Menghapus %s dari memori", title)
+		}
+	}
 
 	log.Printf("[SCRAPING START] Mencari video: %s (%s)", title, year)
 	
@@ -115,33 +146,27 @@ func handlePlay(w http.ResponseWriter, r *http.Request) {
 }
 
 func scrapeIdlix(title, year string) (string, error) {
-	// Menjalankan Headless Chrome via go-rod
-	// Menggunakan argumen tambahan untuk meminimalisir deteksi bot
-	l := launcher.New().
-		Leakless(false).
-		Headless(true).
-		Set("disable-blink-features", "AutomationControlled")
-		
-	urlLauncher, err := l.Launch()
-	if err != nil {
-		return "", fmt.Errorf("gagal meluncurkan browser: %v", err)
+	if globalBrowser == nil {
+		return "", fmt.Errorf("browser global belum siap")
 	}
-	defer l.Cleanup()
 
-	browser := rod.New().ControlURL(urlLauncher).MustConnect()
-	defer browser.MustClose()
+	// [BUG FIX] Buat tab (Page) baru dari instance browser global yang sudah ada
+	// Jauh lebih ringan di RAM daripada membuka browser baru
+	page := stealth.MustPage(globalBrowser)
+	defer page.MustClose()
 
-	// Gunakan stealth plugin untuk bypass Cloudflare
-	page := stealth.MustPage(browser)
-
-	// Asumsi domain idlix saat ini
+	// [BUG FIX] Pindahkan domain hardcode ke Environment Variable
+	domain := os.Getenv("IDLIX_DOMAIN")
+	if domain == "" {
+		domain = "tv.idlixofficial.co"
+	}
 	searchQuery := url.QueryEscape(title)
-	searchUrl := fmt.Sprintf("https://tv.idlixofficial.co/?s=%s", searchQuery)
+	searchUrl := fmt.Sprintf("https://%s/?s=%s", domain, searchQuery)
 
 	log.Printf("[SCRAPING] Membuka URL: %s", searchUrl)
 
 	// Timeout 15 detik agar tidak menggantung selamanya jika terkena Cloudflare Captcha
-	err = page.Timeout(15 * time.Second).Navigate(searchUrl)
+	err := page.Timeout(15 * time.Second).Navigate(searchUrl)
 	if err != nil {
 		return "", fmt.Errorf("gagal membuka situs pencarian: %v", err)
 	}
