@@ -261,19 +261,71 @@ window.loadEpisodes = async function(seasonNumber) {
 // RENDER LOGIC
 // ============================================================================
 
-function setHeroMovie(movie) {
+async function setHeroMovie(movie) {
     currentHeroMovie = movie;
+    const isTv = movie.media_type === 'tv' || movie.first_air_date;
+    const type = isTv ? 'tv' : 'movie';
     const bgUrl = movie.backdrop_path ? `${TMDB_IMAGE_URL}${movie.backdrop_path}` : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070';
-    document.getElementById('hero-section').style.backgroundImage = `url('${bgUrl}')`;
-    document.getElementById('hero-title').textContent = movie.title || movie.name;
+    document.getElementById('hero').style.backgroundImage = `url('${bgUrl}')`;
+    
+    // Fetch detail tambahan (durasi, genre) dan gambar (logo)
+    let details, images;
+    try {
+        [details, images] = await Promise.all([
+            fetchTMDB(`/${type}/${movie.id}`),
+            fetchTMDB(`/${type}/${movie.id}/images`)
+        ]);
+    } catch(e) {
+        console.error("Gagal load detail hero", e);
+    }
+
+    const titleContainer = document.getElementById('hero-title-container');
+    const logoImg = document.getElementById('hero-title-logo');
+    const fallbackText = document.getElementById('hero-title-fallback');
+    
+    // Reset display
+    logoImg.style.display = 'block';
+    fallbackText.style.display = 'none';
+    
+    // Cari logo berbahasa inggris atau tanpa bahasa
+    let logoPath = null;
+    if (images && images.logos && images.logos.length > 0) {
+        const enLogo = images.logos.find(l => l.iso_639_1 === 'en');
+        logoPath = enLogo ? enLogo.file_path : images.logos[0].file_path;
+    }
+
+    if (logoPath) {
+        logoImg.src = `https://image.tmdb.org/t/p/w500${logoPath}`;
+        logoImg.alt = movie.title || movie.name;
+        fallbackText.textContent = movie.title || movie.name; // In case of error
+    } else {
+        logoImg.style.display = 'none';
+        fallbackText.textContent = movie.title || movie.name;
+        fallbackText.style.display = 'block';
+    }
     
     let desc = movie.overview || "Tidak ada deskripsi tersedia.";
-    if (desc.length > 200) desc = desc.substring(0, 200) + "...";
+    if (desc.length > 250) desc = desc.substring(0, 250) + "...";
     document.getElementById('hero-desc').textContent = desc;
     
     const year = (movie.release_date || movie.first_air_date || "").substring(0, 4);
-    document.querySelector('.hero-meta .year').textContent = year;
-    document.querySelector('.hero-meta .match').textContent = movie.vote_average ? Math.round(movie.vote_average * 10) + "% Match" : "N/A";
+    document.getElementById('hero-year').textContent = year;
+    document.getElementById('hero-match').textContent = movie.vote_average ? Math.round(movie.vote_average * 10) + "% Match" : "N/A";
+    
+    // Format durasi
+    let durationStr = "";
+    if (details) {
+        if (type === 'movie' && details.runtime) {
+            const h = Math.floor(details.runtime / 60);
+            const m = details.runtime % 60;
+            durationStr = `${h}j ${m}m`;
+        } else if (type === 'tv' && details.episode_run_time && details.episode_run_time.length > 0) {
+            durationStr = `${details.episode_run_time[0]}m / ep`;
+        } else if (type === 'tv' && details.number_of_seasons) {
+            durationStr = `${details.number_of_seasons} Musim`;
+        }
+    }
+    document.getElementById('hero-duration').textContent = durationStr || "N/A";
 }
 
 function escapeHTML(str) {
@@ -339,10 +391,13 @@ function renderMovieRow(containerId, movies, append = false) {
                 <img src="${TMDB_POSTER_URL}${movie.poster_path}" alt="${safeTitle}" loading="lazy">
                 <span class="quality-badge">${isTv ? 'SERIES' : 'HD'}</span>
                 <span class="rating-badge"><i class="fas fa-star"></i> ${rating}</span>
-            </div>
-            <div class="movie-info">
-                <h4>${safeTitle}</h4>
-                <span class="year-text">${year.substring(0,4)}</span>
+                <div class="movie-card-overlay">
+                    <i class="fas fa-play play-icon-overlay"></i>
+                </div>
+                <div class="movie-info">
+                    <h4>${safeTitle}</h4>
+                    <span class="year-text">${year.substring(0,4)}</span>
+                </div>
             </div>
         `;
         fragment.appendChild(card);

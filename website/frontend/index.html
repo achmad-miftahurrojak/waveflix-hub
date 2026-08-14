@@ -9,8 +9,8 @@
     <meta property="og:title" content="Summer Tide | Streaming Kualitas HD">
     <meta property="og:description" content="Tonton film dan TV series favorit Anda tanpa hambatan dan iklan berlapis.">
     <meta property="og:image" content="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500">
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -22,49 +22,60 @@
         <div class="nav-left">
             <h1 class="logo">Summer<span>Tide</span></h1>
             <ul class="nav-links">
-                <li><a href="#" class="active">Beranda</a></li>
-                <li><a href="#">Film</a></li>
-                <li><a href="#">Series</a></li>
-                <li><a href="#">Daftar Saya</a></li>
+                <li><a href="#" class="active"><i class="fas fa-home"></i> Beranda</a></li>
+                <li><a href="#"><i class="fas fa-film"></i> Film</a></li>
+                <li><a href="#"><i class="fas fa-tv"></i> Series</a></li>
+                <li><a href="#"><i class="fas fa-bookmark"></i> Daftar Saya</a></li>
             </ul>
         </div>
         <div class="nav-right">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Cari film atau series...">
+                <input type="text" id="search-input" placeholder="Cari film, series...">
             </div>
             <div class="profile">
-                <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="Profile">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces" alt="Profile Avatar">
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero" id="hero-section">
-        <!-- Background Image set via JS -->
+    <div class="hero" id="hero">
         <div class="hero-vignette"></div>
         <div class="hero-content">
-            <h2 id="hero-title" class="hero-title">Oppenheimer</h2>
-            <div class="hero-meta">
-                <span class="match">98% Match</span>
-                <span class="year">2023</span>
-                <span class="rating">R</span>
-                <span class="duration">3h</span>
+            <div class="hero-title-wrapper" id="hero-title-container">
+                <img 
+                    class="hero-title-logo" 
+                    id="hero-title-logo"
+                    src="" 
+                    alt="Movie Title"
+                    onerror="this.style.display='none'; document.getElementById('hero-title-fallback').style.display='block'"
+                >
+                <h1 class="hero-title-fallback" id="hero-title-fallback" style="display:none;">Memuat...</h1>
+            </div>
+            
+            <div class="hero-meta" id="hero-meta">
+                <span class="match" id="hero-match">100% Match</span>
+                <span class="separator">&bull;</span>
+                <span class="year" id="hero-year">2026</span>
+                <span class="separator">&bull;</span>
+                <span class="duration" id="hero-duration">2j 0m</span>
+                <span class="separator">&bull;</span>
                 <span class="quality">HD</span>
             </div>
-            <p id="hero-desc" class="hero-desc">Kisah fisikawan Amerika J. Robert Oppenheimer, yang memimpin upaya untuk membangun senjata pemusnah massal untuk mengakhiri Perang Dunia II.</p>
+            <p class="hero-desc" id="hero-desc">Tunggu sebentar, kami sedang memuat film terbaik untuk Anda.</p>
             <div class="hero-buttons">
                 <button class="btn btn-primary" onclick="playHeroMovie()"><i class="fas fa-play"></i> Putar</button>
                 <button class="btn btn-secondary" onclick="if(currentHeroMovie) openDetails(currentHeroMovie)"><i class="fas fa-info-circle"></i> Info Selengkapnya</button>
             </div>
         </div>
-    </header>
+    </div>
 
     <!-- Main Content -->
     <main class="content">
         <!-- Row 1 -->
         <section class="movie-row">
-            <h3 class="row-title">Sedang Hangat (Trending)</h3>
+            <h3 class="row-title">Sedang Hangat</h3>
             <div class="row-container" id="trending-row">
                 <!-- Injected via JS -->
             </div>
