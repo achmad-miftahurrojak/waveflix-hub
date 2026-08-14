@@ -240,6 +240,7 @@ body.modal-open {
 
 .movie-row {
     margin-bottom: 40px;
+    position: relative; /* Agar carousel button bisa diatur absolute */
 }
 
 .row-title {
@@ -272,7 +273,37 @@ body.modal-open {
 }
 
 .movie-card:hover {
-    transform: scale(1.05);
+    transform: scale(1.15); /* Efek zoom agresif ala Netflix */
+    z-index: 99;
+}
+
+/* Panah Carousel Kiri/Kanan */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 100;
+    height: 100%;
+    width: 40px;
+    display: none; /* Sembunyikan default, muncul saat hover atau via JS */
+    transition: background 0.3s;
+}
+
+.carousel-btn:hover {
+    background: rgba(0,0,0,0.8);
+}
+
+.carousel-btn.left {
+    left: 0;
+}
+
+.carousel-btn.right {
+    right: 0;
 }
 
 .poster-container {
@@ -389,7 +420,8 @@ body.modal-open {
     box-shadow: 0 0 30px rgba(102, 252, 241, 0.2);
 }
 
-.player-container iframe {
+.player-container iframe,
+.player-container .video-js {
     width: 100%;
     height: 100%;
 }

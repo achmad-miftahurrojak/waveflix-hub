@@ -118,53 +118,46 @@ async function fetchTMDB(endpoint) {
     }
 }
 
-// Modifikasi PlayMovie untuk mensupport tipe (movie/tv), season, dan episode
-async function playMovie(title, year, type = 'movie', season = '', episode = '') {
-    const notifMsg = type === 'tv' ? `(S${season}E${episode})` : `(${year})`;
+function getIframeUrl(tmdbId, type, season, episode) {
+    if (type === 'tv') {
+        return `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
+    }
+    return `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`;
+}
+
+async function playMovie(tmdbId, type = 'movie', season = '', episode = '') {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.classList.add('active');
     
-    try {
-        const url = `${BACKEND_URL}/api/play?title=${encodeURIComponent(title)}&year=${year}&type=${type}&season=${season}&episode=${episode}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
+    currentPlaying = { tmdbId, type, season, episode };
+    
+    setTimeout(() => {
         loadingOverlay.classList.remove('active');
         
-        if (data.iframeUrl) {
-            iframe.src = data.iframeUrl;
-            playerModal.classList.add('active');
-            document.body.classList.add('modal-open');
-        } else {
-            alert("Maaf, video tidak ditemukan di server penyedia.");
-        }
-    } catch (error) {
-        loadingOverlay.classList.remove('active');
-        alert("Gagal menghubungi server backend Golang.");
-    }
+        iframe.src = getIframeUrl(tmdbId, type, season, episode);
+        playerModal.classList.add('active');
+        document.body.classList.add('modal-open');
+    }, 500);
 }
+
+
 
 function playHeroMovie() {
     if (currentHeroMovie) {
-        const year = (currentHeroMovie.release_date || currentHeroMovie.first_air_date || "").substring(0, 4);
-        playMovie(currentHeroMovie.title || currentHeroMovie.name, year, currentHeroMovie.media_type || 'movie');
+        playMovie(currentHeroMovie.id, currentHeroMovie.media_type || 'movie');
     }
 }
 
 document.getElementById('details-play-btn').addEventListener('click', () => {
     if (currentDetailsMovie) {
-        const title = currentDetailsMovie.title || currentDetailsMovie.name;
         const isTv = currentDetailsMovie.media_type === 'tv' || currentDetailsMovie.first_air_date;
         const type = isTv ? 'tv' : 'movie';
-        let year = "";
         
         if (isTv) {
-            year = currentDetailsMovie.first_air_date ? currentDetailsMovie.first_air_date.substring(0, 4) : "";
             // Default mainkan S1 E1 jika klik putar utama
-            playMovie(title, year, type, 1, 1);
+            playMovie(currentDetailsMovie.id, type, 1, 1);
         } else {
-            year = currentDetailsMovie.release_date ? currentDetailsMovie.release_date.substring(0, 4) : "";
-            playMovie(title, year, type);
+            playMovie(currentDetailsMovie.id, type);
         }
     }
 });
@@ -245,9 +238,7 @@ window.loadEpisodes = async function(seasonNumber) {
             const epNum = ep.episode_number;
             
             item.onclick = () => {
-                const title = currentDetailsMovie.name;
-                const year = currentDetailsMovie.first_air_date ? currentDetailsMovie.first_air_date.substring(0, 4) : "";
-                playMovie(title, year, 'tv', seasonNumber, epNum);
+                playMovie(currentDetailsMovie.id, 'tv', seasonNumber, epNum);
             };
             
             item.tabIndex = 0;
@@ -291,10 +282,38 @@ function escapeHTML(str) {
     return p.innerHTML;
 }
 
-function renderMovieRow(containerId, movies) {
+function renderMovieRow(containerId, movies, append = false) {
     const container = document.getElementById(containerId);
     if(!container) return;
-    container.innerHTML = ""; 
+    if(!append) container.innerHTML = ""; 
+    
+    // [UI FIX] Inject carousel buttons if they don't exist
+    const section = container.parentElement;
+    if (!section.querySelector('.carousel-btn.left')) {
+        const leftBtn = document.createElement('button');
+        leftBtn.className = 'carousel-btn left';
+        leftBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        leftBtn.onclick = () => { container.scrollBy({ left: -800, behavior: 'smooth' }) };
+        
+        const rightBtn = document.createElement('button');
+        rightBtn.className = 'carousel-btn right';
+        rightBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        rightBtn.onclick = () => { container.scrollBy({ left: 800, behavior: 'smooth' }) };
+        
+        section.appendChild(leftBtn);
+        section.appendChild(rightBtn);
+        
+        // Munculkan panah hanya saat kursor di atas barisan film
+        section.addEventListener('mouseenter', () => {
+            leftBtn.style.display = 'block';
+            rightBtn.style.display = 'block';
+        });
+        section.addEventListener('mouseleave', () => {
+            leftBtn.style.display = 'none';
+            rightBtn.style.display = 'none';
+        });
+    }
+
     const fragment = document.createDocumentFragment();
     
     movies.forEach(movie => {
@@ -358,42 +377,85 @@ function renderMyList() {
 // INISIALISASI (IDLIX FIRST ARCHITECTURE)
 // ============================================================================
 
-async function mapTitlesToTMDB(titles) {
-    const movies = [];
-    for (let title of titles) {
-        // Bersihkan judul dari tulisan berlebih seperti "Season X" atau "Episode Y"
-        let cleanTitle = title.replace(/season \d+/i, '').replace(/episode \d+/i, '').trim();
-        const searchData = await fetchTMDB(`/search/multi?query=${encodeURIComponent(cleanTitle)}`);
-        // Pastikan bukan array kosong
-        if (searchData.results && searchData.results.length > 0) {
-            movies.push(searchData.results[0]);
-        }
+
+
+const genres = [
+    { id: 'trending', endpoint: '/api/homepage' },
+    { id: 'action', endpoint: '/api/discover?genre=28' },
+    { id: 'drama', endpoint: '/api/discover?genre=18' },
+    { id: 'animation', endpoint: '/api/discover?genre=16' },
+    { id: 'horror', endpoint: '/api/discover?genre=27' }
+];
+let genrePages = { trending: 1, action: 1, drama: 1, animation: 1, horror: 1 };
+let isLoadingGenre = { trending: false, action: false, drama: false, animation: false, horror: false };
+
+async function loadGenre(genreId, page) {
+    if (isLoadingGenre[genreId]) return;
+    isLoadingGenre[genreId] = true;
+    
+    const genreObj = genres.find(g => g.id === genreId);
+    let url = `${BACKEND_URL}${genreObj.endpoint}`;
+    if (url.includes('?')) {
+        url += `&page=${page}`;
+    } else {
+        url += `?page=${page}`;
     }
-    return movies;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+            const movies = data.results;
+            
+            if (genreId === 'trending' && page === 1 && movies.length > 0) {
+                setHeroMovie(movies[0]);
+            }
+            
+            // Tampilkan section jika ini page 1
+            if (page === 1) {
+                const section = document.getElementById(`${genreId}-section`);
+                if (section) section.style.display = 'block';
+            }
+            
+            const append = page > 1;
+            // Hindari hero movie di row trending
+            const moviesToRender = (genreId === 'trending' && page === 1) ? movies.slice(1) : movies;
+            renderMovieRow(`${genreId}-row`, moviesToRender, append);
+            
+            setupInfiniteScroll(`${genreId}-row`, genreId);
+        }
+    } catch(err) {
+        console.error(`Gagal load ${genreId}:`, err);
+    }
+    isLoadingGenre[genreId] = false;
+}
+
+function setupInfiniteScroll(rowId, genreId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    
+    row.addEventListener('scroll', () => {
+        // Jika scroll mendekati akhir (sisa 300px)
+        if (row.scrollLeft + row.clientWidth >= row.scrollWidth - 300) {
+            if (!isLoadingGenre[genreId]) {
+                genrePages[genreId]++;
+                loadGenre(genreId, genrePages[genreId]);
+            }
+        }
+    });
 }
 
 async function initApp() {
     renderMyList();
     
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/homepage`);
-        const data = await response.json();
-        if (data.titles && data.titles.length > 0) {
-            const movies = await mapTitlesToTMDB(data.titles);
-            if (movies.length > 0) {
-                setHeroMovie(movies[0]);
-                renderMovieRow('trending-row', movies.slice(1));
-            }
-        }
-    } catch(err) {
-        console.error("Gagal load homepage:", err);
-    }
+    // Load halaman 1 untuk semua genre secara paralel
+    genres.forEach(g => {
+        genrePages[g.id] = 1;
+        loadGenre(g.id, 1);
+    });
     
-    // Sembunyikan Action Row karena Idlix homepage scraper hanya mengambil 1 list utama
-    const actionRow = document.getElementById('action-row');
-    if (actionRow) {
-        actionRow.parentElement.style.display = 'none';
-    }
+    const loadBtn = document.getElementById('load-more-btn');
+    if(loadBtn) loadBtn.style.display = 'none'; // Sembunyikan karena sudah pakai infinite scroll
     
     checkURLParams();
 }
@@ -429,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTimeout = setTimeout(async () => {
             if (query.length > 2) {
                 const loadingRow = document.querySelector('#trending-row');
-                loadingRow.innerHTML = "<p style='color:white; padding: 20px;'>Mencari di Idlix (Menembus Cloudflare, harap tunggu)...</p>";
+                loadingRow.innerHTML = "<p style='color:white; padding: 20px;'>Mencari (harap tunggu)...</p>";
                 
                 try {
                     const response = await fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}`);
@@ -438,11 +500,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rowTitle = document.querySelector('#trending-row').previousElementSibling;
                     rowTitle.textContent = `Hasil Pencarian: "${query}"`;
                     
-                    if (data.titles && data.titles.length > 0) {
-                        const movies = await mapTitlesToTMDB(data.titles);
+                    if (data.results && data.results.length > 0) {
+                        const movies = data.results;
                         renderMovieRow('trending-row', movies);
                     } else {
-                        loadingRow.innerHTML = "<p style='color:#ccc; padding: 20px;'>Tidak ada hasil di Idlix untuk pencarian ini.</p>";
+                        loadingRow.innerHTML = "<p style='color:#ccc; padding: 20px;'>Tidak ada hasil untuk pencarian ini.</p>";
                     }
                 } catch (error) {
                     loadingRow.innerHTML = "<p style='color:red; padding: 20px;'>Gagal menghubungi server pencarian.</p>";

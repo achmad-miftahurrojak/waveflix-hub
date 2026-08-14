@@ -134,8 +134,8 @@
    "juara": 0
   },
   "1531978836223332442": {
-   "xp": 2028,
-   "xp_minggu": 625,
+   "xp": 2088,
+   "xp_minggu": 685,
    "pesan": 4,
    "menit": 0,
    "absen": 1,
@@ -146,9 +146,9 @@
    "juara": 0,
    "game": {
     "hunt": {
-     "main": 5,
+     "main": 6,
      "menang": 0,
-     "minggu": 0
+     "minggu": 1
     },
     "duel": {
      "main": 2,
@@ -163,18 +163,10 @@
    },
    "barang": {},
    "misi": {
-    "tanggal": "2026-08-11",
-    "maju": {
-     "absen": 1,
-     "hunt": 5,
-     "duel": 2
-    },
+    "tanggal": "2026-08-14",
+    "maju": {},
     "diambil": [],
-    "dikabarin": [
-     "absen",
-     "duel",
-     "hunt"
-    ],
+    "dikabarin": [],
     "ganti": {}
    },
    "efek": {},
@@ -182,9 +174,12 @@
     "bintang laut": 1,
     "gurita": 1,
     "kerang kecil": 1,
-    "sandal jepit sebelah": 2
+    "sandal jepit sebelah": 2,
+    "kepiting": 1
    },
-   "suit_beruntun": 1
+   "suit_beruntun": 1,
+   "misi_kemarin": 85,
+   "terakhir_aktif": "2026-08-14"
   },
   "1535477128068341862": {
    "xp": 357,

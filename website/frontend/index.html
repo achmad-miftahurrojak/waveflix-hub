@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -70,12 +71,42 @@
         </section>
 
         <!-- Row 2 -->
-        <section class="movie-row">
-            <h3 class="row-title">Film Action Pilihan</h3>
+        <section class="movie-row" id="action-section" style="display: none;">
+            <h3 class="row-title">Aksi & Petualangan</h3>
             <div class="row-container" id="action-row">
                 <!-- Injected via JS -->
             </div>
         </section>
+
+        <!-- Row 3 -->
+        <section class="movie-row" id="drama-section" style="display: none;">
+            <h3 class="row-title">Drama & Romansa</h3>
+            <div class="row-container" id="drama-row">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+        <!-- Row 4 -->
+        <section class="movie-row" id="animation-section" style="display: none;">
+            <h3 class="row-title">Animasi & Keluarga</h3>
+            <div class="row-container" id="animation-row">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+        <!-- Row 5 -->
+        <section class="movie-row" id="horror-section" style="display: none;">
+            <h3 class="row-title">Horor & Thriller</h3>
+            <div class="row-container" id="horror-row">
+            </div>
+        </section>
+
+        <!-- Load More Button -->
+        <div class="load-more-container" style="text-align: center; margin: 40px 0;">
+            <button id="load-more-btn" class="btn btn-secondary" style="padding: 10px 30px; font-size: 1.1rem; border-radius: 30px;">
+                <i class="fas fa-sync-alt"></i> Muat Lebih Banyak
+            </button>
+        </div>
     </main>
 
     <!-- Details Modal (Netflix Style) -->
@@ -117,12 +148,12 @@
     <!-- Custom Loading Spinner -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="spinner"></div>
-        <p id="loading-text">Mencari video menembus proteksi Cloudflare...</p>
+        <p id="loading-text">Menyiapkan video dari server...</p>
     </div>
 
     <!-- Video Player Modal -->
     <div class="player-modal" id="player-modal">
-        <div class="player-close" onclick="closePlayer()" tabindex="0" aria-label="Tutup Player" onkeydown="if(event.key==='Enter') closePlayer()"><i class="fas fa-times"></i></div>
+        <!-- Pilihan server disembunyikan dari UI agar tidak membingungkan penonton, akan dihandle otomatis oleh JS -->
         <div class="player-container">
             <iframe id="video-frame" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
         </div>
@@ -133,6 +164,6 @@
         <p>&copy; 2026 Summer Tide. Bukan web streaming biasa.</p>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
