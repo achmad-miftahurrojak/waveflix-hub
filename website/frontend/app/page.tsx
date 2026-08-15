@@ -1,41 +1,54 @@
 import {
   getTrendingGlobal,
   getTrendingIndonesia,
-  discoverByProvider,
-  getRecent,
+  getLatest,
+  getLatestEpisodes,
   getHeroSlides,
 } from "@/lib/tmdb";
+import { mediaTypeOf } from "@/lib/helpers";
 import HeroCarousel from "@/components/HeroCarousel";
 import TrendingSection from "@/components/TrendingSection";
 import MovieRow from "@/components/MovieRow";
-import { mediaTypeOf } from "@/lib/helpers";
+import SwitchableCarousel, {
+  type SwitchGroup,
+} from "@/components/SwitchableCarousel";
+import LatestEpisodesRow from "@/components/LatestEpisodesRow";
 
-// Provider ID TMDB (watch_region=ID).
-const NETFLIX = 8;
-const DISNEY = 122; // Disney+ Hotstar (region ID)
-const APPLE_TV = 350;
-const HBO_MAX = 1899;
+// Section "Originals" — switch antar platform besar.
+const ORIGINALS: SwitchGroup[] = [
+  { label: "Netflix Originals", id: 8 },
+  { label: "Disney+ Originals", id: 122 },
+  { label: "HBO Originals", id: 1899 },
+  { label: "Prime Video Originals", id: 119 },
+  { label: "Apple TV+ Originals", id: 350 },
+].map(
+  (p): SwitchGroup => ({
+    label: p.label,
+    sources: [
+      { media: "movie", params: `provider=${p.id}&sort_by=popularity.desc&min_votes=50` },
+      { media: "tv", params: `provider=${p.id}&sort_by=popularity.desc&min_votes=50` },
+    ],
+  })
+);
+
+// Section "Drama by country" — switch antar negara/anime.
+const REGIONS: SwitchGroup[] = [
+  { label: "Korean Drama", sources: [{ media: "tv", params: "country=KR&sort_by=popularity.desc&min_votes=10" }] },
+  { label: "Japanese Drama", sources: [{ media: "tv", params: "country=JP&sort_by=popularity.desc&min_votes=5" }] },
+  { label: "Chinese Drama", sources: [{ media: "tv", params: "country=CN&sort_by=popularity.desc&min_votes=5" }] },
+  { label: "Thai Drama", sources: [{ media: "tv", params: "country=TH&sort_by=popularity.desc&min_votes=3" }] },
+  { label: "Anime", sources: [{ media: "tv", params: "genre=16&country=JP&sort_by=popularity.desc&min_votes=20" }] },
+];
 
 export default async function Home() {
-  const [
-    trendingGlobal,
-    trendingIndonesia,
-    netflix,
-    disney,
-    apple,
-    hbo,
-    recentMovies,
-    recentSeries,
-  ] = await Promise.all([
-    getTrendingGlobal(),
-    getTrendingIndonesia(),
-    discoverByProvider(NETFLIX, "movie"),
-    discoverByProvider(DISNEY, "movie"),
-    discoverByProvider(APPLE_TV, "tv"),
-    discoverByProvider(HBO_MAX, "movie"),
-    getRecent("movie"),
-    getRecent("tv"),
-  ]);
+  const [trendingGlobal, trendingIndonesia, latestMovies, latestSeries, latestEpisodes] =
+    await Promise.all([
+      getTrendingGlobal(),
+      getTrendingIndonesia(),
+      getLatest("movie"),
+      getLatest("tv"),
+      getLatestEpisodes(14),
+    ]);
 
   // Hero: 10 trending global lalu 10 trending Indonesia (dedupe), ganti tiap 10 dtk.
   const globalSlides = await getHeroSlides(trendingGlobal, 10);
@@ -52,49 +65,17 @@ export default async function Home() {
     <main>
       <HeroCarousel slides={heroSlides} />
 
-      {/* Hero penuh 1 layar; baris konten mulai di bawahnya (scroll untuk lihat) */}
       <div className="relative z-[2] pt-4">
-        <TrendingSection items={trendingGlobal} title="Trending Now" />
+        <TrendingSection title="Trending Now" items={trendingGlobal} />
         <TrendingSection
-          items={trendingIndonesia}
           title="Trending in Indonesia"
+          items={trendingIndonesia}
         />
-        <MovieRow
-          title="Netflix"
-          items={netflix}
-          viewAll
-          href={`/browse?media=movie&provider=${NETFLIX}`}
-        />
-        <MovieRow
-          title="Disney+"
-          items={disney}
-          viewAll
-          href={`/browse?media=movie&provider=${DISNEY}`}
-        />
-        <MovieRow
-          title="Apple TV+ Originals"
-          items={apple}
-          viewAll
-          href={`/browse?media=tv&provider=${APPLE_TV}`}
-        />
-        <MovieRow
-          title="HBO Max"
-          items={hbo}
-          viewAll
-          href={`/browse?media=movie&provider=${HBO_MAX}`}
-        />
-        <MovieRow
-          title="Newly Added Movies"
-          items={recentMovies}
-          viewAll
-          href="/browse?media=movie&sort_by=primary_release_date.desc"
-        />
-        <MovieRow
-          title="Newly Added Series"
-          items={recentSeries}
-          viewAll
-          href="/browse?media=tv&sort_by=first_air_date.desc"
-        />
+        <SwitchableCarousel groups={ORIGINALS} />
+        <SwitchableCarousel groups={REGIONS} />
+        <MovieRow title="Latest Movies" items={latestMovies} />
+        <MovieRow title="Latest Series" items={latestSeries} />
+        <LatestEpisodesRow episodes={latestEpisodes} />
       </div>
     </main>
   );

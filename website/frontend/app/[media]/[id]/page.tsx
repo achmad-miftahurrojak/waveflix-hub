@@ -16,6 +16,7 @@ import DetailActions from "@/components/DetailActions";
 import CastRow from "@/components/CastRow";
 import EpisodesSection from "@/components/EpisodesSection";
 import MovieRow from "@/components/MovieRow";
+import InlineHeroVideo from "@/components/InlineHeroVideo";
 
 export const dynamicParams = true;
 
@@ -81,17 +82,11 @@ export default async function DetailPage({
   return (
     <main className="min-h-screen">
       {/* ===== BAGIAN 1: HERO (judul · genre · tombol · meta) ala IDLIX ===== */}
-      <div
-        className="relative flex h-screen min-h-[600px] items-end"
-        style={{
-          backgroundImage: `url('${backdropUrl(detail)}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-        }}
+      <InlineHeroVideo
+        id={detail.id}
+        backdrop={backdropUrl(detail)}
+        heightClass="h-screen min-h-[600px]"
       >
-        <div className="pointer-events-none absolute inset-0 bg-black/35" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent" />
-
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24">
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -148,7 +143,7 @@ export default async function DetailPage({
             )}
           </div>
         </div>
-      </div>
+      </InlineHeroVideo>
 
       {/* ===== BAGIAN 2: DESKRIPSI (creator · tagline · overview · studio) ===== */}
       <div className="px-[4%] py-10">

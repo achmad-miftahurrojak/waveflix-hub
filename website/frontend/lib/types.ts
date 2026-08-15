@@ -86,6 +86,15 @@ export interface TmdbDetail extends TmdbItem {
   production_countries?: { iso_3166_1: string; name: string }[];
   production_companies?: ProductionCompany[];
   created_by?: { id: number; name: string }[];
+  last_episode_to_air?: {
+    season_number?: number;
+    episode_number?: number;
+    name?: string;
+    overview?: string;
+    still_path?: string | null;
+    air_date?: string;
+    runtime?: number | null;
+  };
   genres?: Genre[];
   seasons?: SeasonSummary[];
   credits?: { cast?: CastMember[]; crew?: CrewMember[] };

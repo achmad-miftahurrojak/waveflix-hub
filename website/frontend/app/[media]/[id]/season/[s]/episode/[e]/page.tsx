@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDetail, getHeroLogo, getSeasonEpisodes } from "@/lib/tmdb";
 import { IMG, backdropUrl, itemTitle, runtimeText } from "@/lib/helpers";
-import { ChevronLeft } from "@/components/Icons";
+import { ChevronLeft, ChevronRight } from "@/components/Icons";
 import EpisodePlayButton from "@/components/EpisodePlayButton";
+import EpisodesSection from "@/components/EpisodesSection";
+import InlineHeroVideo from "@/components/InlineHeroVideo";
 
 export const dynamicParams = true;
 
@@ -28,6 +30,15 @@ export default async function EpisodePage({
   const ep = episodes.find((x) => x.episode_number === episode);
   if (!ep) notFound();
 
+  // Navigasi antar-episode (hanya yang sudah rilis).
+  const aired = episodes.filter(
+    (x) => !x.air_date || new Date(x.air_date).getTime() <= Date.now()
+  );
+  const idx = aired.findIndex((x) => x.episode_number === episode);
+  const prev = idx > 0 ? aired[idx - 1] : null;
+  const next = idx >= 0 && idx < aired.length - 1 ? aired[idx + 1] : null;
+  const epHref = (n: number) => `/tv/${id}/season/${season}/episode/${n}`;
+
   const bg = ep.still_path
     ? `${IMG}/original${ep.still_path}`
     : backdropUrl(detail);
@@ -38,17 +49,13 @@ export default async function EpisodePage({
 
   return (
     <main className="min-h-screen">
-      <div
-        className="relative flex h-[86vh] min-h-[560px] items-end"
-        style={{
-          backgroundImage: `url('${bg}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-        }}
+      <InlineHeroVideo
+        id={detail.id}
+        season={season}
+        episode={episode}
+        backdrop={bg}
+        heightClass="h-[86vh] min-h-[560px]"
       >
-        <div className="pointer-events-none absolute inset-0 bg-black/45" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent" />
-
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24 pt-28">
           <Link
             href={`/tv/${id}`}
@@ -99,9 +106,53 @@ export default async function EpisodePage({
             )}
           </div>
         </div>
-      </div>
+      </InlineHeroVideo>
 
       <div className="px-[4%] py-10">
+        {/* Navigasi Sebelumnya / Berikutnya */}
+        {(prev || next) && (
+          <div className="mb-8 grid grid-cols-2 gap-3">
+            {prev ? (
+              <Link
+                href={epHref(prev.episode_number)}
+                className="flex items-center gap-3 rounded-xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10"
+              >
+                <ChevronLeft className="h-6 w-6 shrink-0 text-white/50" />
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-white/50">
+                    Previous
+                  </div>
+                  <div className="truncate font-semibold">
+                    Ep {prev.episode_number}:{" "}
+                    {prev.name || `Episode ${prev.episode_number}`}
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <div />
+            )}
+            {next ? (
+              <Link
+                href={epHref(next.episode_number)}
+                className="col-start-2 flex items-center justify-end gap-3 rounded-xl bg-white/5 p-4 text-right ring-1 ring-white/10 transition hover:bg-white/10"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-accent">
+                    Next
+                  </div>
+                  <div className="truncate font-semibold">
+                    Ep {next.episode_number}:{" "}
+                    {next.name || `Episode ${next.episode_number}`}
+                  </div>
+                </div>
+                <ChevronRight className="h-6 w-6 shrink-0 text-accent" />
+              </Link>
+            ) : (
+              <div />
+            )}
+          </div>
+        )}
+
         <section className="max-w-3xl">
           <h2 className="mb-3 text-xl font-bold">Overview</h2>
           <p className="text-[15px] leading-7 text-white/75">
@@ -110,6 +161,15 @@ export default async function EpisodePage({
               "No description available for this episode."}
           </p>
         </section>
+
+        {detail.seasons && (
+          <EpisodesSection
+            show={detail}
+            seasons={detail.seasons}
+            initialSeason={season}
+            currentEpisode={episode}
+          />
+        )}
       </div>
     </main>
   );

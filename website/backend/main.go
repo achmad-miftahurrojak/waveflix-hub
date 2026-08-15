@@ -293,6 +293,7 @@ func main() {
 
 	// Data user (butuh token)
 	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
+	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
 	mux.HandleFunc("/api/history", requireAuth(handleHistory))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

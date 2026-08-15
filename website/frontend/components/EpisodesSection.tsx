@@ -19,11 +19,22 @@ function formatAirDate(iso: string): string {
 interface Props {
   show: TmdbItem;
   seasons: SeasonSummary[];
+  initialSeason?: number;
+  currentEpisode?: number; // sorot episode yang sedang dibuka
 }
 
-export default function EpisodesSection({ show, seasons }: Props) {
+export default function EpisodesSection({
+  show,
+  seasons,
+  initialSeason,
+  currentEpisode,
+}: Props) {
   const valid = seasons.filter((s) => s.season_number > 0);
-  const [season, setSeason] = useState(valid[0]?.season_number ?? 1);
+  const [season, setSeason] = useState(
+    valid.find((s) => s.season_number === initialSeason)?.season_number ??
+      valid[0]?.season_number ??
+      1
+  );
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -79,7 +90,13 @@ export default function EpisodesSection({ show, seasons }: Props) {
               href={`/tv/${show.id}/season/${season}/episode/${ep.episode_number}`}
               className="group text-left"
             >
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface">
+              <div
+                className={`relative aspect-video w-full overflow-hidden rounded-lg bg-surface ${
+                  currentEpisode === ep.episode_number
+                    ? "ring-2 ring-accent"
+                    : ""
+                }`}
+              >
                 {ep.still_path ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

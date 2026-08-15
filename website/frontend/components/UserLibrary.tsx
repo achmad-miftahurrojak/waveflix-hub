@@ -20,7 +20,7 @@ function toItem(r: any): TmdbItem {
 
 interface Props {
   title: string;
-  endpoint: "/api/watchlist" | "/api/history";
+  endpoint: "/api/watchlist" | "/api/favorites" | "/api/history";
   /** Untuk watchlist: tampilkan localStorage saat belum login. */
   localFallbackKey?: string;
 }

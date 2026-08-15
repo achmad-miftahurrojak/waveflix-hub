@@ -17,14 +17,14 @@ type mediaItem struct {
 	Episode     int     `json:"episode,omitempty"`
 }
 
-// GET /api/watchlist
-func handleGetWatchlist(w http.ResponseWriter, r *http.Request) {
+// getList: GET daftar (watchlist/favorites) — `table` adalah nama tabel (literal).
+func getList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	rows, err := db.Query(
-		`SELECT tmdb_id, media_type, title, poster_path, vote_average
-		 FROM watchlist WHERE user_id = ? ORDER BY added_at DESC`, uid)
+		"SELECT tmdb_id, media_type, title, poster_path, vote_average FROM "+
+			table+" WHERE user_id = ? ORDER BY added_at DESC", uid)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "gagal ambil watchlist")
+		httpError(w, http.StatusInternalServerError, "gagal ambil "+table)
 		return
 	}
 	defer rows.Close()
@@ -38,8 +38,8 @@ func handleGetWatchlist(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"results": items})
 }
 
-// POST /api/watchlist  {tmdb_id, media_type, title, poster_path, vote_average}
-func handleAddWatchlist(w http.ResponseWriter, r *http.Request) {
+// addList: POST {tmdb_id, media_type, title, poster_path, vote_average}
+func addList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	var it mediaItem
 	if err := json.NewDecoder(r.Body).Decode(&it); err != nil || it.TmdbID == 0 {
@@ -50,8 +50,8 @@ func handleAddWatchlist(w http.ResponseWriter, r *http.Request) {
 		it.MediaType = "movie"
 	}
 	_, err := db.Exec(
-		`INSERT OR IGNORE INTO watchlist(user_id, tmdb_id, media_type, title, poster_path, vote_average)
-		 VALUES(?,?,?,?,?,?)`,
+		"INSERT OR IGNORE INTO "+table+
+			"(user_id, tmdb_id, media_type, title, poster_path, vote_average) VALUES(?,?,?,?,?,?)",
 		uid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal simpan")
@@ -60,13 +60,13 @@ func handleAddWatchlist(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-// DELETE /api/watchlist?tmdb_id=..&media_type=..
-func handleDeleteWatchlist(w http.ResponseWriter, r *http.Request) {
+// deleteList: DELETE ?tmdb_id=..&media_type=..
+func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	tmdbID, _ := strconv.ParseInt(r.URL.Query().Get("tmdb_id"), 10, 64)
 	media := normalizeMedia(r.URL.Query().Get("media_type"))
 	if _, err := db.Exec(
-		"DELETE FROM watchlist WHERE user_id = ? AND tmdb_id = ? AND media_type = ?",
+		"DELETE FROM "+table+" WHERE user_id = ? AND tmdb_id = ? AND media_type = ?",
 		uid, tmdbID, media); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal hapus")
 		return
@@ -74,19 +74,25 @@ func handleDeleteWatchlist(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-// Router untuk /api/watchlist (GET/POST/DELETE).
-func handleWatchlist(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		handleGetWatchlist(w, r)
-	case http.MethodPost:
-		handleAddWatchlist(w, r)
-	case http.MethodDelete:
-		handleDeleteWatchlist(w, r)
-	default:
-		httpError(w, http.StatusMethodNotAllowed, "method tidak didukung")
+// listHandler membuat router GET/POST/DELETE untuk satu tabel daftar.
+func listHandler(table string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getList(w, r, table)
+		case http.MethodPost:
+			addList(w, r, table)
+		case http.MethodDelete:
+			deleteList(w, r, table)
+		default:
+			httpError(w, http.StatusMethodNotAllowed, "method tidak didukung")
+		}
 	}
 }
+
+// Router /api/watchlist & /api/favorites.
+var handleWatchlist = listHandler("watchlist")
+var handleFavorites = listHandler("favorites")
 
 // GET /api/history  &  POST /api/history
 func handleHistory(w http.ResponseWriter, r *http.Request) {

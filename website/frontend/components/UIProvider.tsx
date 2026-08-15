@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import type { TmdbItem } from "@/lib/types";
-import PlayerModal from "./PlayerModal";
 import { useAuth } from "./AuthProvider";
 
 interface PlayerState {
@@ -19,6 +18,8 @@ interface PlayerState {
 
 interface UIContextValue {
   play: (m: TmdbItem, season?: number, episode?: number) => void;
+  stop: () => void;
+  player: PlayerState | null;
 }
 
 const UIContext = createContext<UIContextValue | null>(null);
@@ -41,10 +42,11 @@ export default function UIProvider({ children }: { children: ReactNode }) {
     [recordHistory]
   );
 
+  const stop = useCallback(() => setPlayer(null), []);
+
   return (
-    <UIContext.Provider value={{ play }}>
+    <UIContext.Provider value={{ play, stop, player }}>
       {children}
-      <PlayerModal state={player} onClose={() => setPlayer(null)} />
     </UIContext.Provider>
   );
 }

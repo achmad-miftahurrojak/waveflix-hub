@@ -113,6 +113,58 @@ export async function discoverByProvider(
   return tag(withPoster(data.results), media);
 }
 
+// Platform legal besar di Indonesia (Netflix, Disney+, Prime, Apple, HBO, Viu, Vidio).
+export const MAJOR_PROVIDERS = "8|122|119|350|1899|158|489";
+
+/** Rilisan terbaru (film/series) di platform besar — untuk "Latest Movies/Series". */
+export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = await api<TmdbListResponse>(
+    `/api/discover?media=${media}&sort_by=${
+      media === "tv" ? "first_air_date.desc" : "primary_release_date.desc"
+    }&released_before=${today}&provider=${MAJOR_PROVIDERS}&min_votes=1`,
+    { page: 1, results: [] }
+  );
+  return tag(withPoster(data.results), media).slice(0, 18);
+}
+
+export interface LatestEpisode {
+  show: TmdbItem;
+  season: number;
+  episode: number;
+  name: string;
+  still: string | null;
+  air_date: string;
+}
+
+/** Episode terbaru dari serial ongoing (pakai last_episode_to_air TMDB). */
+export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const list = await api<TmdbListResponse>(
+    `/api/discover?media=tv&sort_by=first_air_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}&min_votes=1`,
+    { page: 1, results: [] }
+  );
+  const shows = withPoster(list.results).slice(0, count);
+  const details = await Promise.all(
+    shows.map((s) => getDetail("tv", String(s.id)))
+  );
+  const out: LatestEpisode[] = [];
+  for (const d of details) {
+    const ep = d?.last_episode_to_air;
+    if (!d || !ep || ep.season_number == null || ep.episode_number == null)
+      continue;
+    out.push({
+      show: { ...d, media_type: "tv" },
+      season: ep.season_number,
+      episode: ep.episode_number,
+      name: ep.name || `Episode ${ep.episode_number}`,
+      still: ep.still_path ?? d.backdrop_path ?? null,
+      air_date: ep.air_date || "",
+    });
+  }
+  return out;
+}
+
 export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const sort = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";

@@ -32,6 +32,10 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [openMore, setOpenMore] = useState(false);
   const [openAccount, setOpenAccount] = useState(false);
+  // Cegah mismatch hydration: UI akun baru dirender setelah mount di client.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -151,7 +155,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4">
           <SearchBox />
-          {!ready ? (
+          {!mounted || !ready ? (
             <div className="h-9 w-9 shrink-0 rounded-full bg-white/10" />
           ) : user ? (
             <div
@@ -160,7 +164,7 @@ export default function Navbar() {
               onMouseLeave={() => setOpenAccount(false)}
             >
               <button
-                aria-label="Akun"
+                aria-label="Account"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent font-bold text-black"
               >
                 {user.username.charAt(0).toUpperCase()}
@@ -174,6 +178,9 @@ export default function Navbar() {
                   <div className="my-1 h-px bg-white/10" />
                   <Link href="/daftar-saya" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
                     My List
+                  </Link>
+                  <Link href="/favorit" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                    Favorites
                   </Link>
                   <Link href="/riwayat" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
                     Watch History

@@ -50,41 +50,60 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
             setSaved((d.results ?? []).some((m: any) => m.tmdb_id === item.id));
         })
         .catch(() => {});
+      authFetch("/api/favorites")
+        .then((r) => r.json())
+        .then((d) => {
+          if (alive)
+            setFaved((d.results ?? []).some((m: any) => m.tmdb_id === item.id));
+        })
+        .catch(() => {});
     } else {
       setSaved(readList(LIST_KEY).some((m) => m.id === item.id));
+      setFaved(readList(FAV_KEY).some((m) => m.id === item.id));
     }
-    setFaved(readList(FAV_KEY).some((m) => m.id === item.id));
     return () => {
       alive = false;
     };
   }, [user, item.id, authFetch]);
 
+  // Sinkron ke backend saat login: POST untuk tambah, DELETE untuk hapus.
+  const remoteToggle = async (endpoint: string, active: boolean) => {
+    if (active) {
+      await authFetch(
+        `${endpoint}?tmdb_id=${item.id}&media_type=${mediaTypeOf(item)}`,
+        { method: "DELETE" }
+      );
+    } else {
+      await authFetch(endpoint, {
+        method: "POST",
+        body: JSON.stringify({
+          tmdb_id: item.id,
+          media_type: mediaTypeOf(item),
+          title: itemTitle(item),
+          poster_path: item.poster_path || "",
+          vote_average: item.vote_average || 0,
+        }),
+      });
+    }
+  };
+
   const toggleSave = async () => {
     if (user) {
-      if (saved) {
-        await authFetch(
-          `/api/watchlist?tmdb_id=${item.id}&media_type=${mediaTypeOf(item)}`,
-          { method: "DELETE" }
-        );
-      } else {
-        await authFetch("/api/watchlist", {
-          method: "POST",
-          body: JSON.stringify({
-            tmdb_id: item.id,
-            media_type: mediaTypeOf(item),
-            title: itemTitle(item),
-            poster_path: item.poster_path || "",
-            vote_average: item.vote_average || 0,
-          }),
-        });
-      }
+      await remoteToggle("/api/watchlist", saved);
       setSaved(!saved);
     } else {
       setSaved(toggleLocal(LIST_KEY, item));
     }
   };
 
-  const toggleFav = () => setFaved(toggleLocal(FAV_KEY, item));
+  const toggleFav = async () => {
+    if (user) {
+      await remoteToggle("/api/favorites", faved);
+      setFaved(!faved);
+    } else {
+      setFaved(toggleLocal(FAV_KEY, item));
+    }
+  };
 
   return (
     <div className="flex flex-wrap gap-3">

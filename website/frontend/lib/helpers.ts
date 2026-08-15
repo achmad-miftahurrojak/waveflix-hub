@@ -86,12 +86,11 @@ export function statusLabel(d: TmdbDetail): string {
   }
 }
 
-/** URL embed player (vidsrc). TV default S1E1. */
 export function embedUrl(m: TmdbItem, season?: number, episode?: number): string {
   if (isTv(m)) {
-    return `https://vidsrc.me/embed/tv?tmdb=${m.id}&season=${season ?? 1}&episode=${episode ?? 1}`;
+    return `https://vidlink.pro/tv/${m.id}/${season ?? 1}/${episode ?? 1}`;
   }
-  return `https://vidsrc.me/embed/movie?tmdb=${m.id}`;
+  return `https://vidlink.pro/movie/${m.id}`;
 }
 
 export function detailHref(m: TmdbItem): string {

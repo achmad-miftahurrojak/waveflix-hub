@@ -58,6 +58,18 @@ func initDB() {
 		UNIQUE(user_id, tmdb_id, media_type)
 	);
 
+	CREATE TABLE IF NOT EXISTS favorites (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id     INTEGER NOT NULL,
+		tmdb_id     INTEGER NOT NULL,
+		media_type  TEXT NOT NULL,
+		title       TEXT,
+		poster_path TEXT,
+		vote_average REAL,
+		added_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(user_id, tmdb_id, media_type)
+	);
+
 	CREATE TABLE IF NOT EXISTS history (
 		id          INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id     INTEGER NOT NULL,

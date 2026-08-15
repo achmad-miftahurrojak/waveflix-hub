@@ -122,6 +122,12 @@ export const MaximizeIcon = ({ className }: P) => (
   </svg>
 );
 
+export const MinimizeIcon = ({ className }: P) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke={base} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+    <path d="M8 3v3a2 2 0 0 1-2 2H3m13-5v3a2 2 0 0 0 2 2h3M8 21v-3a2 2 0 0 0-2-2H3m13 5v-3a2 2 0 0 1 2-2h3" />
+  </svg>
+);
+
 export const CloseIcon = ({ className }: P) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke={base} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
     <path d="M18 6 6 18M6 6l12 12" />

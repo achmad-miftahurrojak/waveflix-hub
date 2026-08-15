@@ -393,11 +393,11 @@
   }
  },
  "cuaca": {
-  "tanggal": "2026-08-14",
-  "nama": "Angin Segar",
-  "kali": 1.5,
-  "emoji": "🌬️",
-  "kata": "Anginnya enak, XP naik satu setengah kali.",
+  "tanggal": "2026-08-15",
+  "nama": "Badai",
+  "kali": 3.0,
+  "emoji": "⛈️",
+  "kata": "BADAI! XP tiga kali lipat, tapi cuma hari ini!",
   "diumumkan": true
  },
  "acara": [],
@@ -414,14 +414,8 @@
   "diumumkan": true
  },
  "misi": {
-  "tanggal": "2026-08-14",
+  "tanggal": "2026-08-15",
   "daftar": [
-   {
-    "kode": "suit",
-    "kalimat": "Menangin 2 pertandingan suit",
-    "target": 2,
-    "xp": 80
-   },
    {
     "kode": "balon",
     "kalimat": "Nyamber 1 balon duluan",
@@ -429,35 +423,41 @@
     "xp": 90
    },
    {
-    "kode": "tebak",
-    "kalimat": "Tebak angka gua sampai kena 1 kali",
-    "target": 1,
-    "xp": 90
+    "kode": "suit",
+    "kalimat": "Menangin 2 pertandingan suit",
+    "target": 2,
+    "xp": 80
+   },
+   {
+    "kode": "hunt",
+    "kalimat": "Jelajah pantai 3 kali",
+    "target": 3,
+    "xp": 70
    }
   ],
   "diumumkan": true
  },
  "rekap_terakhir": "2026-W32",
  "rekap_giliran": 1,
- "backup_terakhir": "2026-08-14",
+ "backup_terakhir": "2026-08-15",
  "misi_kemarin_daftar": [
   {
-   "kode": "chat",
-   "kalimat": "Ngobrol 12 pesan di server",
-   "target": 12,
-   "xp": 60
+   "kode": "suit",
+   "kalimat": "Menangin 2 pertandingan suit",
+   "target": 2,
+   "xp": 80
   },
   {
-   "kode": "hunt",
-   "kalimat": "Jelajah pantai 3 kali",
-   "target": 3,
-   "xp": 70
-  },
-  {
-   "kode": "absen",
-   "kalimat": "Absen hari ini",
+   "kode": "balon",
+   "kalimat": "Nyamber 1 balon duluan",
    "target": 1,
-   "xp": 40
+   "xp": 90
+  },
+  {
+   "kode": "tebak",
+   "kalimat": "Tebak angka gua sampai kena 1 kali",
+   "target": 1,
+   "xp": 90
   }
  ],
  "season": {
