@@ -98,6 +98,12 @@ var handleFavorites = listHandler("favorites")
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
 
+	if r.Method == http.MethodDelete {
+		db.Exec("DELETE FROM history WHERE user_id = ?", uid)
+		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+		return
+	}
+
 	if r.Method == http.MethodPost {
 		var it mediaItem
 		if err := json.NewDecoder(r.Body).Decode(&it); err != nil || it.TmdbID == 0 {

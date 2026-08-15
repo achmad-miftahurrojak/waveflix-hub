@@ -86,5 +86,13 @@ func initDB() {
 	if _, err := db.Exec(schema); err != nil {
 		log.Fatalf("Gagal buat skema: %v", err)
 	}
+
+	// Kolom profil tambahan (avatar/banner). ALTER diabaikan errornya kalau kolom
+	// sudah ada (SQLite tidak punya ADD COLUMN IF NOT EXISTS).
+	db.Exec("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
+	db.Exec("ALTER TABLE users ADD COLUMN banner TEXT DEFAULT ''")
+	db.Exec("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''")
+	db.Exec("ALTER TABLE users ADD COLUMN name_font TEXT DEFAULT ''")
+
 	log.Println("Database SQLite siap (waveflix.db)")
 }

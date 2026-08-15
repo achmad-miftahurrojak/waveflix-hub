@@ -290,6 +290,10 @@ func main() {
 	mux.HandleFunc("/api/auth/register", handleRegister)
 	mux.HandleFunc("/api/auth/login", handleLogin)
 	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
+	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
+	mux.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))
+	mux.HandleFunc("/api/auth/avatar", requireAuth(uploadImage("avatar")))
+	mux.HandleFunc("/api/auth/banner", requireAuth(uploadImage("banner")))
 
 	// Data user (butuh token)
 	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
@@ -324,7 +328,7 @@ func enableCORS(next http.Handler) http.Handler {
 		} else if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		}
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)

@@ -5,7 +5,6 @@ import {
   getLatestEpisodes,
   getHeroSlides,
 } from "@/lib/tmdb";
-import { mediaTypeOf } from "@/lib/helpers";
 import HeroCarousel from "@/components/HeroCarousel";
 import TrendingSection from "@/components/TrendingSection";
 import MovieRow from "@/components/MovieRow";
@@ -50,16 +49,8 @@ export default async function Home() {
       getLatestEpisodes(14),
     ]);
 
-  // Hero: 10 trending global lalu 10 trending Indonesia (dedupe), ganti tiap 10 dtk.
-  const globalSlides = await getHeroSlides(trendingGlobal, 10);
-  const gKeys = new Set(
-    globalSlides.map((s) => `${mediaTypeOf(s.item)}-${s.item.id}`)
-  );
-  const indoSource = trendingIndonesia.filter(
-    (m) => !gKeys.has(`${mediaTypeOf(m)}-${m.id}`)
-  );
-  const indoSlides = await getHeroSlides(indoSource, 10);
-  const heroSlides = [...globalSlides, ...indoSlides];
+  // Hero: Top 10 trending Indonesia.
+  const heroSlides = await getHeroSlides(trendingIndonesia, 10);
 
   return (
     <main>

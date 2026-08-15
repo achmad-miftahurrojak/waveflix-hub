@@ -110,6 +110,12 @@ export const HeartSolidIcon = ({ className }: P) => (
   </svg>
 );
 
+export const SparklesIcon = ({ className }: P) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+    <path d="M12 2.5 13.8 8 19 9.8 13.8 11.6 12 17l-1.8-5.4L5 9.8 10.2 8 12 2.5Z" /><path d="M5.5 15 6.4 17.4 9 18.3 6.4 19.2 5.5 21.6 4.6 19.2 2 18.3 4.6 17.4 5.5 15Z" />
+  </svg>
+);
+
 export const NetworkIcon = ({ className }: P) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke={base} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
     <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />

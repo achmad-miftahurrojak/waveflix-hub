@@ -50,6 +50,13 @@ export interface CrewMember {
   job?: string;
 }
 
+export interface TmdbVideo {
+  key: string;
+  site: string;
+  type: string;
+  official?: boolean;
+}
+
 export interface ProductionCompany {
   id: number;
   name: string;
@@ -98,6 +105,7 @@ export interface TmdbDetail extends TmdbItem {
   genres?: Genre[];
   seasons?: SeasonSummary[];
   credits?: { cast?: CastMember[]; crew?: CrewMember[] };
+  videos?: { results?: TmdbVideo[] };
   recommendations?: { results?: TmdbItem[] };
   similar?: { results?: TmdbItem[] };
 }

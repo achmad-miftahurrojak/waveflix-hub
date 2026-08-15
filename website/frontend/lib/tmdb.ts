@@ -245,6 +245,7 @@ export interface HeroSlide {
   genres: string[];
   duration: string;
   status: string;
+  trailer: string | null; // YouTube key
 }
 
 /** Siapkan beberapa slide hero (untuk carousel ala IDLIX). */
@@ -266,6 +267,11 @@ export async function getHeroSlides(
           ? tvCountsText(detail)
           : durationText(detail)
         : "";
+      const vids = detail?.videos?.results ?? [];
+      const yt =
+        vids.find((v) => v.site === "YouTube" && v.type === "Trailer") ??
+        vids.find((v) => v.site === "YouTube" && v.type === "Teaser") ??
+        vids.find((v) => v.site === "YouTube");
       return {
         item,
         logo,
@@ -274,6 +280,7 @@ export async function getHeroSlides(
         genres: detail ? genreNames(detail).slice(0, 3) : [],
         duration,
         status: detail ? statusLabel(detail) : "",
+        trailer: yt?.key ?? null,
       };
     })
   );

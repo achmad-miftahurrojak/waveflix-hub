@@ -1,13 +1,13 @@
 {
  "channel": {
   "1453703811607826596": {
-   "sentuh": "2026-08-15T05:31:56.764279+00:00",
+   "sentuh": "2026-08-15T14:09:22.106156+00:00",
    "pesan": [
     {
      "role": "user",
      "parts": [
       {
-       "text": "! amat: suruh join voice ga"
+       "text": "! amat: <@1534907342770933972> yah ngilang lagi aysel ga"
       }
      ]
     },
@@ -15,7 +15,7 @@
      "role": "model",
      "parts": [
       {
-       "text": "suruh aja sekalian, gas.\n\nnadip buru join voice, jangan ngendok mulu di in-game lu"
+       "text": "sabar napa mat, aysel emang demen ngilang kek buronan. jadi apaan dah emangnya"
       }
      ]
     },
@@ -23,7 +23,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: coba di tag orangnya ga"
+       "text": "! amat: ga kan masalahnya itu udh janjian kan eh ngilang lagi gt"
       }
      ]
     },
@@ -31,7 +31,7 @@
      "role": "model",
      "parts": [
       {
-       "text": "username aslinya apaan dah, gua kaga apal tag dia. lu aja sono mention langsung biar nongol anaknya"
+       "text": "wkwk kebiasaan emang, janjian doang kenceng giliran eksekusi malah ngilang. tungguin aja tar tiba-tiba nongol sok polos tuh bocah"
       }
      ]
     },
@@ -39,15 +39,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: <@568361797497782284> ini orangnya"
-      }
-     ]
-    },
-    {
-     "role": "user",
-     "parts": [
-      {
-       "text": "! amat: tuh usn nya"
+       "text": "! amat: kpan dia nongol lagi? terakhir dia chat apa sih di channel ini ga?"
       }
      ]
     },
@@ -55,7 +47,7 @@
      "role": "model",
      "parts": [
       {
-       "text": "nadip, lu buru join voice ke sini biar bisa ngobrol bareng, jangan sendirian terus ngegame mulu"
+       "text": "gua juga bingung mat, terakhir gua liat aysel chat di sini itu beberapa jam yang lalu gitu, ngomongin soal badai di server. abis itu ya ilang lagi deh, tanpa kabar"
       }
      ]
     },
@@ -63,7 +55,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: <@474510455168172033> sel?"
+       "text": "Aysel: Gelok"
       }
      ]
     },
@@ -71,7 +63,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: hidup?"
+       "text": "Aysel: Baru tau nek kamu gap year jo"
       }
      ]
     },
@@ -79,15 +71,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: <@1534907342770933972> wah ga gua ditinggal sendirian ini aysel ga ada nadip ga ada"
-      }
-     ]
-    },
-    {
-     "role": "model",
-     "parts": [
-      {
-       "text": "wah gua kangen juga dah, ko aysel ilang nadip ilang, gua jadi sendirian njaga server ini wkwk"
+       "text": "! amat: (ngirim gambar)"
       }
      ]
     },
@@ -95,7 +79,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! hamin: panggil lagi sel"
+       "text": "Jojo: 😡"
       }
      ]
     },
@@ -103,15 +87,65 @@
      "role": "user",
      "parts": [
       {
-       "text": "! amat: dia mah kaga sekolah bareng lu sel <@1534907342770933972>"
+       "text": "Jojo: kita bantai utbk"
       }
      ]
     },
     {
-     "role": "model",
+     "role": "user",
      "parts": [
       {
-       "text": "lah iya juga ya wkwk emang si nadip sekolah di mana dah sekarang, pantesan kaga nongol-nongol"
+       "text": "Jojo: itb im coming"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: steir"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: im coming"
+      }
+     ]
+    }
+   ]
+  },
+  "1536886487445016747": {
+   "sentuh": "2026-08-15T13:26:21.276515+00:00",
+   "pesan": [
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Aysel: Gaiso"
+      }
+     ]
+    }
+   ]
+  },
+  "1538177680472678400": {
+   "sentuh": "2026-08-15T13:30:37.422845+00:00",
+   "pesan": [
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: bisa?"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: sel?"
       }
      ]
     }

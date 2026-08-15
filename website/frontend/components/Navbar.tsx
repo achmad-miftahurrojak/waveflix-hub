@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+
+const underlineSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 import {
   HomeIcon,
   FilmIcon,
   TvIcon,
   BookmarkIcon,
+  SparklesIcon,
   ChevronRight,
   MoreIcon,
   TagIcon,
@@ -22,6 +26,7 @@ const NAV = [
   { label: "Home", href: "/", icon: HomeIcon },
   { label: "Movies", href: "/browse?media=movie", icon: FilmIcon },
   { label: "Series", href: "/browse?media=tv", icon: TvIcon },
+  { label: "Reality", href: "/reality", icon: SparklesIcon },
   { label: "My List", href: "/daftar-saya", icon: BookmarkIcon },
 ];
 
@@ -105,14 +110,19 @@ export default function Navbar() {
               <li key={label}>
                 <Link
                   href={href}
-                  className={`flex items-center gap-2 border-b-2 px-2 py-1 text-sm font-semibold transition ${
-                    isActive(href)
-                      ? "border-accent text-accent"
-                      : "border-transparent text-white/70 hover:text-white"
+                  className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
+                    isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
                   }`}
                 >
                   <Icon />
                   <span>{label}</span>
+                  {isActive(href) && (
+                    <motion.span
+                      layoutId="navUnderline"
+                      transition={underlineSpring}
+                      className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
+                    />
+                  )}
                 </Link>
               </li>
             ))}
@@ -123,12 +133,17 @@ export default function Navbar() {
               onMouseLeave={() => setOpenMore(false)}
             >
               <button
-                className={`flex items-center gap-2 border-b-2 px-2 py-1 text-sm font-semibold transition ${
-                  onCategory
-                    ? "border-accent text-accent"
-                    : "border-transparent text-white/70 hover:text-white"
+                className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
+                  onCategory ? "text-accent" : "text-white/70 hover:text-white"
                 }`}
               >
+                {onCategory && (
+                  <motion.span
+                    layoutId="navUnderline"
+                    transition={underlineSpring}
+                    className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
+                  />
+                )}
                 <MoreIcon />
                 <span>More</span>
                 <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
@@ -165,9 +180,18 @@ export default function Navbar() {
             >
               <button
                 aria-label="Account"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent font-bold text-black"
+                className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-accent font-bold text-black"
               >
-                {user.username.charAt(0).toUpperCase()}
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatar}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  user.username.charAt(0).toUpperCase()
+                )}
               </button>
               {openAccount && (
                 <div className="absolute right-0 top-full w-52 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
@@ -176,6 +200,9 @@ export default function Navbar() {
                     <div className="truncate text-xs text-white/50">{user.email}</div>
                   </div>
                   <div className="my-1 h-px bg-white/10" />
+                  <Link href="/account" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                    Account settings
+                  </Link>
                   <Link href="/daftar-saya" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
                     My List
                   </Link>

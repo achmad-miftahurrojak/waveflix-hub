@@ -18,6 +18,18 @@ export interface AuthUser {
   id: number;
   email: string;
   username: string;
+  avatar?: string;
+  banner?: string;
+  bio?: string;
+  name_font?: string;
+  joined?: string;
+}
+
+export interface ProfileFields {
+  username?: string;
+  email?: string;
+  bio?: string;
+  name_font?: string;
 }
 
 interface AuthContextValue {
@@ -29,6 +41,12 @@ interface AuthContextValue {
   logout: () => void;
   authFetch: (path: string, init?: RequestInit) => Promise<Response>;
   recordHistory: (item: TmdbItem, season?: number, episode?: number) => void;
+  updateProfile: (fields: ProfileFields) => Promise<string | null>;
+  changePassword: (current: string, next: string) => Promise<string | null>;
+  uploadImage: (
+    field: "avatar" | "banner",
+    dataUrl: string
+  ) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -125,6 +143,59 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     [token]
   );
 
+  const updateProfile = useCallback(
+    async (fields: ProfileFields) => {
+      try {
+        const res = await authFetch("/api/auth/profile", {
+          method: "PATCH",
+          body: JSON.stringify(fields),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Failed to update profile";
+        setUser(data);
+        return null;
+      } catch {
+        return "Cannot reach the server";
+      }
+    },
+    [authFetch]
+  );
+
+  const changePassword = useCallback(
+    async (current: string, next: string) => {
+      try {
+        const res = await authFetch("/api/auth/password", {
+          method: "POST",
+          body: JSON.stringify({ current_password: current, new_password: next }),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Failed to change password";
+        return null;
+      } catch {
+        return "Cannot reach the server";
+      }
+    },
+    [authFetch]
+  );
+
+  const uploadImage = useCallback(
+    async (field: "avatar" | "banner", dataUrl: string) => {
+      try {
+        const res = await authFetch(`/api/auth/${field}`, {
+          method: "POST",
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Failed to upload image";
+        setUser(data);
+        return null;
+      } catch {
+        return "Cannot reach the server";
+      }
+    },
+    [authFetch]
+  );
+
   const recordHistory = useCallback(
     (item: TmdbItem, season?: number, episode?: number) => {
       if (!token) return;
@@ -146,7 +217,19 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, ready, login, register, logout, authFetch, recordHistory }}
+      value={{
+        user,
+        token,
+        ready,
+        login,
+        register,
+        logout,
+        authFetch,
+        recordHistory,
+        updateProfile,
+        changePassword,
+        uploadImage,
+      }}
     >
       {children}
     </AuthContext.Provider>

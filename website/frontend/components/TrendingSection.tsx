@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import type { TmdbItem } from "@/lib/types";
 import { mediaTypeOf } from "@/lib/helpers";
 import Carousel from "./Carousel";
+
+const pillSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 
 type Tab = "all" | "movie" | "tv";
 
@@ -37,13 +40,18 @@ export default function TrendingSection({
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`rounded-full px-4 py-1 text-sm font-medium transition ${
-                tab === t.id
-                  ? "bg-accent text-black"
-                  : "text-white/60 hover:text-white"
+              className={`relative rounded-full px-4 py-1 text-sm font-medium transition ${
+                tab === t.id ? "text-black" : "text-white/60 hover:text-white"
               }`}
             >
-              {t.label}
+              {tab === t.id && (
+                <motion.span
+                  layoutId="trendingPill"
+                  transition={pillSpring}
+                  className="absolute inset-0 rounded-full bg-accent"
+                />
+              )}
+              <span className="relative z-10">{t.label}</span>
             </button>
           ))}
         </div>
