@@ -1,0 +1,9 @@
+# Kredensial — jangan pernah di-commit
+.env
+
+# Binary hasil build
+main.exe
+main.exe~
+
+# Database lokal SQLite
+*.db

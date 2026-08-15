@@ -1,0 +1,118 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { TmdbItem } from "@/lib/types";
+import { isTv, mediaTypeOf, itemTitle } from "@/lib/helpers";
+import { LIST_KEY, FAV_KEY, migrateStorage } from "@/lib/storage";
+import { useUI } from "./UIProvider";
+import { useAuth } from "./AuthProvider";
+import {
+  PlayIcon,
+  PlusIcon,
+  CheckIcon,
+  HeartIcon,
+  HeartSolidIcon,
+} from "./Icons";
+
+function readList(key: string): TmdbItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    migrateStorage();
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function toggleLocal(key: string, item: TmdbItem): boolean {
+  const list = readList(key);
+  const idx = list.findIndex((m) => m.id === item.id);
+  if (idx > -1) list.splice(idx, 1);
+  else list.push(item);
+  localStorage.setItem(key, JSON.stringify(list));
+  return idx === -1;
+}
+
+export default function DetailActions({ item }: { item: TmdbItem }) {
+  const { play } = useUI();
+  const { user, authFetch } = useAuth();
+  const tv = isTv(item);
+  const [saved, setSaved] = useState(false);
+  const [faved, setFaved] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    if (user) {
+      authFetch("/api/watchlist")
+        .then((r) => r.json())
+        .then((d) => {
+          if (alive)
+            setSaved((d.results ?? []).some((m: any) => m.tmdb_id === item.id));
+        })
+        .catch(() => {});
+    } else {
+      setSaved(readList(LIST_KEY).some((m) => m.id === item.id));
+    }
+    setFaved(readList(FAV_KEY).some((m) => m.id === item.id));
+    return () => {
+      alive = false;
+    };
+  }, [user, item.id, authFetch]);
+
+  const toggleSave = async () => {
+    if (user) {
+      if (saved) {
+        await authFetch(
+          `/api/watchlist?tmdb_id=${item.id}&media_type=${mediaTypeOf(item)}`,
+          { method: "DELETE" }
+        );
+      } else {
+        await authFetch("/api/watchlist", {
+          method: "POST",
+          body: JSON.stringify({
+            tmdb_id: item.id,
+            media_type: mediaTypeOf(item),
+            title: itemTitle(item),
+            poster_path: item.poster_path || "",
+            vote_average: item.vote_average || 0,
+          }),
+        });
+      }
+      setSaved(!saved);
+    } else {
+      setSaved(toggleLocal(LIST_KEY, item));
+    }
+  };
+
+  const toggleFav = () => setFaved(toggleLocal(FAV_KEY, item));
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {/* Movie diputar langsung; series diputar dari halaman episode. */}
+      {!tv && (
+        <button
+          onClick={() => play(item)}
+          className="flex items-center gap-2 rounded-md bg-accent px-7 py-3 font-semibold text-black transition hover:scale-105 hover:bg-accent-dark"
+        >
+          <PlayIcon className="text-black" /> Play
+        </button>
+      )}
+      <button
+        onClick={toggleSave}
+        className="flex items-center gap-2 rounded-md border-2 border-white/40 px-6 py-3 font-semibold transition hover:bg-white/10"
+      >
+        {saved ? <CheckIcon /> : <PlusIcon />}
+        {saved ? "Saved" : "My List"}
+      </button>
+      <button
+        onClick={toggleFav}
+        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 ${
+          faved ? "border-accent text-accent" : "border-white/40"
+        }`}
+      >
+        {faved ? <HeartSolidIcon /> : <HeartIcon />}
+        {faved ? "Favorited" : "Favorite"}
+      </button>
+    </div>
+  );
+}

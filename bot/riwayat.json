@@ -54,13 +54,13 @@
    ]
   },
   "1453703811607826596": {
-   "sentuh": "2026-08-12T02:30:50.181270+00:00",
+   "sentuh": "2026-08-14T13:06:50.419081+00:00",
    "pesan": [
     {
-     "role": "user",
+     "role": "model",
      "parts": [
       {
-       "text": "! 𝓰𝓲𝓼𝓮𝓵𝓵𝓮: ngape lu"
+       "text": "lah kok jadi gua wkwk, lu aja sono yang seret. mana mau denger tuh bocah kalo dibilangin"
       }
      ]
     },
@@ -68,7 +68,7 @@
      "role": "user",
      "parts": [
       {
-       "text": "! 𝓰𝓲𝓼𝓮𝓵𝓵𝓮: ngape lu"
+       "text": "! amat: coba dulu atuh"
       }
      ]
     },
@@ -76,7 +76,95 @@
      "role": "model",
      "parts": [
       {
-       "text": "lah lu yang kenapa dah, gajelas amat nge-spam gituan. mentang-mentang xp lu paling banyak minggu ini jadi nyolot lu ya"
+       "text": "yaudah bentar.\n\nwoy nadip udahan mainnya, lu dicariin amat tuh disuruh off. ntar mata lu juling ngegame mulu kaga kelar-kelar"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: suruh join voice ga"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "suruh aja sekalian, gas.\n\nnadip buru join voice, jangan ngendok mulu di in-game lu"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: coba di tag orangnya ga"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "username aslinya apaan dah, gua kaga apal tag dia. lu aja sono mention langsung biar nongol anaknya"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: <@568361797497782284> ini orangnya"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: tuh usn nya"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "nadip, lu buru join voice ke sini biar bisa ngobrol bareng, jangan sendirian terus ngegame mulu"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: <@474510455168172033> sel?"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: hidup?"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: <@1534907342770933972> wah ga gua ditinggal sendirian ini aysel ga ada nadip ga ada"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "wah gua kangen juga dah, ko aysel ilang nadip ilang, gua jadi sendirian njaga server ini wkwk"
       }
      ]
     }
