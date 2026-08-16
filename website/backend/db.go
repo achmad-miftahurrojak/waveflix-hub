@@ -13,11 +13,9 @@ var db *sql.DB
 const dbFile = "waveflix.db"
 const legacyDBFile = "summertide.db"
 
-// migrateDBFile: kalau DB baru belum ada tapi DB lama ada, ganti namanya supaya
-// akun/watchlist/history user lama tetap terbawa (bukan bikin DB kosong baru).
 func migrateDBFile() {
 	if _, err := os.Stat(dbFile); err == nil {
-		return // DB baru sudah ada
+		return
 	}
 	if _, err := os.Stat(legacyDBFile); err == nil {
 		if err := os.Rename(legacyDBFile, dbFile); err != nil {
@@ -35,7 +33,7 @@ func initDB() {
 	if err != nil {
 		log.Fatalf("Gagal buka DB: %v", err)
 	}
-	db.SetMaxOpenConns(1) // SQLite: hindari "database is locked"
+	db.SetMaxOpenConns(1)
 
 	schema := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -87,8 +85,6 @@ func initDB() {
 		log.Fatalf("Gagal buat skema: %v", err)
 	}
 
-	// Kolom profil tambahan (avatar/banner). ALTER diabaikan errornya kalau kolom
-	// sudah ada (SQLite tidak punya ADD COLUMN IF NOT EXISTS).
 	db.Exec("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN banner TEXT DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''")

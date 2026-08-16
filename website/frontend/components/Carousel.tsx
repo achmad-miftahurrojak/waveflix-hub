@@ -10,7 +10,6 @@ interface Props {
   ranked?: boolean;
 }
 
-/** Strip film horizontal + panah. py-8 memberi ruang agar hover:scale tidak kepotong. */
 export default function Carousel({ items, ranked }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const scroll = (dir: number) =>

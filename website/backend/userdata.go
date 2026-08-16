@@ -17,7 +17,6 @@ type mediaItem struct {
 	Episode     int     `json:"episode,omitempty"`
 }
 
-// getList: GET daftar (watchlist/favorites) — `table` adalah nama tabel (literal).
 func getList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	rows, err := db.Query(

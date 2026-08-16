@@ -17,7 +17,7 @@ import {
 } from "./helpers";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8080";
-const REVALIDATE = 60 * 15; // 15 menit → konten baru cepat masuk
+const REVALIDATE = 60 * 15; 
 
 async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promise<T> {
   try {

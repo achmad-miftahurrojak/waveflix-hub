@@ -48,7 +48,6 @@ func decodeJSON(r *http.Request, dst interface{}) error {
 	return json.NewDecoder(r.Body).Decode(dst)
 }
 
-// POST /api/auth/register {email, username, password}
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Email    string `json:"email"`
@@ -111,7 +110,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	writeAuth(w, id, body.Email, username, avatar, banner)
 }
 
-// GET /api/auth/me  (butuh token)
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
 	var email, username, avatar, banner, bio, nameFont, joined string
@@ -130,7 +128,6 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// uploadImage: POST {image: "data:image/...;base64,..."} untuk avatar/banner.
 func uploadImage(column string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -165,7 +162,6 @@ func uploadImage(column string) http.HandlerFunc {
 	}
 }
 
-// PATCH /api/auth/profile {username}  — ubah display name (butuh token)
 func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch && r.Method != http.MethodPut {
 		httpError(w, http.StatusMethodNotAllowed, "method tidak didukung")
@@ -224,7 +220,6 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	handleMe(w, r)
 }
 
-// POST /api/auth/password {current_password, new_password}  (butuh token)
 func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httpError(w, http.StatusMethodNotAllowed, "method tidak didukung")
@@ -287,7 +282,6 @@ func httpError(w http.ResponseWriter, code int, msg string) {
 	json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
-// requireAuth: middleware yang memvalidasi Bearer token dan menyuntik userID ke context.
 func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")

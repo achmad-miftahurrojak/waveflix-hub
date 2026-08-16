@@ -14,17 +14,14 @@ const tmdbBaseUrl = "https://api.themoviedb.org/3"
 const traktBaseUrl = "https://api.trakt.tv"
 const watchRegion = "ID" // Indonesia
 
-// Kredensial diisi dari .env / environment saat startup (lihat loadConfig).
 var (
 	tmdbApiKey        string
 	traktClientID     string
 	traktClientSecret string
 )
 
-// loadConfig memuat .env lalu mengisi kredensial dari environment.
 func loadConfig() {
 	loadDotEnv(".env")
-	// Fallback TMDB key lama supaya app tetap jalan kalau .env belum diisi.
 	tmdbApiKey = getenv("TMDB_API_KEY", "cff0f315183dd0830f0ef2ef924ae25c")
 	traktClientID = getenv("TRAKT_CLIENT_ID", "")
 	traktClientSecret = getenv("TRAKT_CLIENT_SECRET", "")
@@ -36,16 +33,14 @@ func loadConfig() {
 	}
 }
 
-// Bahasa asli dominan per negara → memperketat filter "produksi negara X".
-// India (IN) sengaja tidak dimasukkan karena bahasanya beragam.
 var countryLang = map[string]string{
-	"ID": "id", // Indonesia
-	"US": "en", // Amerika Serikat
-	"KR": "ko", // Korea
-	"JP": "ja", // Jepang
-	"CN": "zh", // China
-	"GB": "en", // Inggris
-	"TH": "th", // Thailand
+	"ID": "id",
+	"US": "en",
+	"KR": "ko",
+	"JP": "ja",
+	"CN": "zh",
+	"GB": "en",
+	"TH": "th",
 }
 
 func normalizeMedia(m string) string {
@@ -88,7 +83,9 @@ func handleHomepage(w http.ResponseWriter, r *http.Request) { handleTrending(w, 
 
 // ============================================================================
 // DISCOVER  ->  /api/discover?media=movie&provider=8&genre=28&year=2024
-//               &country=US&sort_by=popularity.desc&page=1&released_before=...
+//
+//	&country=US&sort_by=popularity.desc&page=1&released_before=...
+//
 // ============================================================================
 func handleDiscover(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
@@ -112,9 +109,6 @@ func handleDiscover(w http.ResponseWriter, r *http.Request) {
 	}
 	if v := q.Get("country"); v != "" {
 		p.Set("with_origin_country", v)
-		// Perketat: cocokkan bahasa asli ke negaranya supaya co-production /
-		// judul yang salah-label origin tidak ikut muncul. India (banyak bahasa)
-		// sengaja dilewati → cukup pakai origin_country saja.
 		if lang, ok := countryLang[v]; ok {
 			p.Set("with_original_language", lang)
 		}
@@ -168,7 +162,6 @@ func handleDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fallback deskripsi ke bahasa Inggris kalau versi Indonesia kosong.
 	if ov, _ := data["overview"].(string); ov == "" {
 		if en, err := fetchJSON(base + "?language=en-US&api_key=" + tmdbApiKey); err == nil {
 			if enOv, ok := en["overview"].(string); ok && enOv != "" {
@@ -295,7 +288,7 @@ func main() {
 	mux.HandleFunc("/api/auth/avatar", requireAuth(uploadImage("avatar")))
 	mux.HandleFunc("/api/auth/banner", requireAuth(uploadImage("banner")))
 
-	// Data user (butuh token)
+	// Data user
 	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
 	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
 	mux.HandleFunc("/api/history", requireAuth(handleHistory))
