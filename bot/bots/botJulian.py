@@ -1567,7 +1567,7 @@ async def buka(interaction: discord.Interaction, semua: bool=False):
         return
     jumlah = await buka_server(guild, f'manual oleh {interaction.user}')
     await interaction.followup.send(f'{jumlah} channel dibuka lagi.')
-_jejak_join = []
+_jejak_join = {}
 
 async def kunci_server(guild, alasan):
     kena = []
@@ -1602,16 +1602,19 @@ async def buka_server(guild, alasan):
 async def cek_raid(member):
     if not ANTI_RAID:
         return False
+    # [BUG FIX] Buffer join dibuat per-guild supaya join di server lain
+    # nggak kepakai buat ngerakit "rombongan" yang bikin false-positive raid.
     sekarang = datetime.now(timezone.utc)
-    _jejak_join.append((sekarang, member))
+    jejak = _jejak_join.setdefault(member.guild.id, [])
+    jejak.append((sekarang, member))
     batas = sekarang - timedelta(seconds=RAID_DETIK)
-    while _jejak_join and _jejak_join[0][0] < batas:
-        _jejak_join.pop(0)
-    if len(_jejak_join) < RAID_JUMLAH:
+    while jejak and jejak[0][0] < batas:
+        jejak.pop(0)
+    if len(jejak) < RAID_JUMLAH:
         return False
-    rombongan = [m for _w, m in _jejak_join]
+    rombongan = [m for _w, m in jejak]
     baru = [m for m in rombongan if sekarang - m.created_at < timedelta(days=AKUN_BARU_HARI)]
-    _jejak_join.clear()
+    _jejak_join[member.guild.id] = []
     daftar = '\n'.join((f'{m} (`{m.id}`) — akun umur {(sekarang - m.created_at).days} hari' for m in rombongan[:10]))
     isi = f'**{len(rombongan)} akun masuk dalam {RAID_DETIK} detik.**\n{len(baru)} di antaranya akun baru (< {AKUN_BARU_HARI} hari).\n\n{daftar}'
     if RAID_AUTO_KUNCI:

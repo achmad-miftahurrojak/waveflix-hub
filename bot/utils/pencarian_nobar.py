@@ -15,7 +15,10 @@ def _cek_ketersediaan_sinkron(url):
     except Exception:
         return False
 
-async def cari_film(query):
+async def cari_film(query, batas=5):
+    # [BUG FIX] Batasi jumlah hasil yang diverifikasi. Sebelumnya SEMUA hasil TMDB
+    # (bisa 20+) diperiksa satu-satu ke idlix + tinyurl padahal hasil akhir cuma dipakai [:5].
+    # Sekarang cukup verifikasi batas + 3 (margin buat yang ternyata ga tersedia).
     TMDB_API_KEY = os.getenv('TMDB_API_KEY')
     if not TMDB_API_KEY:
         raise ValueError('TMDB_API_KEY belum di-set di .env!')
@@ -104,9 +107,13 @@ async def cari_film(query):
                         print(f'Gagal memendekkan URL dengan tinyurl: {e}')
                     return item
                 return None
-            tasks = [verifikasi(item) for item in hasil_mentah]
+            # [BUG FIX] Hanya verifikasi segelintir calon, bukan semua hasil TMDB.
+            # asyncio.gather tetap jalan paralel, tapi jumlahnya dibatasi supaya
+            # idlix + tinyurl nggak kena banjir request dan hasil lebih cepet.
+            target_verifikasi = min(len(hasil_mentah), batas + 3)
+            tasks = [verifikasi(item) for item in hasil_mentah[:target_verifikasi]]
             verified_results = await asyncio.gather(*tasks)
-            hasil = [v for v in verified_results if v is not None][:5]
+            hasil = [v for v in verified_results if v is not None][:batas]
     return hasil
 
 async def cari_trending():
@@ -130,7 +137,9 @@ async def cari_trending():
     hasil_akhir = []
     for judul in judul_trending:
         try:
-            hasil_pencarian = await cari_film(judul)
+            # [BUG FIX] Cuma butuh 1 hasil per judul trending, jadi verifikasi dibatasi
+            # ke segelintir calon alih-alih semua hasil TMDB (hebatnya turun drastis).
+            hasil_pencarian = await cari_film(judul, batas=1)
             if hasil_pencarian:
                 hasil_akhir.append(hasil_pencarian[0])
         except Exception as e:

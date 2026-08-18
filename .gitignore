@@ -1,0 +1,15 @@
+# File rahasia - jangan commit
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# Log
+*.log
