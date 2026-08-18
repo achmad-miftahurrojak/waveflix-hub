@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 SINI = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(SINI))
 load_dotenv(os.path.join(ROOT, '.env'))
-FOLDER = os.path.join(ROOT, 'icon-banner-app')
+FOLDER = os.path.join(ROOT, 'assets', 'branding')
 DAFTAR = [('Julian', os.getenv('JULIAN_TOKEN'), 'icon-julian.jpg'),
           ('Dirga', os.getenv('DIRGA_TOKEN'), 'icon-dirga.jpg'),
           ('Arka', os.getenv('ARKA_TOKEN'), 'icon-arka.jpg'),

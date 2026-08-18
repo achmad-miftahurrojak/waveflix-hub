@@ -104,7 +104,7 @@ PESAN_AFK = ['lo kelamaan diem di {asal}, jadi kelempar ke {afk}. balik aja kalo
 CHANNEL_PENGUMUMAN_ID = int(os.getenv('JULIAN_CHANNEL_PENGUMUMAN_ID', '1532238760874348554'))
 JAM_KIRIM = 7
 CATATAN_UMUM = 'pengumuman.json'
-FOLDER_GAMBAR = 'gambar'
+FOLDER_GAMBAR = os.path.join(_BOT_ROOT, 'assets', 'images')
 GAMBAR_LIBUR = {'idul fitri': 'idulfitri.jpg', 'idul adha': 'iduladha.jpg', 'tahun baru islam': 'tahunbaruislam.jpg', 'maulid': 'maulid.jpg', 'isra': 'isramiraj.jpg', 'nyepi': 'nyepi.jpg', 'waisak': 'waisak.jpg', 'imlek': 'imlek.jpg', 'natal': 'natal.jpg', 'jumat agung': 'jumatagung.jpg', 'kenaikan': 'kenaikanisa.jpg', 'paskah': 'paskah.jpg'}
 
 def cari_gambar_libur(nama):
