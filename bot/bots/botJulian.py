@@ -27,6 +27,7 @@ except Exception as e:
     print(f'[ai] ga bisa pinjem otak botDirga: {e}')
     tanya_ai = None
 load_dotenv()
+_BOT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOKEN = os.getenv('JULIAN_TOKEN')
 # [REFACTOR] Memindahkan Hardcoded ID ke .env untuk deployment fleksibel
 CHANNEL_SAMBUTAN_ID = int(os.getenv('JULIAN_CHANNEL_SAMBUTAN_ID', '1535071902312169492'))
