@@ -1,9 +1,7 @@
 "use client";
 
-import { type ComponentProps, useState } from "react";
-
-type FormSubmitEvent = Parameters<NonNullable<ComponentProps<"form">["onSubmit"]>>[0];
 import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
@@ -12,7 +10,7 @@ export default function EmailForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: FormSubmitEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) return;
 
