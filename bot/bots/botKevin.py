@@ -22,6 +22,10 @@ _voice_client: discord.VoiceClient | None = None
 _sedang_reconnect: bool = False
 _stream_aktif: bool = True
 FFMPEG_OPTS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -thread_queue_size 4096 -nostdin -loglevel warning', 'options': '-vn'}
+_BOT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FFMPEG_PATH = os.path.join(_BOT_ROOT, 'bin', 'ffmpeg.exe')
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = 'ffmpeg'  # fallback ke ffmpeg di PATH sistem
 
 def _ambil_url_sync(sumber: str) -> str:
     if 'youtube.com' in sumber or 'youtu.be' in sumber or sumber.startswith('ytsearch'):
@@ -62,7 +66,7 @@ async def _mulai_stream(vc: discord.VoiceClient) -> bool:
         def setelah_selesai(error):
             if error:
                 print(f'[kevin] stream berhenti: {error}')
-        audio = discord.FFmpegPCMAudio(url, **FFMPEG_OPTS)
+        audio = discord.FFmpegPCMAudio(url, executable=FFMPEG_PATH, **FFMPEG_OPTS)
         sumber = discord.PCMVolumeTransformer(audio, volume=VOLUME)
         vc.play(sumber, after=setelah_selesai)
         print('[kevin] streaming berjalan')

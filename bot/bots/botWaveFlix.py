@@ -2,10 +2,16 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 import os
+import sys
 from dotenv import load_dotenv
 import asyncio
 import random
 from datetime import datetime, timedelta
+
+# Tambahkan utils/ ke sys.path untuk import pencarian_nobar
+_BOT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_BOT_ROOT, 'utils'))
+
 from pencarian_nobar import cari_film, cari_trending
 
 load_dotenv()

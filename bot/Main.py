@@ -5,6 +5,12 @@ import sys
 import importlib  # [REFACTOR] Standar industri untuk import dinamis
 import math       # [REFACTOR] Digunakan untuk validasi latency (NaN)
 
+# Tambahkan subfolder ke sys.path agar modul yang sudah dipindah tetap bisa diimpor
+_BASE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_BASE, 'bots'))
+sys.path.insert(0, os.path.join(_BASE, 'utils'))
+sys.path.insert(0, _BASE)
+
 KUNCI = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.arka.lock')
 
 def _hidup_windows(pid):

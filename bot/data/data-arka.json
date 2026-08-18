@@ -2,7 +2,7 @@
  "orang": {
   "1311673049208193066": {
    "xp": 698,
-   "xp_minggu": 853,
+   "xp_minggu": 0,
    "pesan": 5,
    "menit": 10,
    "absen": 1,
@@ -20,7 +20,7 @@
     "hunt": {
      "main": 6,
      "menang": 1,
-     "minggu": 2
+     "minggu": 0
     }
    },
    "misi": {
@@ -59,7 +59,7 @@
   },
   "997730524787376128": {
    "xp": 2130,
-   "xp_minggu": 2238,
+   "xp_minggu": 0,
    "pesan": 12,
    "menit": 235,
    "absen": 4,
@@ -72,7 +72,7 @@
     "hunt": {
      "main": 12,
      "menang": 1,
-     "minggu": 4
+     "minggu": 0
     },
     "duel": {
      "main": 2,
@@ -137,7 +137,7 @@
   },
   "1531978836223332442": {
    "xp": 2088,
-   "xp_minggu": 685,
+   "xp_minggu": 0,
    "pesan": 4,
    "menit": 0,
    "absen": 1,
@@ -150,17 +150,17 @@
     "hunt": {
      "main": 6,
      "menang": 0,
-     "minggu": 1
+     "minggu": 0
     },
     "duel": {
      "main": 2,
      "menang": 2,
-     "minggu": 2
+     "minggu": 0
     },
     "suit": {
      "main": 3,
      "menang": 2,
-     "minggu": 2
+     "minggu": 0
     }
    },
    "barang": {},
@@ -185,7 +185,7 @@
   },
   "1535477128068341862": {
    "xp": 357,
-   "xp_minggu": 407,
+   "xp_minggu": 0,
    "pesan": 1,
    "menit": 0,
    "absen": 1,
@@ -203,7 +203,7 @@
     "suit": {
      "main": 2,
      "menang": 2,
-     "minggu": 2
+     "minggu": 0
     },
     "duel": {
      "main": 1,
@@ -237,7 +237,7 @@
   },
   "474510455168172033": {
    "xp": 2019,
-   "xp_minggu": 1566,
+   "xp_minggu": 0,
    "pesan": 1,
    "menit": 225,
    "absen": 0,
@@ -262,7 +262,7 @@
   },
   "1147867432367685724": {
    "xp": 24,
-   "xp_minggu": 24,
+   "xp_minggu": 0,
    "pesan": 2,
    "menit": 0,
    "absen": 0,
@@ -283,7 +283,7 @@
   },
   "1536222049888895098": {
    "xp": 136,
-   "xp_minggu": 136,
+   "xp_minggu": 0,
    "pesan": 0,
    "menit": 0,
    "absen": 1,
@@ -321,7 +321,7 @@
   },
   "1535985706831450182": {
    "xp": 328,
-   "xp_minggu": 328,
+   "xp_minggu": 0,
    "pesan": 0,
    "menit": 0,
    "absen": 1,
@@ -361,7 +361,7 @@
   },
   "1536606866484891648": {
    "xp": 5745,
-   "xp_minggu": 5745,
+   "xp_minggu": 0,
    "pesan": 9,
    "menit": 0,
    "absen": 1,
@@ -369,7 +369,7 @@
    "absen_terakhir": "2026-08-11",
    "menang": 34,
    "kalah": 0,
-   "juara": 1,
+   "juara": 2,
    "game": {
     "hunt": {
      "main": 6,
@@ -398,71 +398,72 @@
   }
  },
  "cuaca": {
-  "tanggal": "2026-08-16",
-  "nama": "Angin Segar",
-  "kali": 1.5,
-  "emoji": "🌬️",
-  "kata": "Anginnya enak, XP naik satu setengah kali.",
-  "diumumkan": false
+  "tanggal": "2026-08-18",
+  "nama": "Kabut",
+  "kali": 0.8,
+  "emoji": "🌫️",
+  "kata": "Kabut tebal, semuanya jadi lambat.",
+  "diumumkan": true
  },
  "acara": [],
  "lomba": {},
  "toko": {
-  "minggu": "2026-W32",
+  "minggu": "2026-W33",
   "stok": [
    "kerang",
-   "cepat",
-   "lumba",
+   "umpan",
+   "perisai",
    "tiket",
-   "paus"
+   "paus",
+   "namapet"
   ],
   "diumumkan": true
  },
  "misi": {
-  "tanggal": "2026-08-16",
+  "tanggal": "2026-08-18",
   "daftar": [
+   {
+    "kode": "duel",
+    "kalimat": "Menangin 1 duel",
+    "target": 1,
+    "xp": 100
+   },
+   {
+    "kode": "absen",
+    "kalimat": "Absen hari ini",
+    "target": 1,
+    "xp": 40
+   },
    {
     "kode": "hunt",
     "kalimat": "Jelajah pantai 3 kali",
     "target": 3,
     "xp": 70
-   },
-   {
-    "kode": "suit",
-    "kalimat": "Menangin 2 pertandingan suit",
-    "target": 2,
-    "xp": 80
-   },
-   {
-    "kode": "chat",
-    "kalimat": "Ngobrol 12 pesan di server",
-    "target": 12,
-    "xp": 60
    }
   ],
-  "diumumkan": false
+  "diumumkan": true
  },
- "rekap_terakhir": "2026-W32",
- "rekap_giliran": 1,
- "backup_terakhir": "2026-08-15",
+ "rekap_terakhir": "2026-W33",
+ "rekap_giliran": 2,
+ "backup_terakhir": "2026-08-18",
  "misi_kemarin_daftar": [
   {
-   "kode": "balon",
-   "kalimat": "Nyamber 1 balon duluan",
-   "target": 1,
-   "xp": 90
-  },
-  {
-   "kode": "suit",
-   "kalimat": "Menangin 2 pertandingan suit",
-   "target": 2,
-   "xp": 80
+   "kode": "chat",
+   "kalimat": "Ngobrol 12 pesan di server",
+   "target": 12,
+   "xp": 60
   },
   {
    "kode": "hunt",
    "kalimat": "Jelajah pantai 3 kali",
    "target": 3,
    "xp": 70
+  },
+  {
+   "kode": "tebak",
+   "kalimat": "Tebak angka gua sampai kena 1 kali",
+   "target": 1,
+   "xp": 90
   }
  ],
  "season": {
@@ -471,14 +472,12 @@
   "hall": []
  },
  "quest": {
-  "minggu": "2026-W32",
-  "kode": "absen",
-  "kalimat": "Kumpulin 80 absen dalam seminggu",
-  "target": 80,
-  "maju": 1,
-  "penyumbang": {
-   "997730524787376128": 1
-  },
+  "minggu": "2026-W33",
+  "kode": "lagu",
+  "kalimat": "Tebak bener 25 lagu",
+  "target": 25,
+  "maju": 0,
+  "penyumbang": {},
   "kelar": false,
   "diumumkan": true
  },
@@ -488,5 +487,5 @@
   "total_makan": 0,
   "dicek": "2026-08-12T09:30:38.774143+07:00"
  },
- "kapsul_terakhir": "2026-08-15"
+ "kapsul_terakhir": "2026-08-17"
 }

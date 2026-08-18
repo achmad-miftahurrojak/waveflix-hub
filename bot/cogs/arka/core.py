@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import random
 import re
 import time
@@ -7,6 +8,12 @@ from datetime import datetime, timedelta
 import aiohttp
 import discord
 from discord.ext import commands, tasks
+
+# Tambahkan utils/ ke sys.path untuk import acara, penyimpanan, kartu_level
+_COGS_ARKA = os.path.dirname(os.path.abspath(__file__))
+_BOT_ROOT = os.path.dirname(os.path.dirname(_COGS_ARKA))
+sys.path.insert(0, os.path.join(_BOT_ROOT, 'utils'))
+
 import acara as papan
 import penyimpanan
 from .config import *

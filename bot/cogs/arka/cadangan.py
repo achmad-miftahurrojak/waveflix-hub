@@ -10,7 +10,7 @@ from .config import *
 def _berkas_cadangan():
     siap, hilang = ([], [])
     for nama in BACKUP_BERKAS:
-        jalur = os.path.join(SINI, nama)
+        jalur = os.path.join(DATA_DIR, nama)
         if os.path.exists(jalur):
             siap.append((nama, jalur, os.path.getsize(jalur)))
         else:

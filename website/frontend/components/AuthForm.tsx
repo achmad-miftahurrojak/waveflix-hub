@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { CheckIcon } from "./Icons";
@@ -15,7 +15,8 @@ const PERKS = [
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const { login, register } = useAuth();
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       : await login(email, password);
     setLoading(false);
     if (err) setError(err);
-    else router.push("/");
+    else router.push("/home");
   };
 
   const inputCls =

@@ -23,7 +23,7 @@ import SearchBox from "./SearchBox";
 import { useAuth } from "./AuthProvider";
 
 const NAV = [
-  { label: "Home", href: "/", icon: HomeIcon },
+  { label: "Home", href: "/home", icon: HomeIcon },
   { label: "Movies", href: "/browse?media=movie", icon: FilmIcon },
   { label: "Series", href: "/browse?media=tv", icon: TvIcon },
   { label: "Reality", href: "/reality", icon: SparklesIcon },
@@ -72,7 +72,7 @@ export default function Navbar() {
 
   const isActive = (href: string) => {
     const [path, query] = href.split("?");
-    if (path === "/") return pathname === "/";
+    if (path === "/home") return pathname === "/home";
     if (!pathname.startsWith(path)) return false;
     // Movies & Series berbagi path /browse — bedakan lewat query media.
     const hrefMedia = new URLSearchParams(query ?? "").get("media");
@@ -99,77 +99,79 @@ export default function Navbar() {
       >
         <div className="flex items-center gap-8">
           <Link
-            href="/"
+            href={user ? "/home" : "/"}
             className="text-4xl uppercase leading-none tracking-[-0.03em] text-accent"
             style={{ fontFamily: "var(--font-logo)" }}
           >
             Waveflix
           </Link>
-          <ul className="hidden items-center gap-1 lg:flex">
-            {NAV.map(({ label, href, icon: Icon }) => (
-              <li key={label}>
-                <Link
-                  href={href}
+          {user && (
+            <ul className="hidden items-center gap-1 lg:flex">
+              {NAV.map(({ label, href, icon: Icon }) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
+                      isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
+                    }`}
+                  >
+                    <Icon />
+                    <span>{label}</span>
+                    {isActive(href) && (
+                      <motion.span
+                        layoutId="navUnderline"
+                        transition={underlineSpring}
+                        className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
+                      />
+                    )}
+                  </Link>
+                </li>
+              ))}
+              {/* Dropdown "More" — Genres / Country / Year jadi satu (ala IDLIX) */}
+              <li
+                className="relative"
+                onMouseEnter={() => setOpenMore(true)}
+                onMouseLeave={() => setOpenMore(false)}
+              >
+                <button
                   className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
-                    isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
+                    onCategory ? "text-accent" : "text-white/70 hover:text-white"
                   }`}
                 >
-                  <Icon />
-                  <span>{label}</span>
-                  {isActive(href) && (
+                  {onCategory && (
                     <motion.span
                       layoutId="navUnderline"
                       transition={underlineSpring}
                       className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
                     />
                   )}
-                </Link>
-              </li>
-            ))}
-            {/* Dropdown "More" — Genres / Country / Year jadi satu (ala IDLIX) */}
-            <li
-              className="relative"
-              onMouseEnter={() => setOpenMore(true)}
-              onMouseLeave={() => setOpenMore(false)}
-            >
-              <button
-                className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
-                  onCategory ? "text-accent" : "text-white/70 hover:text-white"
-                }`}
-              >
-                {onCategory && (
-                  <motion.span
-                    layoutId="navUnderline"
-                    transition={underlineSpring}
-                    className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
-                  />
+                  <MoreIcon />
+                  <span>More</span>
+                  <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
+                </button>
+                {openMore && (
+                  <div className="absolute left-0 top-full w-56 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
+                    {moreMenu.map(({ label, href, icon: Icon }) => (
+                      <Link
+                        key={label}
+                        href={href}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
+                      >
+                        <span className="text-white/60">
+                          <Icon />
+                        </span>
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
-                <MoreIcon />
-                <span>More</span>
-                <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
-              </button>
-              {openMore && (
-                <div className="absolute left-0 top-full w-56 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
-                  {moreMenu.map(({ label, href, icon: Icon }) => (
-                    <Link
-                      key={label}
-                      href={href}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-                    >
-                      <span className="text-white/60">
-                        <Icon />
-                      </span>
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </li>
-          </ul>
+              </li>
+            </ul>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
-          <SearchBox />
+          {user && <SearchBox />}
           {!mounted || !ready ? (
             <div className="h-9 w-9 shrink-0 rounded-full bg-white/10" />
           ) : user ? (
@@ -224,9 +226,9 @@ export default function Navbar() {
           ) : (
             <Link
               href="/masuk"
-              className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black transition hover:bg-accent-dark"
+              className="rounded-md bg-[#E50914] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#c10710]"
             >
-              Sign In
+              Masuk
             </Link>
           )}
         </div>

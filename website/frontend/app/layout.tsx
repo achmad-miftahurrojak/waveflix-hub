@@ -26,6 +26,8 @@ const logoFont = Anton({
   fallback: ["Impact", "Arial Narrow", "sans-serif"],
 });
 
+import RouteGuard from "@/components/RouteGuard";
+
 export const metadata: Metadata = {
   title: "Waveflix | Stream Without Limits",
   description: "Watch your favorite movies and TV series without limits.",
@@ -45,13 +47,15 @@ export default function RootLayout({
       <body className="font-sans" suppressHydrationWarning>
         <AuthProvider>
           <UIProvider>
-            <Suspense fallback={null}>
-              <Navbar />
-            </Suspense>
-            {children}
-            <footer className="py-10 text-center text-sm text-white/40">
-              &copy; 2026 Waveflix. Not your average streaming site.
-            </footer>
+            <RouteGuard>
+              <Suspense fallback={null}>
+                <Navbar />
+              </Suspense>
+              {children}
+              <footer className="py-10 text-center text-sm text-white/40">
+                &copy; 2026 Waveflix. Not your average streaming site.
+              </footer>
+            </RouteGuard>
           </UIProvider>
         </AuthProvider>
       </body>

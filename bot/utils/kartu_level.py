@@ -2,7 +2,9 @@ import os
 import io
 from PIL import Image, ImageDraw, ImageFont
 LEBAR, TINGGI = (1200, 630)
-FOLDER = 'gambar'
+_UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
+_BOT_ROOT = os.path.dirname(_UTILS_DIR)
+FOLDER = os.path.join(_BOT_ROOT, 'gambar')
 NAMA_LATAR = ['level-bg.png', 'welcome-bg.png', 'welcome-bg.jpg']
 WHITE_GLASS = (255, 255, 255, 225)
 DARK_BLUE = (15, 30, 70)

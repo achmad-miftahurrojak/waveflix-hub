@@ -1,5 +1,9 @@
 import UserLibrary from "@/components/UserLibrary";
 
 export default function RiwayatPage() {
-  return <UserLibrary title="Riwayat Tontonan" endpoint="/api/history" />;
+  return (
+    <main className="min-h-screen pb-16">
+      <UserLibrary title="Riwayat Tontonan" endpoint="/api/history" />
+    </main>
+  );
 }

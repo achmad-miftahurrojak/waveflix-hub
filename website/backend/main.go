@@ -282,6 +282,7 @@ func main() {
 	// Auth
 	mux.HandleFunc("/api/auth/register", handleRegister)
 	mux.HandleFunc("/api/auth/login", handleLogin)
+	mux.HandleFunc("/api/auth/check-email", handleCheckEmail)
 	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
 	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
 	mux.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))

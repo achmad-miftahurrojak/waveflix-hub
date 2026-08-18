@@ -82,7 +82,6 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	writeAuth(w, id, body.Email, body.Username, "", "")
 }
 
-// POST /api/auth/login {email, password}
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Email    string `json:"email"`
@@ -108,6 +107,22 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeAuth(w, id, body.Email, username, avatar, banner)
+}
+
+func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
+	email := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("email")))
+	if email == "" {
+		httpError(w, http.StatusBadRequest, "email wajib diisi")
+		return
+	}
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&exists)
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "gagal mengecek email")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"exists": exists})
 }
 
 func handleMe(w http.ResponseWriter, r *http.Request) {

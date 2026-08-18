@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env
+.arka.lock
+data/cookies.txt
+data/id-channel-discord.txt
+data/*.rusak-*
+lavalink/plugins/temp/
+lavalink/jre17.zip

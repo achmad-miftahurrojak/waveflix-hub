@@ -2,7 +2,9 @@ import io
 import os
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageSequence
 LEBAR, TINGGI = (1000, 500)
-FOLDER = 'gambar'
+_UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
+_BOT_ROOT = os.path.dirname(_UTILS_DIR)
+FOLDER = os.path.join(_BOT_ROOT, 'gambar')
 NAMA_LATAR = ['welcome-bg.gif', 'welcome-bg.png', 'welcome-bg.jpg', 'welcome-bg.webp']
 GELAP = 0.3
 ZOOM = 1.0

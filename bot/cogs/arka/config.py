@@ -1,9 +1,10 @@
 import os
 from datetime import timedelta, timezone
-SINI = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-BERKAS = os.path.join(SINI, 'data-arka.json')
-BERKAS_SOAL = os.path.join(SINI, 'soal-arka.json')
-BERKAS_LAGU = os.path.join(SINI, 'soal-lagu.json')
+_BOT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.path.join(_BOT_ROOT, 'data')
+BERKAS = os.path.join(DATA_DIR, 'data-arka.json')
+BERKAS_SOAL = os.path.join(DATA_DIR, 'soal-arka.json')
+BERKAS_LAGU = os.path.join(DATA_DIR, 'soal-lagu.json')
 WIB = timezone(timedelta(hours=7))
 CHANNEL_ARENA = int(os.getenv('ARKA_CHANNEL_ARENA', '1535810881634570372'))
 CHANNEL_REKAP = int(os.getenv('ARKA_CHANNEL_REKAP', '1535836590264557599'))

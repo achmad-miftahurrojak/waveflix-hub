@@ -14,7 +14,6 @@ import {
 import { StarIcon, PlayIcon } from "./Icons";
 
 const IMAGE_MS = 5000; // video main di belakang gambar dulu, baru gambar fade-out
-const WITH_TRAILER_MS = 30000;
 const IMAGE_ONLY_MS = 10000;
 
 function VolumeOn() {
@@ -52,14 +51,69 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     return () => io.disconnect();
   }, []);
 
-  // Auto-geser slide.
+  // Auto-geser slide (hanya jika TIDAK ada trailer).
+  // Jika ada trailer, perpindahan slide di-handle oleh event "infoDelivery" dari YouTube saat video selesai (state = 0).
   useEffect(() => {
     if (total <= 1) return;
-    const dur = slides[active]?.trailer ? WITH_TRAILER_MS : IMAGE_ONLY_MS;
-    const t = setTimeout(() => setActive((i) => (i + 1) % total), dur);
+    if (slides[active]?.trailer) return; // tunggu video selesai
+
+    const t = setTimeout(() => setActive((i) => (i + 1) % total), IMAGE_ONLY_MS);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, total]);
+
+  // Dengarkan progress video menggunakan YouTube IFrame API resmi
+  useEffect(() => {
+    if (!playVideo) return;
+    let player: any;
+    let timer: NodeJS.Timeout;
+    let skipped = false;
+
+    const attachAPI = () => {
+      if (!iframeRef.current || !(window as any).YT) return;
+      player = new (window as any).YT.Player(iframeRef.current, {
+        events: {
+          onReady: () => {
+            // Polling waktu setiap 250ms
+            timer = setInterval(() => {
+              if (skipped || !player || typeof player.getCurrentTime !== "function") return;
+              const current = player.getCurrentTime();
+              const duration = player.getDuration();
+              // Skip 1.5 detik sebelum habis
+              if (duration > 0 && duration - current < 1.5) {
+                skipped = true;
+                setActive((prev) => (prev + 1) % total);
+              }
+            }, 250);
+          },
+          onStateChange: (e: any) => {
+            // 0 = Ended (buat jaga-jaga kalau polling kelewat)
+            if (e.data === 0 && !skipped) {
+              skipped = true;
+              setActive((prev) => (prev + 1) % total);
+            }
+          }
+        }
+      });
+    };
+
+    if (!(window as any).YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      (window as any).onYouTubeIframeAPIReady = attachAPI;
+    } else if (!(window as any).YT.Player) {
+      // Script loaded but API not ready yet, wait for it
+      (window as any).onYouTubeIframeAPIReady = attachAPI;
+    } else {
+      attachAPI();
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [active, playVideo, total]);
 
   // Reveal: video main dulu 5 detik di belakang gambar, lalu gambar fade-out.
   useEffect(() => {
@@ -70,9 +124,9 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, playVideo]);
 
-  const sendCmd = (func: string) =>
+  const sendCmd = (func: string, args: any[] = []) =>
     iframeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func, args: [] }),
+      JSON.stringify({ event: "command", func, args }),
       "*"
     );
   const toggleMute = () => {
@@ -85,7 +139,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   const embed =
     playVideo && current
-      ? `https://www.youtube.com/embed/${current.trailer}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`
+      ? `https://www.youtube.com/embed/${current.trailer}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3&cc_load_policy=0&vq=hd1080`
       : "";
 
   return (
@@ -100,6 +154,10 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             allow="autoplay; encrypted-media"
             onLoad={() => {
               if (!muted) sendCmd("unMute");
+              
+              // Matikan subtitle secara paksa via JS API (Fallback)
+              sendCmd("unloadModule", ["captions"]);
+              sendCmd("setOption", ["captions", "track", {}]);
             }}
             className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
             style={{ width: "max(100%, 177.78vh)", height: "max(100%, 56.25vw)" }}

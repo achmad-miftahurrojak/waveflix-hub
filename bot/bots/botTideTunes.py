@@ -22,6 +22,8 @@ genai_client = None
 if GEMINI_KEY:
     genai_client = genai.Client(api_key=GEMINI_KEY)
 
+LAVALINK_AKTIF = os.getenv("LAVALINK_AKTIF", "1").lower() not in ("0", "false", "no")
+
 class TideTunesBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -30,10 +32,14 @@ class TideTunesBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         
     async def setup_hook(self):
-        nodes = [wavelink.Node(uri=LAVALINK_URI, password=LAVALINK_PASSWORD)]
-        await wavelink.Pool.connect(nodes=nodes, client=self, cache_capacity=100)
+        if LAVALINK_AKTIF:
+            nodes = [wavelink.Node(uri=LAVALINK_URI, password=LAVALINK_PASSWORD)]
+            await wavelink.Pool.connect(nodes=nodes, client=self, cache_capacity=100)
+            print("[TideTunes] Lavalink connected.")
+        else:
+            print("[TideTunes] Lavalink dimatikan (LAVALINK_AKTIF=0). Fitur musik nonaktif.")
         await self.tree.sync()
-        print("[TideTunes] Bot is ready, Lavalink connected, and slash commands synced.")
+        print("[TideTunes] Slash commands synced.")
 
 bot = TideTunesBot()
 

@@ -1,64 +1,8 @@
 {
  "channel": {
   "1453703811607826596": {
-   "sentuh": "2026-08-15T14:09:22.106156+00:00",
+   "sentuh": "2026-08-17T22:08:40.115387+00:00",
    "pesan": [
-    {
-     "role": "user",
-     "parts": [
-      {
-       "text": "! amat: <@1534907342770933972> yah ngilang lagi aysel ga"
-      }
-     ]
-    },
-    {
-     "role": "model",
-     "parts": [
-      {
-       "text": "sabar napa mat, aysel emang demen ngilang kek buronan. jadi apaan dah emangnya"
-      }
-     ]
-    },
-    {
-     "role": "user",
-     "parts": [
-      {
-       "text": "! amat: ga kan masalahnya itu udh janjian kan eh ngilang lagi gt"
-      }
-     ]
-    },
-    {
-     "role": "model",
-     "parts": [
-      {
-       "text": "wkwk kebiasaan emang, janjian doang kenceng giliran eksekusi malah ngilang. tungguin aja tar tiba-tiba nongol sok polos tuh bocah"
-      }
-     ]
-    },
-    {
-     "role": "user",
-     "parts": [
-      {
-       "text": "! amat: kpan dia nongol lagi? terakhir dia chat apa sih di channel ini ga?"
-      }
-     ]
-    },
-    {
-     "role": "model",
-     "parts": [
-      {
-       "text": "gua juga bingung mat, terakhir gua liat aysel chat di sini itu beberapa jam yang lalu gitu, ngomongin soal badai di server. abis itu ya ilang lagi deh, tanpa kabar"
-      }
-     ]
-    },
-    {
-     "role": "user",
-     "parts": [
-      {
-       "text": "Aysel: Gelok"
-      }
-     ]
-    },
     {
      "role": "user",
      "parts": [
@@ -112,6 +56,62 @@
      "parts": [
       {
        "text": "Jojo: im coming"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: hol on, liat??? Hhmm sapa ni ya?"
+      }
+     ]
+    },
+    {
+     "role": "model",
+     "parts": [
+      {
+       "text": "nah kan, panjang umur tuh si aysel baru aja diomongin. si jojo malah kesurupan mau ngebut utbk wkwk. itb jalur ghoib kali ya dia"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: ini mah applikasi jir"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: mayak"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: aku gatau dolen dc"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "Jojo: 🗿"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "parts": [
+      {
+       "text": "! amat: "
       }
      ]
     }
