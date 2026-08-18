@@ -30,7 +30,7 @@ npm install && npm run dev    # frontend di :3000
 
 ## Akun / Login (SUDAH ADA)
 
-Golang + JWT + SQLite (`backend/summertide.db`, pure-Go driver `modernc.org/sqlite`).
+Golang + JWT + SQLite (`backend/waveflix.db`, pure-Go driver `modernc.org/sqlite`).
 - `/masuk`, `/daftar` — form login/register. Token JWT di `localStorage` (`summertide_token`).
 - Watchlist & history tersinkron ke DB saat login (fallback localStorage saat belum login).
 - Halaman `/riwayat` (tontonan) + `/daftar-saya`. Navbar: avatar+dropdown (Keluar) kalau login.

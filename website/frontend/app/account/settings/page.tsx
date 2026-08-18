@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
+
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<"form">["onSubmit"]>>[0];
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
 const pillSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 import { useAuth } from "@/components/AuthProvider";
-import { NAME_FONTS, nameFontCss, profileFontVars } from "@/components/profileFonts";
+import { NAME_FONTS, nameFontCss, profileFontVars } from "@/lib/profileFonts";
 
 type Msg = { ok: boolean; text: string } | null;
 type Tab = "profile" | "security" | "account";
@@ -100,7 +102,7 @@ export default function SettingsPage() {
     setImgMsg(err ? { ok: false, text: err } : { ok: true, text: `${field} removed.` });
   };
 
-  const saveProfile = async (e: React.FormEvent) => {
+  const saveProfile = async (e: FormSubmitEvent) => {
     e.preventDefault();
     setSavingProf(true);
     const err = await updateProfile({ username: name.trim(), bio, name_font: font });
@@ -108,7 +110,7 @@ export default function SettingsPage() {
     setProfMsg(err ? { ok: false, text: err } : { ok: true, text: "Changes saved." });
   };
 
-  const savePw = async (e: React.FormEvent) => {
+  const savePw = async (e: FormSubmitEvent) => {
     e.preventDefault();
     setPwMsg(null);
     if (nw !== confirm) return setPwMsg({ ok: false, text: "New passwords don't match." });
@@ -120,7 +122,7 @@ export default function SettingsPage() {
     }
   };
 
-  const saveEmail = async (e: React.FormEvent) => {
+  const saveEmail = async (e: FormSubmitEvent) => {
     e.preventDefault();
     const err = await updateProfile({ email: newEmail.trim() });
     if (err) setEmailMsg({ ok: false, text: err });

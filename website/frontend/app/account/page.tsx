@@ -9,7 +9,7 @@ const pillSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 import type { TmdbItem } from "@/lib/types";
 import { useAuth } from "@/components/AuthProvider";
 import PosterGrid from "@/components/PosterGrid";
-import { nameFontCss, profileFontVars } from "@/components/profileFonts";
+import { nameFontCss, profileFontVars } from "@/lib/profileFonts";
 
 type Tab = "overview" | "favorites" | "mylist" | "history";
 

@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
+
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<"form">["onSubmit"]>>[0];
 import { SearchIcon } from "./Icons";
 
 export default function SearchBox() {
@@ -10,7 +12,7 @@ export default function SearchBox() {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: FormSubmitEvent) => {
     e.preventDefault();
     const q = value.trim();
     if (q) router.push(`/search?q=${encodeURIComponent(q)}`);

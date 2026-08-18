@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
+
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<"form">["onSubmit"]>>[0];
 import { useAuth } from "./AuthProvider";
 import { CheckIcon } from "./Icons";
 
@@ -24,7 +26,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   const isRegister = mode === "register";
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: FormSubmitEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
