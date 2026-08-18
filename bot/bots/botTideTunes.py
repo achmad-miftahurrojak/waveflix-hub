@@ -122,10 +122,10 @@ async def process_autoplay(guild_id, player):
             "Jangan ada nomor urut, jangan ada teks pembuka/penutup."
         )
         try:
-            # [CRITICAL FIX] gemini-3.5-flash belum eksis, diubah ke gemini-1.5-flash
+            # [CRITICAL FIX] Model deprecated (404). Dipindah ke gemini-flash-lite-latest yang masih aktif.
             response = await asyncio.to_thread(
                 genai_client.models.generate_content,
-                model='gemini-1.5-flash',
+                model='gemini-flash-lite-latest',
                 contents=prompt
             )
             rekomendasi_list = [line.strip() for line in response.text.strip().split('\n') if line.strip()]
