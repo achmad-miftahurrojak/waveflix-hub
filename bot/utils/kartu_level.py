@@ -30,7 +30,7 @@ def get_font(name, size):
         if os.path.exists(f):
             try:
                 return ImageFont.truetype(f, size)
-            except:
+            except Exception:
                 pass
     return ImageFont.load_default()
 
@@ -58,7 +58,7 @@ def buat_kartu_level(nama, avatar_bytes, tingkat, xp, xp_bawah, xp_atas, peringk
         mask = Image.new('L', (AVATAR_SIZE, AVATAR_SIZE), 0)
         ImageDraw.Draw(mask).ellipse((0, 0, AVATAR_SIZE, AVATAR_SIZE), fill=255)
         lapis.paste(avatar, (AVATAR_X, AVATAR_Y), mask)
-    except:
+    except Exception:
         gambar.ellipse([AVATAR_X, AVATAR_Y, AVATAR_X + AVATAR_SIZE, AVATAR_Y + AVATAR_SIZE], fill=OCEAN_BLUE)
     draw_text(gambar, (AVATAR_X + AVATAR_SIZE // 2, AVATAR_Y + AVATAR_SIZE + 30), nama.upper()[:15], f_title, WHITE_GLASS[:3], anchor='mt', shadow=True)
     PANEL_X = 480

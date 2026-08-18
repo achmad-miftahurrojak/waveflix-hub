@@ -22,7 +22,14 @@ class Hunt(commands.Cog):
         efek = catat.setdefault('efek', {})
         tas = catat.setdefault('barang', {})
         sampai = efek.get('cepat_sampai')
-        masih_cepat = sampai and datetime.fromisoformat(sampai) > datetime.now(WIB)
+        # [BUG FIX] Guard fromisoformat: kalau data efek rusak atau di-edit manual,
+        # jangan biarin crash /hunt — anggap aja efeknya udah lewat.
+        masih_cepat = False
+        if sampai:
+            try:
+                masih_cepat = datetime.fromisoformat(sampai) > datetime.now(WIB)
+            except (TypeError, ValueError):
+                efek.pop('cepat_sampai', None)
         if not masih_cepat and tas.get('cepat', 0) > 0:
             tas['cepat'] -= 1
             if not tas['cepat']:

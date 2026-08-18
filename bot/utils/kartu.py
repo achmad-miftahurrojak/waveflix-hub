@@ -15,7 +15,7 @@ LEBAR_GIF = 600
 MAKS_FRAME = 40
 FPS = 10
 KATA_ATAS = 'WELCOME'
-KATA_BAWAH = 'YOU ARE OUR {nomor}{akhiran} MEMBER ♥'
+KATA_BAWAH = 'YOU ARE ONE OF OUR {nomor} MEMBERS ♥'
 AVATAR = 200
 AVATAR_ATAS = 42
 CINCIN = 7
@@ -73,11 +73,6 @@ def _font_muat(teks, gambar, ukuran, maks, tebal=True):
             return font
         ukuran -= 2
     return _font(16, tebal)
-
-def _akhiran(n):
-    if 10 <= n % 100 <= 20:
-        return 'TH'
-    return {1: 'ST', 2: 'ND', 3: 'RD'}.get(n % 10, 'TH')
 
 def _tulis(gambar, y, teks, font, warna, tepi=3):
     gambar.text((PUSAT, y), teks, font=font, fill=warna, anchor='mm', stroke_width=tepi, stroke_fill=GARIS_TEPI)
@@ -139,7 +134,10 @@ def _lapisan(nama, avatar_bytes, nomor, nama_server):
     _tulis(gambar, Y_ATAS, KATA_ATAS, f_atas, (255, 255, 255), tepi=4)
     f_nama = _font_muat(nama, gambar, UKURAN_NAMA, ruang)
     _tulis(gambar, Y_NAMA, nama, f_nama, (255, 255, 255), tepi=3)
-    bawah = KATA_BAWAH.format(nomor=nomor, server=nama_server, akhiran=_akhiran(nomor))
+    # [BUG FIX] Total member dipakai sebagai "nomor" jadi angka di kartu selalu jumlah
+    # seluruh anggota, bukan nomor urut member ke berapa. Template di-hindari dari
+    # klaim "YOU ARE THE N-TH MEMBER" yang menyesatkan; cukup akui jumlahnya aja.
+    bawah = KATA_BAWAH.format(nomor=nomor)
     f_bawah = _font_muat(bawah, gambar, UKURAN_BAWAH, ruang)
     _tulis(gambar, Y_BAWAH, bawah, f_bawah, WARNA_AKSEN, tepi=3)
     return lapis

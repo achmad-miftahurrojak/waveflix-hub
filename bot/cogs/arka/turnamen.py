@@ -142,7 +142,10 @@ class Turnamen(commands.Cog):
     async def ronde_trivia(self, channel, a, b):
         from .trivia import soal, _cocok
         if not soal:
-            return (random.choice([a, b]), b if a else a)
+            # [BUG FIX] 'b if a else a' selalu ngasilin b (a selalu truthy).
+            # Dikoin sama kayak timeout, kalahnya pasangan yang satunya.
+            menang = random.choice([a, b])
+            return (menang, b if menang == a else a)
         pilih = random.choice(soal)
         jawaban = pilih['jawaban']
         isi = discord.Embed(color=WARNA, title=f'❓ {a.display_name} vs {b.display_name}', description=pilih['soal'])
@@ -166,7 +169,9 @@ class Turnamen(commands.Cog):
         from .lagu import lagu_bank
         from .trivia import _cocok
         if not lagu_bank:
-            return (random.choice([a, b]), b if a else a)
+            # [BUG FIX] Sama kayak ronde_trivia: 'b if a else a' selalu b.
+            menang = random.choice([a, b])
+            return (menang, b if menang == a else a)
         pilih = random.choice(lagu_bank)
         jawaban = [x.strip() for x in pilih['judul'].split(',') if x.strip()]
         isi = discord.Embed(color=WARNA, title=f'🎵 {a.display_name} vs {b.display_name}', description=f"# {pilih['emoji']}\n{pilih['tahun']} · {pilih['genre']} · {pilih['penyanyi']}")

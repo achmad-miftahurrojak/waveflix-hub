@@ -144,6 +144,11 @@ class Akinator(commands.Cog):
         tampilan = AkiTanya(inter.user, self.bot)
         kandidat = list(AKI_SUBJEK)
         sifat = aki_tanya_terbaik(kandidat, set())
+        # [BUG FIX] aki_tanya_terbaik bisa balikin None kalau semua sifat udah
+        # terpakai/ga ngebantu. Jangan di-KEYError-kan di AKI_SIFAT[sifat].
+        if sifat is None or sifat not in AKI_SIFAT:
+            await inter.response.send_message('Sifat buat nebak lagi abis. Coba lagi lain kali.', ephemeral=True)
+            return
         tampilan.sifat_sekarang = sifat
         tampilan.jumlah = 1
         pembuka = discord.Embed(color=WARNA, title='🧞  Pertanyaan ke-1', description=f'## {AKI_SIFAT[sifat]}')
