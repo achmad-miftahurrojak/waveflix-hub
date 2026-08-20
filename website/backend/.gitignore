@@ -2,8 +2,15 @@
 .env
 
 # Binary hasil build
-main.exe
-main.exe~
+*.exe
+*.exe~
+main
 
-# Database lokal SQLite
+# Database lokal SQLite & log files
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# User uploads
+uploads/

@@ -6,3 +6,7 @@
 next-env.d.ts
 .env*.local
 .DS_Store
+
+# Playwright E2E test outputs
+test-results/
+playwright-report/

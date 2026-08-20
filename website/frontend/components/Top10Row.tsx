@@ -30,7 +30,7 @@ export default function Top10Row({ items }: { items: TmdbItem[] }) {
       el.removeEventListener("scroll", updateArrows);
       window.removeEventListener("resize", updateArrows);
     };
-  }, []);
+  }, [items]);
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;

@@ -55,6 +55,8 @@ export default function SettingsPage() {
   const [pwMsg, setPwMsg] = useState<Msg>(null);
   const [newEmail, setNewEmail] = useState("");
   const [emailMsg, setEmailMsg] = useState<Msg>(null);
+  const [savingPw, setSavingPw] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
 
   // images
   const [imgMsg, setImgMsg] = useState<Msg>(null);
@@ -113,7 +115,9 @@ export default function SettingsPage() {
     e.preventDefault();
     setPwMsg(null);
     if (nw !== confirm) return setPwMsg({ ok: false, text: "New passwords don't match." });
+    setSavingPw(true);
     const err = await changePassword(cur, nw);
+    setSavingPw(false);
     if (err) setPwMsg({ ok: false, text: err });
     else {
       setPwMsg({ ok: true, text: "Password updated." });
@@ -123,7 +127,10 @@ export default function SettingsPage() {
 
   const saveEmail = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setEmailMsg(null);
+    setSavingEmail(true);
     const err = await updateProfile({ email: newEmail.trim() });
+    setSavingEmail(false);
     if (err) setEmailMsg({ ok: false, text: err });
     else {
       setEmailMsg({ ok: true, text: "Email updated." });
@@ -267,7 +274,9 @@ export default function SettingsPage() {
               <label className={label}>Confirm new password</label>
               <input type="password" minLength={8} className={input} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             </div>
-            <button type="submit" className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark">Update Password</button>
+            <button type="submit" disabled={savingPw} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark disabled:opacity-60">
+              {savingPw ? "Updating…" : "Update Password"}
+            </button>
             <Note msg={pwMsg} />
           </form>
 
@@ -282,7 +291,9 @@ export default function SettingsPage() {
               <label className={label}>New email</label>
               <input type="email" className={input} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="you@example.com" required />
             </div>
-            <button type="submit" className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark">Update Email</button>
+            <button type="submit" disabled={savingEmail} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark disabled:opacity-60">
+              {savingEmail ? "Updating…" : "Update Email"}
+            </button>
             <Note msg={emailMsg} />
           </form>
         </div>

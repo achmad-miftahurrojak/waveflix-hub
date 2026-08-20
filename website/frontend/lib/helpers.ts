@@ -19,7 +19,9 @@ export function itemYear(m: TmdbItem): string {
 }
 
 export function posterUrl(m: TmdbItem): string {
-  return m.poster_path ? `${IMG}/w500${m.poster_path}` : "";
+  return m.poster_path
+    ? `${IMG}/w500${m.poster_path}`
+    : "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=500";
 }
 
 export function backdropUrl(m: TmdbItem): string {
