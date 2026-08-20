@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -70,8 +72,8 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
-	if body.Email == "" || len(body.Password) < 6 || body.Username == "" {
-		httpError(w, http.StatusBadRequest, "email/username wajib, password minimal 6 karakter")
+	if body.Email == "" || len(body.Password) < 8 || body.Username == "" {
+		httpError(w, http.StatusBadRequest, "email/username wajib, password minimal 8 karakter")
 		return
 	}
 
@@ -173,23 +175,58 @@ func uploadImage(column string) http.HandlerFunc {
 			httpError(w, http.StatusBadRequest, "data tidak valid")
 			return
 		}
-		ok := strings.HasPrefix(body.Image, "data:image/png;base64,") ||
-			strings.HasPrefix(body.Image, "data:image/jpeg;base64,") ||
-			strings.HasPrefix(body.Image, "data:image/gif;base64,") ||
-			body.Image == ""
-		if !ok {
+
+		if body.Image == "" {
+			if _, err := db.Exec("UPDATE users SET "+column+" = ? WHERE id = ?", "", uid); err != nil {
+				httpError(w, http.StatusInternalServerError, "gagal hapus gambar")
+				return
+			}
+			handleMe(w, r)
+			return
+		}
+
+		var ext string
+		var rawBase64 string
+		if strings.HasPrefix(body.Image, "data:image/png;base64,") {
+			ext = "png"
+			rawBase64 = strings.TrimPrefix(body.Image, "data:image/png;base64,")
+		} else if strings.HasPrefix(body.Image, "data:image/jpeg;base64,") {
+			ext = "jpg"
+			rawBase64 = strings.TrimPrefix(body.Image, "data:image/jpeg;base64,")
+		} else if strings.HasPrefix(body.Image, "data:image/gif;base64,") {
+			ext = "gif"
+			rawBase64 = strings.TrimPrefix(body.Image, "data:image/gif;base64,")
+		} else {
 			httpError(w, http.StatusBadRequest, "format harus JPG, PNG, atau GIF")
 			return
 		}
+
 		if len(body.Image) > 8_000_000 { // ~6MB file
 			httpError(w, http.StatusRequestEntityTooLarge, "ukuran gambar terlalu besar (maks ~6MB)")
 			return
 		}
-		if _, err := db.Exec("UPDATE users SET "+column+" = ? WHERE id = ?", body.Image, uid); err != nil {
-			httpError(w, http.StatusInternalServerError, "gagal simpan gambar")
+
+		data, err := base64.StdEncoding.DecodeString(rawBase64)
+		if err != nil {
+			httpError(w, http.StatusBadRequest, "data base64 tidak valid")
 			return
 		}
-		handleMe(w, r) // kembalikan profil terbaru
+
+		filename := fmt.Sprintf("%s_%d.%s", column, uid, ext)
+		filepath := fmt.Sprintf("./uploads/%s", filename)
+
+		if err := os.WriteFile(filepath, data, 0644); err != nil {
+			httpError(w, http.StatusInternalServerError, "gagal simpan gambar ke disk")
+			return
+		}
+
+		dbPath := fmt.Sprintf("/uploads/%s", filename)
+		if _, err := db.Exec("UPDATE users SET "+column+" = ? WHERE id = ?", dbPath, uid); err != nil {
+			httpError(w, http.StatusInternalServerError, "gagal simpan path gambar")
+			return
+		}
+
+		handleMe(w, r)
 	}
 }
 
@@ -265,8 +302,8 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
 		return
 	}
-	if len(body.New) < 6 {
-		httpError(w, http.StatusBadRequest, "password baru minimal 6 karakter")
+	if len(body.New) < 8 {
+		httpError(w, http.StatusBadRequest, "password baru minimal 8 karakter")
 		return
 	}
 	var hash string

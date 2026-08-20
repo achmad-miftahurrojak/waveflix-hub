@@ -6,6 +6,14 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "http://localhost:8080/uploads/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

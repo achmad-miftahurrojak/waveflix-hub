@@ -62,8 +62,14 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 // deleteList: DELETE ?tmdb_id=..&media_type=..
 func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
-	tmdbID, _ := strconv.ParseInt(r.URL.Query().Get("tmdb_id"), 10, 64)
-	media := normalizeMedia(r.URL.Query().Get("media_type"))
+	q := r.URL.Query()
+	idStr := getIDParam(q)
+	tmdbID, _ := strconv.ParseInt(idStr, 10, 64)
+	media := getMediaParam(q)
+	if tmdbID == 0 {
+		httpError(w, http.StatusBadRequest, "id tidak valid")
+		return
+	}
 	if _, err := db.Exec(
 		"DELETE FROM "+table+" WHERE user_id = ? AND tmdb_id = ? AND media_type = ?",
 		uid, tmdbID, media); err != nil {

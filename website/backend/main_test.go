@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"testing"
 )
 
@@ -56,5 +57,29 @@ func TestJWT(t *testing.T) {
 	}
 	if token == "" {
 		t.Error("signToken returned empty token")
+	}
+}
+
+func TestGetIDParam(t *testing.T) {
+	tests := []struct {
+		urlQuery string
+		expected string
+	}{
+		{"id=123", "123"},
+		{"tmdb_id=456", "456"},
+		{"id=123&tmdb_id=456", "123"},
+		{"id=abc", ""},
+		{"id=123a", ""},
+		{"id=12.3", ""},
+		{"id=-123", ""},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		u, _ := url.ParseQuery(tt.urlQuery)
+		res := getIDParam(u)
+		if res != tt.expected {
+			t.Errorf("getIDParam(%q) = %q; want %q", tt.urlQuery, res, tt.expected)
+		}
 	}
 }

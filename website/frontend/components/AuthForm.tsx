@@ -122,8 +122,8 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               <input
                 type="password"
                 required
-                minLength={6}
-                placeholder="At least 6 characters"
+                minLength={8}
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputCls}

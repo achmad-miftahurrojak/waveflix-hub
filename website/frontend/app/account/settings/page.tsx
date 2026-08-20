@@ -261,11 +261,11 @@ export default function SettingsPage() {
             </div>
             <div className="mb-4">
               <label className={label}>New password</label>
-              <input type="password" minLength={6} className={input} value={nw} onChange={(e) => setNw(e.target.value)} required />
+              <input type="password" minLength={8} className={input} value={nw} onChange={(e) => setNw(e.target.value)} required />
             </div>
             <div className="mb-4">
               <label className={label}>Confirm new password</label>
-              <input type="password" minLength={6} className={input} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+              <input type="password" minLength={8} className={input} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             </div>
             <button type="submit" className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark">Update Password</button>
             <Note msg={pwMsg} />

@@ -68,6 +68,15 @@ func getIDParam(q url.Values) string {
 	if id == "" {
 		id = q.Get("tmdb_id")
 	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return ""
+	}
+	for _, c := range id {
+		if c < '0' || c > '9' {
+			return "" // invalid non-numeric ID
+		}
+	}
 	return id
 }
 
@@ -330,7 +339,14 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 // ============================================================================
 // HELPERS
 // ============================================================================
-var httpClient = http.Client{Timeout: 10 * time.Second}
+var httpClient = http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
 
 func writeJSON(w http.ResponseWriter, body string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -412,7 +428,10 @@ func main() {
 	initJWTSecret()
 	initDB()
 
+	os.MkdirAll("./uploads", 0755)
+
 	mux := http.NewServeMux()
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 	mux.HandleFunc("/api/trending", handleTrending)
 	mux.HandleFunc("/api/homepage", handleHomepage)
 	mux.HandleFunc("/api/discover", handleDiscover)
