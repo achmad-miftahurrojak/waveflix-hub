@@ -145,11 +145,17 @@ export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
     { page: 1, results: [] }
   );
   const shows = withPoster(list.results).slice(0, count);
-  const details = await Promise.all(
-    shows.map((s) => getDetail("tv", String(s.id)))
+  if (shows.length === 0) return [];
+
+  const ids = shows.map((s) => s.id).join(",");
+  const detailsMap = await api<Record<string, TmdbDetail>>(
+    `/api/detail-batch?media=tv&ids=${ids}`,
+    {}
   );
+
   const out: LatestEpisode[] = [];
-  for (const d of details) {
+  for (const s of shows) {
+    const d = detailsMap[String(s.id)];
     const ep = d?.last_episode_to_air;
     if (!d || !ep || ep.season_number == null || ep.episode_number == null)
       continue;

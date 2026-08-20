@@ -44,6 +44,7 @@ export default function Top10Row({ items }: { items: TmdbItem[] }) {
       {/* Quick view modal */}
       {selectedItem && (
         <QuickViewModal
+          isOpen={true}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
         />

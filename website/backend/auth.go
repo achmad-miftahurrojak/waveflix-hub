@@ -13,7 +13,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func jwtSecret() []byte {
+var jwtSecretValue []byte
+
+func initJWTSecret() {
 	s := os.Getenv("JWT_SECRET")
 	if s == "" {
 		log.Fatal("JWT_SECRET environment variable is required. Isi di backend/.env dengan string acak minimal 32 karakter.")
@@ -21,7 +23,11 @@ func jwtSecret() []byte {
 	if len(s) < 32 {
 		log.Fatal("JWT_SECRET harus berukuran minimal 32 karakter.")
 	}
-	return []byte(s)
+	jwtSecretValue = []byte(s)
+}
+
+func jwtSecret() []byte {
+	return jwtSecretValue
 }
 
 type ctxKey string
@@ -53,6 +59,7 @@ func decodeJSON(r *http.Request, dst interface{}) error {
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) // 1MB max
 	var body struct {
 		Email    string `json:"email"`
 		Username string `json:"username"`
@@ -79,7 +86,11 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		body.Email, body.Username, string(hash),
 	)
 	if err != nil {
-		httpError(w, http.StatusConflict, "email sudah terdaftar")
+		if strings.Contains(err.Error(), "UNIQUE") {
+			httpError(w, http.StatusConflict, "email sudah terdaftar")
+			return
+		}
+		httpError(w, http.StatusInternalServerError, "gagal mendaftarkan user")
 		return
 	}
 	id, _ := res.LastInsertId()
@@ -87,6 +98,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) // 1MB max
 	var body struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`

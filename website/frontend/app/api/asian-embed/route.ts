@@ -70,6 +70,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  if (!/^[a-zA-Z0-9-]+$/.test(slug) || !/^[0-9]+$/.test(ep)) {
+    return NextResponse.json(
+      { error: "Invalid slug or ep format" },
+      { status: 400 }
+    );
+  }
+
   // URL pattern yang umum dipakai situs Asia
   const pathVariants = [
     `/${slug}-episode-${ep}.html`,
@@ -78,11 +85,16 @@ export async function GET(req: NextRequest) {
     `/${slug}-episode-${ep}-english-sub.html`,
   ];
 
-  // Coba setiap kombinasi mirror × path
+  const urls: string[] = [];
   for (const mirror of DRAMACOOL_MIRRORS) {
     for (const path of pathVariants) {
-      const url = mirror + path;
-      try {
+      urls.push(mirror + path);
+    }
+  }
+
+  try {
+    const result = await Promise.any(
+      urls.map(async (url) => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 6000);
 
@@ -99,35 +111,35 @@ export async function GET(req: NextRequest) {
 
         clearTimeout(timeout);
 
-        if (!res.ok) continue;
+        if (!res.ok) throw new Error("Not OK");
 
         const html = await res.text();
 
-        // Pastikan ini bukan halaman 404/error dari server
         if (
           html.includes("Page not found") ||
           html.includes("404") ||
           html.length < 1000
         ) {
-          continue;
+          throw new Error("Invalid page content");
         }
 
         const embedUrl = extractEmbedUrl(html);
         if (embedUrl) {
-          return NextResponse.json({
+          const sourceMirror = DRAMACOOL_MIRRORS.find(m => url.startsWith(m)) || "unknown";
+          return {
             url: embedUrl,
-            source: mirror,
-          });
+            source: sourceMirror,
+          };
         }
-      } catch {
-        // Timeout atau network error → coba kombinasi berikutnya
-        continue;
-      }
-    }
+        throw new Error("Embed not found");
+      })
+    );
+    
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Video not found on any mirror" },
+      { status: 404 }
+    );
   }
-
-  return NextResponse.json(
-    { error: "Video not found on any mirror" },
-    { status: 404 }
-  );
 }

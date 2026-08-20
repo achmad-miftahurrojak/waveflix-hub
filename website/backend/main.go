@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -53,6 +55,22 @@ func normalizeMedia(m string) string {
 	return "movie"
 }
 
+func getMediaParam(q url.Values) string {
+	m := q.Get("media")
+	if m == "" {
+		m = q.Get("media_type")
+	}
+	return normalizeMedia(m)
+}
+
+func getIDParam(q url.Values) string {
+	id := q.Get("id")
+	if id == "" {
+		id = q.Get("tmdb_id")
+	}
+	return id
+}
+
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if v != "" {
@@ -62,12 +80,41 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
+type cacheItem struct {
+	data     []byte
+	expireAt time.Time
+}
+
+var (
+	memCache = make(map[string]cacheItem)
+	cacheMu  sync.RWMutex
+)
+
+func init() {
+	go func() {
+		for {
+			time.Sleep(10 * time.Minute)
+			now := time.Now()
+			cacheMu.Lock()
+			for k, v := range memCache {
+				if now.After(v.expireAt) {
+					delete(memCache, k)
+				}
+			}
+			cacheMu.Unlock()
+		}
+	}()
+}
+
 // ============================================================================
 // TRENDING  ->  /api/trending?media=all|movie|tv&page=1  (global, dipakai fallback)
 // ============================================================================
 func handleTrending(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	media := q.Get("media")
+	if media == "" {
+		media = q.Get("media_type")
+	}
 	if media != "movie" && media != "tv" {
 		media = "all"
 	}
@@ -92,7 +139,7 @@ func handleHomepage(w http.ResponseWriter, r *http.Request) { handleTrending(w, 
 // ============================================================================
 func handleDiscover(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	media := normalizeMedia(q.Get("media"))
+	media := getMediaParam(q)
 	page := firstNonEmpty(q.Get("page"), "1")
 
 	p := url.Values{}
@@ -150,8 +197,8 @@ func handleDiscover(w http.ResponseWriter, r *http.Request) {
 // ============================================================================
 func handleDetail(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	media := normalizeMedia(q.Get("media"))
-	id := q.Get("id")
+	media := getMediaParam(q)
+	id := getIDParam(q)
 	if id == "" {
 		writeJSON(w, `{"error":"id kosong"}`)
 		return
@@ -177,12 +224,62 @@ func handleDetail(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
+func handleDetailBatch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	media := getMediaParam(q)
+	idsStr := q.Get("ids")
+	if idsStr == "" {
+		writeJSON(w, `{"error":"ids kosong"}`)
+		return
+	}
+	ids := strings.Split(idsStr, ",")
+
+	type result struct {
+		id   string
+		data map[string]interface{}
+		err  error
+	}
+	ch := make(chan result, len(ids))
+
+	for _, id := range ids {
+		go func(id string) {
+			base := tmdbBaseUrl + "/" + media + "/" + id
+			targetUrl := base + "?language=en-US&append_to_response=credits,videos,recommendations,similar,images&include_image_language=en,null&api_key=" + tmdbApiKey
+			data, err := fetchJSON(targetUrl)
+			if err != nil {
+				ch <- result{id: id, err: err}
+				return
+			}
+
+			if ov, _ := data["overview"].(string); ov == "" {
+				if en, err := fetchJSON(base + "?language=en-US&api_key=" + tmdbApiKey); err == nil {
+					if enOv, ok := en["overview"].(string); ok && enOv != "" {
+						data["overview"] = enOv
+					}
+				}
+			}
+			ch <- result{id: id, data: data}
+		}(id)
+	}
+
+	out := make(map[string]interface{})
+	for i := 0; i < len(ids); i++ {
+		res := <-ch
+		if res.err == nil {
+			out[res.id] = res.data
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
+
 // ============================================================================
 // SEASON  ->  /api/season?id=123&season=1   (daftar episode satu musim)
 // ============================================================================
 func handleSeason(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	id := q.Get("id")
+	id := getIDParam(q)
 	season := firstNonEmpty(q.Get("season"), "1")
 	if id == "" {
 		writeJSON(w, `{"episodes":[]}`)
@@ -196,8 +293,8 @@ func handleSeason(w http.ResponseWriter, r *http.Request) {
 // ============================================================================
 func handleImages(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	media := normalizeMedia(q.Get("media"))
-	id := q.Get("id")
+	media := getMediaParam(q)
+	id := getIDParam(q)
 	if id == "" {
 		writeJSON(w, `{"logos":[]}`)
 		return
@@ -241,19 +338,52 @@ func writeJSON(w http.ResponseWriter, body string) {
 }
 
 func fetchJSON(targetUrl string) (map[string]interface{}, error) {
+	cacheKey := "json:" + targetUrl
+	cacheMu.RLock()
+	if item, exists := memCache[cacheKey]; exists && time.Now().Before(item.expireAt) {
+		cacheMu.RUnlock()
+		var out map[string]interface{}
+		json.Unmarshal(item.data, &out)
+		return out, nil
+	}
+	cacheMu.RUnlock()
+
 	resp, err := httpClient.Get(targetUrl)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	cacheMu.Lock()
+	memCache[cacheKey] = cacheItem{
+		data:     bodyBytes,
+		expireAt: time.Now().Add(15 * time.Minute),
+	}
+	cacheMu.Unlock()
+
 	var out map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+	if err := json.Unmarshal(bodyBytes, &out); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
 func proxyRequest(w http.ResponseWriter, targetUrl string) {
+	cacheKey := "proxy:" + targetUrl
+	cacheMu.RLock()
+	if item, exists := memCache[cacheKey]; exists && time.Now().Before(item.expireAt) {
+		cacheMu.RUnlock()
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(item.data)
+		return
+	}
+	cacheMu.RUnlock()
+
 	resp, err := httpClient.Get(targetUrl)
 	if err != nil {
 		log.Printf("Gagal fetch TMDB: %v", err)
@@ -263,13 +393,23 @@ func proxyRequest(w http.ResponseWriter, targetUrl string) {
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	cacheMu.Lock()
+	memCache[cacheKey] = cacheItem{
+		data:     bodyBytes,
+		expireAt: time.Now().Add(15 * time.Minute),
+	}
+	cacheMu.Unlock()
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	w.Write(bodyBytes)
 }
 
 func main() {
 	loadConfig()
+	initJWTSecret()
 	initDB()
 
 	mux := http.NewServeMux()
@@ -277,6 +417,7 @@ func main() {
 	mux.HandleFunc("/api/homepage", handleHomepage)
 	mux.HandleFunc("/api/discover", handleDiscover)
 	mux.HandleFunc("/api/detail", handleDetail)
+	mux.HandleFunc("/api/detail-batch", handleDetailBatch)
 	mux.HandleFunc("/api/season", handleSeason)
 	mux.HandleFunc("/api/images", handleImages)
 	mux.HandleFunc("/api/search", handleSearch)
@@ -297,11 +438,22 @@ func main() {
 	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
 	mux.HandleFunc("/api/history", requireAuth(handleHistory))
 
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if err := db.Ping(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			writeJSON(w, `{"status":"error","database":"disconnected"}`)
+			return
+		}
+		writeJSON(w, `{"status":"ok","database":"connected"}`)
+	})
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"service":"waveflix-api","status":"ok"}`)
 	})
 
 	handler := enableCORS(mux)
+	handler = secureHeaders(handler)
+	handler = recoveryMiddleware(handler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -311,6 +463,28 @@ func main() {
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Server gagal: %v", err)
 	}
+}
+
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("[PANIC] %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				writeJSON(w, `{"error":"internal server error"}`)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+func secureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func enableCORS(next http.Handler) http.Handler {

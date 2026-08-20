@@ -1,7 +1,9 @@
 package main
 
 import (
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -35,7 +37,22 @@ func init() {
 // rateLimit — max `limit` requests per `window` per IP
 func rateLimit(limit int, window time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
+		ip := r.Header.Get("X-Forwarded-For")
+		if ip == "" {
+			ip = r.Header.Get("X-Real-IP")
+		}
+		if ip == "" {
+			host, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				ip = r.RemoteAddr
+			} else {
+				ip = host
+			}
+		} else {
+			ips := strings.Split(ip, ",")
+			ip = strings.TrimSpace(ips[0])
+		}
+
 		mu.Lock()
 		v, exists := visitors[ip]
 		if !exists || time.Since(v.lastSeen) > window {

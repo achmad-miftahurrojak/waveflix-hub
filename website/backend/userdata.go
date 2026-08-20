@@ -112,10 +112,13 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 		if it.MediaType != "tv" {
 			it.MediaType = "movie"
 		}
-		db.Exec(
+		if _, err := db.Exec(
 			`INSERT INTO history(user_id, tmdb_id, media_type, title, poster_path, vote_average, season, episode)
 			 VALUES(?,?,?,?,?,?,?,?)`,
-			uid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage, it.Season, it.Episode)
+			uid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage, it.Season, it.Episode); err != nil {
+			httpError(w, http.StatusInternalServerError, "gagal simpan history")
+			return
+		}
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 		return
 	}

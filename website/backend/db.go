@@ -33,7 +33,12 @@ func initDB() {
 	if err != nil {
 		log.Fatalf("Gagal buka DB: %v", err)
 	}
-	db.SetMaxOpenConns(1)
+
+	if _, err := db.Exec("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=NORMAL;"); err != nil {
+		log.Printf("Gagal set PRAGMA: %v", err)
+	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
 
 	schema := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -89,6 +94,10 @@ func initDB() {
 	db.Exec("ALTER TABLE users ADD COLUMN banner TEXT DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN name_font TEXT DEFAULT ''")
+
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_watchlist_user_added ON watchlist(user_id, added_at DESC)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_favorites_user_added ON favorites(user_id, added_at DESC)")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_history_user_watched ON history(user_id, watched_at DESC)")
 
 	log.Println("Database SQLite siap (waveflix.db)")
 }
