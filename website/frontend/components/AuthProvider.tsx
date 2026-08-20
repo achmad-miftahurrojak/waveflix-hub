@@ -62,11 +62,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Muat token dari sessionStorage saat pertama render.
-  // sessionStorage = sesi hilang saat browser ditutup → user harus login ulang.
+  // Muat token dari localStorage saat pertama render.
+  // localStorage = sesi persisten across browser restarts.
   useEffect(() => {
     migrateStorage(); // pindahkan kunci lama (summertide_*) → baru sekali saja
-    const saved = sessionStorage.getItem(TOKEN_KEY);
+    const saved = localStorage.getItem(TOKEN_KEY);
     if (!saved) {
       setReady(true);
       return;
@@ -78,14 +78,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((u) => setUser(u))
       .catch(() => {
-        sessionStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(TOKEN_KEY);
         setToken(null);
       })
       .finally(() => setReady(true));
   }, []);
 
   const persist = (tok: string, u: AuthUser) => {
-    sessionStorage.setItem(TOKEN_KEY, tok);
+    localStorage.setItem(TOKEN_KEY, tok);
     setToken(tok);
     setUser(u);
   };
@@ -126,7 +126,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
   }, []);

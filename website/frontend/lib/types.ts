@@ -108,4 +108,5 @@ export interface TmdbDetail extends TmdbItem {
   videos?: { results?: TmdbVideo[] };
   recommendations?: { results?: TmdbItem[] };
   similar?: { results?: TmdbItem[] };
+  images?: { logos?: TmdbLogo[]; backdrops?: { file_path: string }[]; posters?: { file_path: string }[] };
 }

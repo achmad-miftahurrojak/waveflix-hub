@@ -257,10 +257,12 @@ export async function getHeroSlides(
   return Promise.all(
     picks.map(async (item) => {
       const media = mediaTypeOf(item);
-      const [logo, detail] = await Promise.all([
-        getHeroLogo(item),
-        getDetail(media, String(item.id)),
-      ]);
+      const detail = await getDetail(media, String(item.id));
+      const logos = detail?.images?.logos ?? [];
+      const enLogo = logos.find((l) => l.iso_639_1 === "en") ?? logos[0];
+      const logo = enLogo
+        ? `https://image.tmdb.org/t/p/w500${enLogo.file_path}`
+        : await getHeroLogo(item);
       const ov = detail?.overview || item.overview || "";
       const duration = detail
         ? isTv(detail)

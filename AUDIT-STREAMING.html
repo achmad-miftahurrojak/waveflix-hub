@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waveflix Audit</title>
+</head>
+<body>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --surface-2: #ecebe6;
+    --ink: #1a1d21;
+    --ink-2: #4a4f57;
+    --line: #d9d6ce;
+    --accent: #0e7490;
+    --accent-ink: #ffffff;
+    --good: #15803d;
+    --warn: #b45309;
+    --bad: #b91c1c;
+    --info: #1d4ed8;
+    --chip-critical: #dc2626;
+    --chip-high: #ea580c;
+    --chip-medium: #d97706;
+    --chip-low: #2563eb;
+    --chip-info: #64748b;
+  }
+  :root:not([data-theme="light"]) body {
+    --bg: #101418;
+    --surface: #171d23;
+    --surface-2: #1f272f;
+    --ink: #e8eaed;
+    --ink-2: #aab2bc;
+    --line: #2a323b;
+    --accent: #35c4dc;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --info: #60a5fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101418;
+      --surface: #171d23;
+      --surface-2: #1f272f;
+      --ink: #e8eaed;
+      --ink-2: #aab2bc;
+      --line: #2a323b;
+      --accent: #35c4dc;
+      --good: #4ade80;
+      --warn: #fbbf24;
+      --bad: #f87171;
+      --info: #60a5fa;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101418;
+    --surface: #171d23;
+    --surface-2: #1f272f;
+    --ink: #e8eaed;
+    --ink-2: #aab2bc;
+    --line: #2a323b;
+    --accent: #35c4dc;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --info: #60a5fa;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.55;
+    font-size: 16px;
+  }
+  h1, h2, h3, h4 { font-family: "Archivo", "Segoe UI", system-ui, sans-serif; text-wrap: balance; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  header.hero {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    padding: 56px 0 40px;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 12px;
+  }
+  h1 { font-size: clamp(32px, 5vw, 48px); margin: 0 0 12px; font-weight: 800; }
+  .sub { color: var(--ink-2); font-size: 18px; max-width: 640px; margin: 0; }
+  .meta { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--ink-2); margin-top: 20px; }
+  .meta b { color: var(--ink); }
+
+  .verdict { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+  .vpill {
+    padding: 10px 18px; border-radius: 999px; background: var(--surface);
+    border: 1px solid var(--line); font-weight: 700; font-size: 15px;
+  }
+  .vpill .n { font-family: "JetBrains Mono", monospace; font-size: 20px; margin-right: 6px; }
+
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 20px; }
+  section h2 { font-size: 26px; margin: 0 0 4px; }
+  .secnum { font-family: "JetBrains Mono", monospace; color: var(--accent); font-size: 13px; letter-spacing: 0.1em; }
+  .lead p { color: var(--ink-2); margin: 10px 0 24px; max-width: 760px; }
+
+  h3 { font-size: 18px; margin: 28px 0 12px; }
+  .callout {
+    background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 16px 20px; margin: 16px 0;
+  }
+  .callout.crit { border-left-color: var(--bad); }
+  .callout b { color: var(--accent); }
+  .callout.crit b { color: var(--bad); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+  th {
+    text-align: left; font-family: "Archivo", sans-serif; font-size: 12px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2);
+    padding: 10px 12px; border-bottom: 2px solid var(--line);
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:hover td { background: var(--surface-2); }
+  td code { font-family: "JetBrains Mono", monospace; font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  .st { font-weight: 700; white-space: nowrap; font-size: 12.5px; padding: 3px 9px; border-radius: 999px; display: inline-block; }
+  .st-pass { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .st-fail { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+  .st-partial { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+
+  .sev { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .sev-critical { background: #dc2626; color: #fff; }
+  .sev-high { background: #ea580c; color: #fff; }
+  .sev-medium { background: #d97706; color: #fff; }
+  .sev-low { background: #2563eb; color: #fff; }
+  .sev-info { background: #64748b; color: #fff; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 16px 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .card h4 { margin: 0 0 8px; font-size: 15px; }
+  .card p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .stat { font-family: "Archivo", sans-serif; font-size: 30px; font-weight: 800; color: var(--accent); }
+
+  .score { display: flex; align-items: baseline; gap: 10px; }
+  .score-val { font-size: 28px; font-weight: 800; font-family: "Archivo", sans-serif; }
+  .score-note { color: var(--ink-2); font-size: 13px; }
+
+  .row-sev { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+
+  pre.code {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-family: "JetBrains Mono", monospace;
+    font-size: 13px; line-height: 1.6; margin: 12px 0;
+  }
+  pre.code .cmt { color: var(--ink-2); }
+  code.block { font-family: "JetBrains Mono", monospace; }
+
+  ul.tight { margin: 8px 0; padding-left: 20px; }
+  ul.tight li { margin: 4px 0; }
+
+  .toc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; margin: 28px 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+
+  footer { padding: 32px 0 48px; color: var(--ink-2); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    body { font-size: 15px; }
+    th, td { padding: 8px; font-size: 13px; }
+  }
+</style>
+
+<header class="hero">
+  <div class="container">
+    <p class="eyebrow">Tier-1 Streaming Platform Audit · Windows</p>
+    <h1>Waveflix Audit</h1>
+    <p class="sub">Bedah menyeluruh video player, performa streaming, discovery UX, detail page, auth, keamanan, rendering Windows, heuristik UX, aksesibilitas — dengan benchmark kualitas platform streaming tier-1.</p>
+    <div class="meta">Target: <b>website/frontend</b> (Next.js) + <b>website/backend</b> (Go) · Metode: <b>audit kode statis + penelusuran runtime</b> · Tanggal: <b>2026-08-18</b></div>
+    <div class="verdict">
+      <div class="vpill"><span class="n">5.7</span>UX Heuristic Avg</div>
+      <div class="vpill"><span class="n">4</span>Video Player PASS</div>
+      <div class="vpill"><span class="n">2</span>CRITICAL Security</div>
+      <div class="vpill"><span class="n">4</span>HIGH Security</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="toc">
+    <strong>Daftar Isi</strong>
+    <ol>
+      <li><a href="#verdict-utama">Verdict Utama — Temuan Terbesar</a></li>
+      <li><a href="#player">Video Player Report</a></li>
+      <li><a href="#perf">Streaming Performance</a></li>
+      <li><a href="#discovery">Content Discovery UX</a></li>
+      <li><a href="#detail">Detail Page Audit</a></li>
+      <li><a href="#auth">Auth &amp; Session Report</a></li>
+      <li><a href="#browser">Browser Compatibility Matrix</a></li>
+      <li><a href="#rendering">Windows Rendering Report</a></li>
+      <li><a href="#heuristik">UX Heuristic Scorecard</a></li>
+      <li><a href="#security">Security Findings</a></li>
+      <li><a href="#a11y">Accessibility Violations</a></li>
+      <li><a href="#roadmap">Prioritized Fix Roadmap</a></li>
+      <li><a href="#kode">Kode Perbaikan</a></li>
+    </ol>
+  </div>
+
+  <section id="verdict-utama">
+    <h2><span class="secnum">SEBELUM SEMUANYA</span><br>Verdict Utama</h2>
+    <div class="lead"><p>Produk ini <b>belum menjadi platform streaming</b>. Ia adalah <b>katalog TMDB</b> (proksi Go → data film/seri Indonesia) dengan <b>player = iframe vidlink.pro</b> pihak ketiga. Tidak ada elemen <code>&lt;video&gt;</code> milik sendiri, tidak ada HLS/DASH, tidak ada ABR, tidak ada DRM. Endpoint <code>/api/stream</code> itu mock yang tak pernah dipanggil frontend.</p></div>
+    <div class="callout crit"><b>2 CRITICAL keamanan.</b> (1) JWT secret hardcoded publik di source &amp; tidak terset di .env → siapapun bisa memalsukan token login user mana pun. (2) Konten premium di-iframe tanpa auth &amp; tanpa signed URL → bisa disedot gratis.</div>
+    <p>Hal yang <b>bagus</b>: discovery kuat (skor 8/10), detail page lengkap, watchlist + history dual-mode login/guest, semua query DB terparameterisasi (nol SQL injection), tidak ada IDOR, tidak ada stored XSS, React escapes semua string.</p>
+  </section>
+
+  <section id="player">
+    <h2><span class="secnum">1</span><br>Video Player Report</h2>
+    <div class="callout crit"><b>Arsitektur menentukan segalanya:</b> player = <code>iframe src="https://vidlink.pro/movie/{id}"</code> atau <code>/tv/{id}/{s}/{e}</code> (["helpers.ts:89"](https://github.com/…/lib/helpers.ts#L89)) dirender di <code>InlineHeroVideo</code>. Tidak ada elemen <code>&lt;video&gt;</code> di seluruh codebase (verifikasi grep: 0 match), tidak ada lib player (package.json: framer-motion/next/react only). Semua fitur player di bawah ini <b>bukan milik Anda</b> — di-delegate ke embed.</div>
+    <table>
+      <tr><th>Fitur</th><th>Status</th><th>Catatan</th><th>Bukti</th></tr>
+      <tr><td>Playback direct play</td><td><span class="st st-fail">FAIL</span></td><td>Load iframe pihak ke-3 — latency tak terkontrol oleh Anda. Tanpa preload/startup tuning.</td><td><code>InlineHeroVideo.tsx:77-82</code></td></tr>
+      <tr><td>Buffering indicator</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada spinner/error state untuk iframe.</td><td>grep nol match</td></tr>
+      <tr><td>Adaptive bitrate (ABR)</td><td><span class="st st-fail">FAIL</span></td><td>Nol kode ABR. iframe tak bisa kendali kualitas.</td><td>grep nol match</td></tr>
+      <tr><td>Quality selector</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada.</td><td>grep nol match</td></tr>
+      <tr><td>Seek + scrubbing preview</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada; serah embed.</td><td>—</td></tr>
+      <tr><td>Resume playback</td><td><span class="st st-fail">FAIL</span></td><td>History simpan tmdb_id/s/e saja tanpa posisi detik.</td><td><code>userdata.go:106-119</code></td></tr>
+      <tr><td>Fullscreen</td><td><span class="st st-partial">PARTIAL</span></td><td>Tombol custom + <code>allowFullScreen</code> + listener. Video jika embed setor fullscreen internal berkonflik dengan parent.</td><td><code>InlineHeroVideo.tsx:62-67,81</code></td></tr>
+      <tr><td>Picture-in-Picture</td><td><span class="st st-partial">PARTIAL</span></td><td>iframe <code>allow="picture-in-picture"</code> tapi tak ada JS/tombol <code>requestPictureInPicture</code>.</td><td><code>InlineHeroVideo.tsx:80</code></td></tr>
+      <tr><td>Keyboard shortcuts</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada binding. Hero malah <code>disablekb=1</code>.</td><td><code>HeroCarousel.tsx:142</code></td></tr>
+      <tr><td>Subtitles / caption</td><td><span class="st st-fail">FAIL</span></td><td>Hero paksa matikan caption (<code>cc_load_policy=0</code>, unload captions).</td><td><code>HeroCarousel.tsx:142,159-160</code></td></tr>
+      <tr><td>Audio track switcher</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada.</td><td>—</td></tr>
+      <tr><td>Volume memory</td><td><span class="st st-fail">FAIL</span></td><td>Mute state <code>useState</code> per-render, tidak persist.</td><td><code>HeroCarousel.tsx:37,132-136</code></td></tr>
+      <tr><td>Autoplay next episode</td><td><span class="st st-fail">FAIL</span></td><td>Navigasi prev/next manual, tanpa onEnded autoplay.</td><td><code>episode/page.tsx:113-153</code></td></tr>
+      <tr><td>History tonton</td><td><span class="st st-partial">PARTIAL</span></td><td>Kunjungan tercatat saat klik play (login), bukan resume.</td><td><code>UIProvider.tsx:37-43</code></td></tr>
+      <tr><td>Trailer hero (YouTube inline)</td><td><span class="st st-pass">PASS</span></td><td>IntersectionObserver + YouTube IFrame API + polling progress + mute toggle.</td><td><code>HeroCarousel.tsx:46-136</code></td></tr>
+    </table>
+    <h3>Langkah reproduksi tiap FAIL</h3>
+    <ul class="tight">
+      <li><b>Direct play di bawah 2 detik</b>: klik Play → iframe vidlink dimuat dari nol → depend penuh pada server pihak ke-3. Tidak bisa diverifikasi/diperbaiki dari kode ini.</li>
+      <li><b>ABR &amp; quality</b>: tidak ada tombol/setting resolusi di UI; kualitas video serah vidlink.</li>
+      <li><b>Resume</b>: tutup halaman → buka lagi → video mulai dari awal; tidak ingat posisi.</li>
+      <li><b>Subtitle</b>: di player utama tidak ada; di hero trailer sengaja dimatikan.</li>
+    </ul>
+  </section>
+
+  <section id="perf">
+    <h2><span class="secnum">2</span><br>Streaming Performance</h2>
+    <div class="grid2">
+      <div class="card"><h4>Bitrate ladder</h4><p class="stat">TIDAK ADA</p><p>Nol pilihan resolusi. Satu-satunya petunjuk kualitas = <code>vq=hd1080</code> di URL trailer YouTube.</p></div>
+      <div class="card"><h4>Protokol</h4><p class="stat">TIDAK ADA</p><p>Bukan HLS/DASH milik sendiri. Playback = iframe vidlink; trailer = YouTube embed; <code>/api/stream</code> mock return .mp4 langsung.</p></div>
+      <div class="card"><h4>CDN</h4><p class="stat">PIHAK KE-3</p><p>Semua byte media dari YouTube CDN &amp; vidlink.pro. Backend Go hanya proxy JSON TMDB (poster/metadata).</p></div>
+      <div class="card"><h4>Preloading</h4><p class="stat">PARSIAL</p><p>Trailer hero pre-init saat slide masuk viewport (IntersectionObserver threshold 0.35). Playback penuh tanpa preload.</p></div>
+    </div>
+    <table>
+      <tr><th>Metrik</th><th>Nilai</th><th>Catatan</th></tr>
+      <tr><td>TTFB video</td><td>Tak terukur dari kode</td><td>Kecepatan buka iframe vidlink = milik mereka.</td></tr>
+      <tr><td>Startup time (target &lt;2s @10Mbps)</td><td>Tak terjangkau</td><td>Tanpa kontrol preload/segment, target tak bisa terpenuhi dari sisi Anda.</td></tr>
+      <tr><td>Stall rate / 10 menit</td><td>Tak terukur</td><td>Tak ada metrik player.</td></tr>
+      <tr><td>Segment size</td><td>—</td><td>Tak ada segment sendiri.</td></tr>
+      <tr><td>Network throttle (3G/4G/WiFi)</td><td>FAIL</td><td>Nol logika ABR; kualitas tidak pernah turun-naik otomatis.</td></tr>
+    </table>
+    <div class="callout"><b>Implikasi.</b> Ambil kesimpulan: produk ini bukan streaming platform, punya <i>scraper-archaeology</i>. Endpoint <code>/api/stream</code> (return BigBuckBunny.mp4 hardcoded) tidak pernah dipanggil frontend — rencana scraper HLS tidak jadi dibangun.</div>
+  </section>
+
+  <section id="discovery">
+    <h2><span class="secnum">3</span><br>Content Discovery UX</h2>
+    <div class="score"><span class="score-val">8.0</span><span class="score-note">/10 — kekuatan utama produk ini</span></div>
+    <table>
+      <tr><th>Elemen</th><th>Skor</th><th>Status</th><th>Bukti</th></tr>
+      <tr><td>Hero + featured content</td><td><b>9</b></td><td><span class="st st-pass">PASS</span></td><td>HeroCarousel 86vh, logo/tagline/badge/rating, trailer auto-mute, poll progress auto-advance. Top 10 Indonesia sebagai sumber.</td></tr>
+      <tr><td>Row kategori horizontal scroll</td><td><b>9</b></td><td><span class="st st-pass">PASS</span></td><td>8 grup: Trending, Indonesia, 5 Originals, Drama per negara, Latest.</td></tr>
+      <tr><td>Hover preview card</td><td><b>4</b></td><td><span class="st st-fail">FAIL</span></td><td>Hanya scale + ring. Tidak ada popover ala Netflix (genre/rating/tombol play).</td></tr>
+      <tr><td>Carousel smooth + nav buttons</td><td><b>7</b></td><td><span class="st st-partial">PARTIAL</span></td><td>scrollBy 640px hover-reveal; <b>tanpa scroll-snap</b>; tombol hilang di tablet/mobile.</td></tr>
+      <tr><td>Search real-time + filter</td><td><b>5</b></td><td><span class="st st-partial">PARTIAL</span></td><td>Search = submit → navigasi `/search?q=`, bukan typeahead. Tidak ada filter dalam hasil.</td></tr>
+      <tr><td>FilterBar (tanpa reload)</td><td><b>8</b></td><td><span class="st st-pass">PASS</span></td><td>media/genre/tahun/negara/platform/sort via router.push.</td></tr>
+      <tr><td>Continue Watching</td><td><b>2</b></td><td><span class="st st-fail">FAIL</span></td><td>History ada tapi tidak dirender sebagai row resume di home.</td></tr>
+      <tr><td>Watchlist</td><td><b>8</b></td><td><span class="st st-pass">PASS</span></td><td>Dual-mode: login SQLite / guest localStorage. Akses dari My List.</td></tr>
+      <tr><td>Recommendation berbasis riwayat</td><td><b>2</b></td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada. Hanya "More Like This" per-detail (TMDB similar). AuthForm promosi "Personalized recommendations" tapi fitur tak ada.</td></tr>
+    </table>
+    <h3>Gap terbesar (Netflix-tier)</h3>
+    <ul class="tight">
+      <li><b>Hover preview card</b> — paling ketinggalan (MovieCard hanya scale + ring).</li>
+      <li><b>Continue Watching row</b> — semua infra ada (history berisi season/episode), tinggal render card resume.</li>
+      <li><b>Live search + filter dalam hasil</b>.</li>
+      <li><b>Scroll snap</b> satu CSS line di Carousel.</li>
+    </ul>
+  </section>
+
+  <section id="detail">
+    <h2><span class="secnum">4</span><br>Detail Page Audit</h2>
+    <table>
+      <tr><th>Elemen</th><th>Status</th><th>Bukti</th></tr>
+      <tr><td>Thumbnail + status badge + meta</td><td><span class="st st-pass">PASS</span></td><td>Hero inline lengkap: logo, genre, rating, tahun, durasi/seasons.</td></tr>
+      <tr><td>Play + Add to Watchlist tanpa scroll</td><td><span class="st st-pass">PASS</span></td><td>DetailActions langsung di hero (<code>DetailActions.tsx:108-135</code>).</td></tr>
+      <tr><td>Sinopsis + tagline + cast</td><td><span class="st st-pass">PASS</span></td><td>Sycnopsis + creator + cast row horizontal.</td></tr>
+      <tr><td>Trailer autoplay on hover</td><td><span class="st st-fail">FAIL</span></td><td>Hanya hero carousel punya trailer, detail page tidak.</td></tr>
+      <tr><td>Episode list per season</td><td><span class="st st-pass">PASS</span></td><td>Dropdown season + kartu episode + ring current.</td></tr>
+      <tr><td>Episode progress indicator</td><td><span class="st st-fail">FAIL</span></td><td>History simpan season/episode tapi tidak dirender sebagai progress.</td></tr>
+      <tr><td>"More Like This"</td><td><span class="st st-pass">PASS</span></td><td>Merge recommendations + similar TMDB, 14 judul.</td></tr>
+    </table>
+  </section>
+
+  <section id="auth">
+    <h2><span class="secnum">5</span><br>Auth &amp; Session Report</h2>
+    <table>
+      <tr><th>Flow</th><th>Status</th><th>Catatan</th></tr>
+      <tr><td>Login/register minimal</td><td><span class="st st-partial">PARTIAL</span></td><td>Email + password + username. Tanpa social login, tanpa verifikasi email. Password bcrypt (cost 10) ✅.</td></tr>
+      <tr><td>Session persistence</td><td><span class="st st-fail">FAIL</span></td><td><code>sessionStorage</code> → hilang saat tab/browser ditutup. Tidak ada "remember me".</td></tr>
+      <tr><td>Multi-profile</td><td><span class="st st-fail">FAIL</span></td><td>Tidak ada; satu akun = satu profil.</td></tr>
+      <tr><td>Token refresh silent</td><td><span class="st st-fail">FAIL</span></td><td>JWT 30 hari tanpa refresh/rotasi. Expiry = semua request 401; hanya /me yang bersihkan token saat reload.</td></tr>
+      <tr><td>Logout invalidasi</td><td><span class="st st-fail">FAIL</span></td><td>Client-only (hapus sessionStorage); token tetap valid server-side 30 hari. Tidak ada sesi server/blacklist.</td></tr>
+    </table>
+  </section>
+
+  <section id="browser">
+    <h2><span class="secnum">6</span><br>Browser Compatibility Matrix</h2>
+    <div class="callout"><b>Poin kunci:</b> karena video = iframe pihak ke-3 (bukan <code>&lt;video&gt;</code>/DRM sendiri), compat codec &amp; DRM <b>bukan tanggung jawab kode Anda</b> — semuanya di-handle oleh vidlink.pro &amp; YouTube embed di browser.</div>
+    <table>
+      <tr><th>Browser</th><th>Codec</th><th>DRM</th><th>Status (produk Anda)</th><th>Catatan</th></tr>
+      <tr><td>Chrome</td><td>H.264/VP9/AV1</td><td>Widevine</td><td><span class="st st-pass">PASS</span></td><td>Kirim via embed pihak ke-3; tak ada error codec dari kode Anda.</td></tr>
+      <tr><td>Edge</td><td>H.264/VP9/AV1</td><td>Widevine + PlayReady</td><td><span class="st st-pass">PASS</span></td><td>iframe Path kemungkinan support; tak teruji di kode.</td></tr>
+      <tr><td>Firefox</td><td>H.264/VP9/AV1</td><td>Widevine terbatas</td><td><span class="st st-pass">PASS</span></td><td>Tak ada fallback codec di kode Anda; serah embed.</td></tr>
+      <tr><td>Opera</td><td>Chromium</td><td>Widevine</td><td><span class="st st-pass">PASS</span></td><td>Sama dgn Chrome.</td></tr>
+    </table>
+    <p>Verdict: <b>tidak ada browser-specific player bug</b> karena level player di-delegasikan. Namun ketiadaan elemen <code>&lt;video&gt;</code> berarti <b>Anda tidak punya kontrol apa pun</b> atas codec/DRM/license — jika embed gagal di browser tertentu, tidak ada fallback dari sisi Anda.</p>
+  </section>
+
+  <section id="rendering">
+    <h2><span class="secnum">7</span><br>Windows Rendering Report</h2>
+    <table>
+      <tr><th>Item</th><th>Status</th><th>Detail / Fix</th></tr>
+      <tr><td>DPI scaling 100-200%</td><td><span class="st st-partial">PARTIAL</span></td><td>Semua container <code>max-w</code> fluid — responsif. Card <code>w-[185px]</code> fix konsisten (ala Netflix). <b>Fix:</b> hero <code>min-h-[560px]</code> terlalu tinggi di 1366x768 → <code>clamp(420px,60vh,600px)</code>.</td></tr>
+      <tr><td>Resolusi 1366/1080/1440</td><td><span class="st st-partial">PARTIAL</span></td><td>Layout proporsional (px-[4%]). Hero 86vh mendominasi di 1366x768 → konten di bawah fold.</td></tr>
+      <tr><td>Fullscreen</td><td><span class="st st-partial">PARTIAL</span></td><td>requestFullscreen di parent div; <b>fix:</b> panggil di iframe element juga biar konten fullscreen benar.</td></tr>
+      <tr><td>Scrollbar horizontal</td><td><span class="st st-pass">PASS</span></td><td><code>.no-scrollbar</code> + <code>scrollbar-width:thin</code>; body <code>overflow-x:hidden</code>.</td></tr>
+      <tr><td>Hardware acceleration</td><td><span class="st st-partial">PARTIAL</span></td><td>Hover pakai transform (GPU-friendly). <b>Fix:</b> tambah <code>will-change-transform</code>/overlay video; video iframe tidak di-pin dengan translateZ.</td></tr>
+    </table>
+  </section>
+
+  <section id="heuristik">
+    <h2><span class="secnum">8</span><br>UX Heuristic Scorecard</h2>
+    <div class="score"><span class="score-val">6.0</span><span class="score-note">/10 — di bawah benchmark tier-1 (8+)</span></div>
+    <table>
+      <tr><th>Heuristic</th><th>Skor</th><th>Bukti</th></tr>
+      <tr><td>Visibility of status</td><td><b>7</b></td><td>Loading state di episode/search/InfiniteGrid. <b>Gagal:</b> tidak ada buffering/error state untuk iframe player.</td></tr>
+      <tr><td>User control &amp; freedom</td><td><b>6</b></td><td>Play/stop/fullscreen/prev-next ada. <b>Gagal:</b> tidak ada pause/rewind/seek/skip-intro — serah embed.</td></tr>
+      <tr><td>Consistency</td><td><b>7</b></td><td>Player UI konsisten; carousel arrows beda perilaku dgn Top10.</td></tr>
+      <tr><td>Error prevention</td><td><b>3</b></td><td><b>Tidak ada</b> konfirmasi sebelum keluar video berjalan; stop() langsung reset.</td></tr>
+      <tr><td>Error recovery</td><td><b>4</b></td><td>Error login ditampilkan; fetch gagal diam (catch → []), tanpa tombol retry.</td></tr>
+      <tr><td>Minimalist / auto-hide</td><td><b>7</b></td><td>Auto-hide 2.6s + onMouseLeave di player; mute hero selalu visible.</td></tr>
+      <tr><td>Efficiency (3 klik ke konten favorit)</td><td><b>6</b></td><td>Faktual 4-5 klik (home→card→detail→scroll→episode→play). Netflix 2-3.</td></tr>
+      <tr><td>Aesthetic &amp; minimalist</td><td><b>8</b></td><td>Dark theme bersih, spacing konsisten. HeroCarousel banyak iframe serentak = potensi perf.</td></tr>
+    </table>
+  </section>
+
+  <section id="security">
+    <h2><span class="secnum">9</span><br>Security Findings</h2>
+    <div class="row-sev"><span class="sev sev-critical">CRITICAL</span><span class="sev sev-critical">CRITICAL</span><span class="sev sev-high">HIGH ×4</span><span class="sev sev-medium">MEDIUM ×5</span></div>
+
+    <h3>CRITICAL</h3>
+    <table>
+      <tr><th>Nama Celah</th><th>Lokasi</th><th>Dampak</th><th>Mitigasi</th></tr>
+      <tr>
+        <td><b>JWT secret hardcoded publik → account takeover</b></td>
+        <td><code>auth.go:16-20</code></td>
+        <td>Default <code>"summer-tide-dev-secret-ganti-di-produksi"</code> dibundel di source; <b>JWT_SECRET tidak ada di .env</b> (cek backend/.env hanya TMDB/TRAKT). Attacker sign token <code>sub:&lt;uid&gt;</code> → impersonate user mana pun, baca/tulis watchlist+history, ganti email.</td>
+        <td>Hapus fallback, <code>log.Fatal</code> bila env kosong, secret 256-bit acak, tambahkan ke .env.example.</td>
+      </tr>
+      <tr>
+        <td><b>Konten premium tanpa proteksi — tanpa auth, tanpa signed URL</b></td>
+        <td><code>main.go:223-228</code>, <code>helpers.ts:89-94</code></td>
+        <td><code>/api/stream</code> publik return URL statis tanpa expire; playback sebenarnya iframe <code>https://vidlink.pro/...</code> tanpa token — siapapun bisa sedot konten apa pun. Gate-nya cuma frontend RouteGuard (kosmetik).</td>
+        <td>Stream hanya untuk sesi terotentikasi via signed URL (HMAC + expiry + nonce), validasi server-side di route, jangan bocorkan CDN URL ke client.</td>
+      </tr>
+    </table>
+
+    <h3>HIGH</h3>
+    <table>
+      <tr><th>Nama Celah</th><th>Lokasi</th><th>Dampak</th><th>Mitigasi</th></tr>
+      <tr><td>Tanpa rate limiting — brute force + enumeration + scraping</td><td><code>main.go:301</code></td><td><code>/api/auth/*</code> &amp; semua endpoint katalog tidak di-throttle. <code>/api/auth/check-email</code> = oracle keberadaan email (&amp; account enumeration).</td><td>Middleware rate-limit per IP + per akun; response email-agnostic.</td></tr>
+      <tr><td>TMDB API key hardcoded di source</td><td><code>main.go:25</code></td><td>Key <code>cff0f315...</code> sebagai default di repo; dipakai melawan kuota/billing Anda.</td><td>Hapus fallback, fail-closed, rotate key, simpan di .env (sudah di-gitignore).</td></tr>
+      <tr><td>Token di sessionStorage (XSS-stealable)</td><td><code>AuthProvider.tsx:69,88</code></td><td>Token JWT bisa dibaca XSS/devtools/ekstensi jahat; kombinasi dgn secret publik = serangan instant takeover.</td><td>httpOnly + Secure + SameSite=Strict cookie untuk token sensitif.</td></tr>
+      <tr><td>Logout tidak revoke; token hidup 30 hari</td><td><code>auth.go:41</code>, <code>AuthProvider.tsx:128-132</code></td><td>Token stateless tanpa jti/deny-list; "Log Out" hanya client-side — token bocor tetap jadi master key 30 hari.</td><td>Short-lived token + refresh rotation, atau server-side session store.</td></tr>
+    </table>
+
+    <h3>MEDIUM</h3>
+    <table>
+      <tr><th>Nama Celah</th><th>Lokasi</th><th>Dampak</th><th>Mitigasi</th></tr>
+      <tr><td>Ganti email tanpa reauth</td><td><code>auth.go:208-216</code></td><td>Token curian bisa ubah email korban → lockout.</td><td>Wajib password saat ubah email (spt handleChangePassword).</td></tr>
+      <tr><td>Ganti password tak invalidasi sesi lama</td><td><code>auth.go:270</code></td><td>JWT lama tetap valid 30 hari setelah reset.</td><td>Token version claim yang dicek tiap request.</td></tr>
+      <tr><td>Nol security headers</td><td>seluruh backend + next.config</td><td>Tanpa CSP / X-Frame-Options / HSTS / X-Content-Type-Options → clickjacking, MIME-sniffing.</td><td>Set headers di enableCORS + next.config.</td></tr>
+      <tr><td>Upload avatar base64 tanpa decode → bloat DB</td><td><code>auth.go:160-171</code></td><td>Hanya cek prefix + panjang; garbage 6-8MB disimpan ke SQLite (1 max-conn contention).</td><td>Decode+re-encode server-side, simpan ke disk/object store, batasi per-user.</td></tr>
+      <tr><td>CORS fallback ke localhost untuk origin mana pun</td><td><code>main.go:322-324</code></td><td>Origin asing tetap dapat ACAO:localhost:3000; browser blokir tapi signal cargo-culted, tanpa Vary: Origin.</td><td>Echo hanya allowlist; tambah Vary: Origin.</td></tr>
+    </table>
+
+    <h3>LOW / INFO</h3>
+    <ul class="tight">
+      <li>[LOW] Validasi register lemah — tanpa format email, username bebas, password min 6 (<code>auth.go:62</code>).</li>
+      <li>[LOW] <code>json.NewDecoder</code> tanpa <code>MaxBytesReader</code> → DoS memori (<code>auth.go:47-49</code>).</li>
+      <li>[LOW] <code>ParseInt</code> error di-ignore di delete → no-op diam-diam (<code>userdata.go:65</code>).</li>
+      <li>[INFO] bcrypt cost 10 — memadai untuk 2026; pertimbangkan 12.</li>
+    </ul>
+    <div class="callout"><b>Positif (terverifikasi, bukan issue):</b> nol SQL injection (semua query parameterized, <code>userdata.go:22-124</code>, <code>auth.go:74-270</code>); nol IDOR (semua scope oleh uid dari token, <code>auth.go:328</code>); nol CSRF (Bearer header, CORS tanpa credential); TMDB key tetap di server; React escapes semua string user; <code>name_font</code> di-whitelist <code>profileFonts.ts:38</code>; nol stored XSS.</div>
+  </section>
+
+  <section id="a11y">
+    <h2><span class="secnum">10</span><br>Accessibility Violations</h2>
+    <div class="score"><span class="score-val">~55%</span><span class="score-note">WCAG pass</span></div>
+    <table>
+      <tr><th>[Kriteria] Masalah</th><th>Lokasi</th><th>Fix</th></tr>
+      <tr><td>[2.1.1/2.4.3] QuickViewModal tanpa focus trap, aria-modal, tanpa Escape</td><td><code>QuickViewModal.tsx:27-79</code></td><td>Focus trap + <code>role="dialog"</code> + <code>aria-modal</code> + keydown Escape.</td></tr>
+      <tr><td>[1.4.1] Dropdown nawigasi keyboard-only tidak bisa dibuka (hanya onMouseEnter)</td><td><code>Navbar.tsx:133-168</code></td><td>Tambah onFocus/onBlur + aria-expanded + aria-haspopup.</td></tr>
+      <tr><td>[1.4.1] Top10 card <code>role="button"</code> tanpa onKeyDown → Enter/Space tak jalan</td><td><code>Top10Row.tsx:99-103</code></td><td>Tambah onKeyDown, atau ganti jadi <code>&lt;button&gt;</code>.</td></tr>
+      <tr><td>[1.2.2] Subtitle sengaja dimatikan tanpa kontrol (<code>cc_load_policy=0</code>)</td><td><code>HeroCarousel.tsx:142,159-160</code></td><td>Tombol CC toggle yang load captions.</td></tr>
+      <tr><td>[3.1.1] <code>html lang="en"</code> padahal konten Indonesia</td><td><code>layout.tsx:43</code></td><td>Set <code>lang="id"</code>.</td></tr>
+      <tr><td>[1.4.3] Contrast: <code>white/40</code> body text di atas video (fail &lt;3:1)</td><td><code>[media][id]/page.tsx:152</code>, <code>CastRow.tsx:23</code></td><td>Naikkan ke <code>white/70</code>+ untuk teks body.</td></tr>
+      <tr><td>[2.4.7] Banyak <code>outline-none</code> → ring 1px accent contrast lemah</td><td><code>MovieCard.tsx:14</code>, <code>AuthForm.tsx:40</code>, dll</td><td>Pakai <code>focus-visible</code> outline, atau <code>ring-2 ring-offset-2</code>.</td></tr>
+      <tr><td>[1.3.1] Input settings tanpa <code>htmlFor</code>/<code>id</code></td><td><code>settings/page.tsx:217-268</code></td><td>Associate label.</td></tr>
+      <tr><td>[1.1.1] Player iframe tanpa <code>title</code> → screen reader baca URL</td><td><code>InlineHeroVideo.tsx:77-82</code></td><td>Tambah <code>title</code> deskriptif.</td></tr>
+      <tr><td>[1.3.1] Detail page tak ada h1 saat logo dipakai (judul = img)</td><td><code>[media][id]/page.tsx:91-102</code></td><td>Judul <code>sr-only</code> h1.</td></tr>
+    </table>
+  </section>
+
+  <section id="roadmap">
+    <h2><span class="secnum">11</span><br>Prioritized Fix Roadmap</h2>
+    <div class="grid2">
+      <div class="card">
+        <h4>P0 — Fix sekarang (keamanan)</h4>
+        <ul class="tight">
+          <li>Hapus JWT secret default + fail-closed di .env (account takeover).</li>
+          <li>Proteksi stream: auth + signed expiring URL.</li>
+          <li>Hapus TMDB key hardcoded.</li>
+          <li>Rate limit auth + check-email agnostic.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>P1 — Minggu ini (fondasi player)</h4>
+        <ul class="tight">
+          <li>Putuskan arah player: pertahankan iframe vidlink ATAU bangun <code>&lt;video&gt;</code>+HLS.js sendiri (ini keputusan produk).</li>
+          <li>Token ke httpOnly cookie.</li>
+          <li>Continue Watching row (infra sudah ada).</li>
+          <li>Resume position di history.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>P2 — Nice to have</h4>
+        <ul class="tight">
+          <li>Hover preview card ala Netflix.</li>
+          <li>Live search + filter dalam hasil.</li>
+          <li>Scroll snap + keyboard shortcuts player.</li>
+          <li>Security headers, focus trap modal, a11y pass ~90%.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="kode">
+    <h2><span class="secnum">12</span><br>Kode Perbaikan</h2>
+    <p>Perbaikan siap pakai untuk masalah paling berdampak.</p>
+
+    <h3>1. JWT secret — fail-closed (P0)</h3>
+    <pre class="code">// auth.go — hapus fallback publik
+<span class="cmt">// sebelum: fallback hardcoded "summer-tide-dev-secret-ganti-di-produksi"</span>
+<span class="cmt">// sesudah: wajib env, mati bila kosong → attacker tak bisa sign token tanpa secret</span>
+func jwtSecret() []byte {
+    s := os.Getenv("JWT_SECRET")
+    if len(s) &lt; 32 {
+        log.Fatal("[auth] JWT_SECRET wajib di-set (min 32 char, acak) — matikan agar tak jalan dgn secret default")
+    }
+    return []byte(s)
+}</pre>
+    <p class="meta">Juga: hapus <code>getenv("TMDB_API_KEY", ...)</code> fallback di main.go:25 → <code>log.Fatal</code> bila kosong + rotate key.</p>
+
+    <h3>2. Token ke httpOnly cookie (P1)</h3>
+    <pre class="code">// auth.go — saat login/register sukses, set cookie httpOnly alih-alih return token ke JS
+func setAuthCookie(w http.ResponseWriter, token string) {
+    http.SetCookie(w, &amp;http.Cookie{
+        Name:     "waveflix_session",
+        Value:    token,
+        Path:     "/",
+        HttpOnly: true,
+        Secure:   true,          <span class="cmt">// produksi HTTPS</span>
+        SameSite: http.SameSiteStrictMode, <span class="cmt">// cegah CSRF</span>
+        MaxAge:   60 * 60 * 24 * 7,
+    })
+}
+<span class="cmt">// frontend: hapus sessionStorage persist (AuthProvider.tsx:87-91,128-132);
+// cukup baca /api/auth/me yang baca cookie. Request lain otomatis kirim cookie.</span></pre>
+
+    <h3>3. Signed expiring stream URL (P0) — kerangka di endpoint /api/stream</h3>
+    <pre class="code"><span class="cmt">// main.go — ganti handlerStream mock dgn HMAC-signed URL yang expire.
+// (Pilih salah satu: integrasikan dgn sumber stream sungguhan, atau tutup endpoint mock.)</span>
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/hex"
+    "fmt"
+    "time"
+)
+
+func signMediaURL(media string, id int, uid int64, ttl time.Duration) string {
+    exp := time.Now().Add(ttl).Unix()
+    msg := fmt.Sprintf("%s/%d/%d/%d", media, id, uid, exp)
+    mac := hmac.New(sha256.New, jwtSecret())
+    mac.Write([]byte(msg))
+    return fmt.Sprintf("https://cdn.internal/%d/%s/%d?exp=%d&sig=%s",
+        id, media, uid, exp, hex.EncodeToString(mac.Sum(nil)))
+}
+<span class="cmt">// route dgn requireAuth; client hanya lihat URL bertanda, tak bisa generate sendiri.
+// Validasi server-side: exp belum lewat + HMAC cocok (ctg. media,id,uid,exp).</span></pre>
+
+    <h3>4. Rate limit middleware — reusable (P0)</h3>
+    <pre class="code"><span class="cmt">// middleware.go — per-IP sliding window sederhana tanpa dependensi</span>
+func rateLimit(perMin int) func(http.Handler) http.Handler {
+    var mu sync.Mutex
+    hits := map[string][]time.Time{}
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+            mu.Lock()
+            now := time.Now()
+            cut := now.Add(-time.Minute)
+            hits[ip] = append(hits[ip], now)   <span class="cmt">// filter &gt; 1 menit</span>
+            keep := hits[ip][:0]
+            for _, t := range hits[ip] { if t.After(cut) { keep = append(keep, t) } }
+            hits[ip] = keep
+            mu.Unlock()
+            if len(keep) &gt; perMin {
+                w.Header().Set("Retry-After", "60")
+                http.Error(w, "terlalu banyak request", http.StatusTooManyRequests)
+                return
+            }
+            next.ServeHTTP(w, r)
+        })
+    }
+}
+<span class="cmt">// main.go: mux.Handle("POST /api/auth/login", rateLimit(10)(muxLogin))</span></pre>
+
+    <h3>5. Confirm-before-leave + resume position (P1 — UX error prevention)</h3>
+    <pre class="code"><span class="cmt">// UIProvider.tsx — simpan posisi &amp; tanyakan sebelum keluar</span>
+"use client";
+import { useEffect, useRef, useState } from "react";
+
+const LEAVE_MSG = "Video masih diputar. Yakin mau keluar?";
+
+export function usePlayerGuard(active: boolean) {
+  const armed = useRef(false);
+
+  useEffect(() => {
+    if (!active) return;
+    <span class="cmt">// tanya sebelum tab ditutup / pindah halaman internal</span>
+    const onBefore = (e: BeforeUnloadEvent) =&gt; {
+      if (armed.current) { e.preventDefault(); e.returnValue = LEAVE_MSG; }
+    };
+    window.addEventListener("beforeunload", onBefore);
+    return () =&gt; window.removeEventListener("beforeunload", onBefore);
+  }, [active]);
+
+  const arm = () =&gt; { armed.current = true; };
+  const disarm = () =&gt; { armed.current = false; };
+  return { arm, disarm };
+}
+<span class="cmt">// di InlineHeroVideo: arm() saat play aktif, disarm() saat stop().</span></pre>
+
+    <h3>6. Continue Watching row — render history yang sudah tersimpan (P1)</h3>
+    <pre class="code"><span class="cmt">// app/home/page.tsx — ambil history klien (sudah ada /api/history) &amp; render sebagai row.
+"use client";
+const { user, authFetch } = useAuth();
+useEffect(() =&gt; {
+  if (!user) return;
+  fetch(authFetch, "/api/history")  <span class="cmt">// GET hasil unik per judul, ada</span>
+    .then((res) =&gt; res.json())
+    .then((d) =&gt; setContinueWatching(d.results ?? []));
+}, [user]);
+<span class="cmt">// render: row "Lanjutkan Nonton" pakai MovieCard + indikator episode terakhir.
+// Backend tinggal tambah kolom `position_sec` di table history (userdata.go POST).</span></pre>
+  </section>
+
+</div>
+
+<footer>
+  <div class="container">
+    Audit statis + penelusuran execution · Waveflix, Summer Tide platform · 2026-08-18 · Skor UX 6.0/10, discovery 8/10, a11y ~55% · 2 CRITICAL / 4 HIGH security.
+  </div>
+</footer>
+</body>
+</html>

@@ -22,7 +22,10 @@ var (
 
 func loadConfig() {
 	loadDotEnv(".env")
-	tmdbApiKey = getenv("TMDB_API_KEY", "cff0f315183dd0830f0ef2ef924ae25c")
+	tmdbApiKey = getenv("TMDB_API_KEY", "")
+	if tmdbApiKey == "" {
+		log.Println("[config] WARNING: TMDB_API_KEY kosong. Call ke TMDB akan gagal. Isi di backend/.env")
+	}
 	traktClientID = getenv("TRAKT_CLIENT_ID", "")
 	traktClientSecret = getenv("TRAKT_CLIENT_SECRET", "")
 
@@ -155,7 +158,7 @@ func handleDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	base := tmdbBaseUrl + "/" + media + "/" + id
-	data, err := fetchJSON(base + "?language=en-US&append_to_response=credits,videos,recommendations,similar&api_key=" + tmdbApiKey)
+	data, err := fetchJSON(base + "?language=en-US&append_to_response=credits,videos,recommendations,similar,images&include_image_language=en,null&api_key=" + tmdbApiKey)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, `{"error":"gagal ambil detail"}`)
@@ -280,9 +283,9 @@ func main() {
 	mux.HandleFunc("/api/stream", handleStream)
 
 	// Auth
-	mux.HandleFunc("/api/auth/register", handleRegister)
-	mux.HandleFunc("/api/auth/login", handleLogin)
-	mux.HandleFunc("/api/auth/check-email", handleCheckEmail)
+	mux.HandleFunc("/api/auth/register", rateLimit(3, time.Minute, handleRegister))
+	mux.HandleFunc("/api/auth/login", rateLimit(5, time.Minute, handleLogin))
+	mux.HandleFunc("/api/auth/check-email", rateLimit(5, time.Minute, handleCheckEmail))
 	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
 	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
 	mux.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))
@@ -315,11 +318,14 @@ func enableCORS(next http.Handler) http.Handler {
 		"http://localhost:3000": true,
 		"http://127.0.0.1:3000": true,
 	}
+	if envOrigin := os.Getenv("ALLOWED_ORIGIN"); envOrigin != "" {
+		allowedOrigins[envOrigin] = true
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if allowedOrigins[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
-		} else if origin != "" {
+		} else if origin != "" && len(allowedOrigins) == 2 { // fallback untuk dev lokal jika belum set origin produksi
 			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")

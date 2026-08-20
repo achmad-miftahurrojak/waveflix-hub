@@ -98,8 +98,15 @@ export default function Top10Row({ items }: { items: TmdbItem[] }) {
                   {/* Poster and click handler */}
                   <div 
                     onClick={() => setSelectedItem(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedItem(item);
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
+                    aria-label={`View details: ${itemTitle(item)}`}
                     className="relative w-[130px] md:w-[160px] lg:w-[200px] aspect-[2/3] rounded-md overflow-hidden bg-white/5 shrink-0 shadow-lg cursor-pointer"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

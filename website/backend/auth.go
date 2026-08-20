@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -15,7 +16,10 @@ import (
 func jwtSecret() []byte {
 	s := os.Getenv("JWT_SECRET")
 	if s == "" {
-		s = "summer-tide-dev-secret-ganti-di-produksi"
+		log.Fatal("JWT_SECRET environment variable is required. Isi di backend/.env dengan string acak minimal 32 karakter.")
+	}
+	if len(s) < 32 {
+		log.Fatal("JWT_SECRET harus berukuran minimal 32 karakter.")
 	}
 	return []byte(s)
 }

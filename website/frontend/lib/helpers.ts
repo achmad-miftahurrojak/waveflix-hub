@@ -86,13 +86,6 @@ export function statusLabel(d: TmdbDetail): string {
   }
 }
 
-export function embedUrl(m: TmdbItem, season?: number, episode?: number): string {
-  if (isTv(m)) {
-    return `https://vidlink.pro/tv/${m.id}/${season ?? 1}/${episode ?? 1}`;
-  }
-  return `https://vidlink.pro/movie/${m.id}`;
-}
-
 export function detailHref(m: TmdbItem): string {
   return `/${mediaTypeOf(m)}/${m.id}`;
 }
