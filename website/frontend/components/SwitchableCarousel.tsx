@@ -81,23 +81,25 @@ export default function SwitchableCarousel({
             />
           </button>
           {open && (
-            <div className="absolute left-0 top-full z-30 mt-1 w-56 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
-              {groups.map((g, i) => (
-                <button
-                  key={g.label}
-                  onClick={() => {
-                    setActive(i);
-                    setOpen(false);
-                  }}
-                  className={`block w-full rounded-md px-3 py-2 text-left text-sm transition ${
-                    i === active
-                      ? "bg-white/10 text-accent"
-                      : "text-white/75 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
+            <div className="absolute left-0 top-full z-30 pt-4">
+              <div className="w-56 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+                {groups.map((g, i) => (
+                  <button
+                    key={g.label}
+                    onClick={() => {
+                      setActive(i);
+                      setOpen(false);
+                    }}
+                    className={`block w-full rounded-md px-3 py-2 text-left text-sm transition ${
+                      i === active
+                        ? "bg-white/10 text-accent"
+                        : "text-white/75 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

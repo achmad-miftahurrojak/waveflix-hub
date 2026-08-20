@@ -13,6 +13,7 @@ interface Props {
   backdrop: string;
   heightClass: string;
   children: ReactNode;
+  trailer?: string | null;
 }
 
 export default function InlineHeroVideo({
@@ -22,12 +23,74 @@ export default function InlineHeroVideo({
   backdrop,
   heightClass,
   children,
+  trailer,
 }: Props) {
   const { player, stop } = useUI();
+  const active =
+    !!player &&
+    player.item.id === id &&
+    player.season === season &&
+    player.episode === episode;
+
   const wrapRef = useRef<HTMLDivElement>(null);
   const [isFs, setIsFs] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerPlaying, setTrailerPlaying] = useState(false);
+  const trailerIframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (active || !trailer) {
+      setShowTrailer(false);
+      setTrailerPlaying(false);
+      return;
+    }
+    const t = setTimeout(() => {
+      setShowTrailer(true);
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [active, trailer]);
+
+  useEffect(() => {
+    if (!showTrailer || !trailer) return;
+    let player: any;
+    const attachAPI = () => {
+      if (!trailerIframeRef.current || !(window as any).YT) return;
+      player = new (window as any).YT.Player(trailerIframeRef.current, {
+        events: {
+          onStateChange: (e: any) => {
+            if (e.data === 1) setTrailerPlaying(true);
+          },
+          onError: () => {
+            setShowTrailer(false);
+            setTrailerPlaying(false);
+          }
+        }
+      });
+    };
+
+    if (!(window as any).YT) {
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName("script")[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      }
+      const oldFn = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => {
+        if (oldFn) oldFn();
+        attachAPI();
+      };
+    } else {
+      attachAPI();
+    }
+    return () => {
+      if (player && typeof player.destroy === "function") {
+        player.destroy();
+      }
+    };
+  }, [showTrailer, trailer]);
 
   // Auto-failover states
   const [serverIdx, setServerIdx] = useState(0);
@@ -50,11 +113,7 @@ export default function InlineHeroVideo({
     hideTimer.current = setTimeout(() => setControlsVisible(false), 2600);
   }, []);
 
-  const active =
-    !!player &&
-    player.item.id === id &&
-    player.season === season &&
-    player.episode === episode;
+
 
   // Tentukan apakah ini Variety Show terverifikasi (via Whitelist atau Dinamis)
   const slug = active ? getAsianShowSlug(player!.item) : null;
@@ -237,16 +296,34 @@ export default function InlineHeroVideo({
 
   return (
     <div
-      className={`relative flex items-end ${heightClass}`}
-      style={{
-        backgroundImage: `url('${backdrop}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-      }}
+      className={`relative flex items-end overflow-hidden ${heightClass}`}
     >
-      <div className="pointer-events-none absolute inset-0 bg-black/45" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent" />
-      {children}
+      <div
+        className={`absolute inset-0 transition-opacity duration-1000 ${
+          trailerPlaying ? "opacity-0" : "opacity-100"
+        }`}
+        style={{
+          backgroundImage: `url('${backdrop}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+      />
+      {!active && trailer && showTrailer && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <iframe
+            ref={trailerIframeRef}
+            src={`https://www.youtube.com/embed/${trailer}?enablejsapi=1&autoplay=1&mute=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&cc_load_policy=0&vq=hd1080`}
+            title="Trailer"
+            allow="autoplay; encrypted-media"
+            className="absolute top-1/2 left-1/2 h-[56.25vw] w-[177.77vh] min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover pointer-events-none scale-125"
+          />
+        </div>
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-black/45 z-[1]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent z-[1]" />
+      <div className="relative z-10 w-full">
+        {children}
+      </div>
     </div>
   );
 }

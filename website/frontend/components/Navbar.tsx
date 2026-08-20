@@ -87,14 +87,14 @@ export default function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-[1000] transition-all duration-300 ${
-        scrolled ? "px-[3%] pt-3" : ""
+        scrolled ? "px-[3%] pt-3" : "px-0 pt-0"
       }`}
     >
       <nav
         className={`flex items-center justify-between gap-4 transition-all duration-300 ${
           scrolled
-            ? "rounded-full bg-[#050507]/95 px-8 py-3 shadow-lg ring-1 ring-white/10 backdrop-blur"
-            : "bg-gradient-to-b from-black/70 via-black/30 to-transparent px-[4%] py-4"
+            ? "rounded-full border border-white/10 bg-black/60 px-8 py-2.5 scale-[0.98] shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-xl"
+            : "border-0 border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent px-[4%] py-4 shadow-none backdrop-blur-none"
         }`}
       >
         <div className="flex items-center gap-8">
@@ -106,22 +106,22 @@ export default function Navbar() {
             Waveflix
           </Link>
           {user && (
-            <ul className="hidden items-center gap-1 lg:flex">
+            <ul className="hidden items-center gap-1.5 lg:flex">
               {NAV.map(({ label, href, icon: Icon }) => (
                 <li key={label}>
                   <Link
                     href={href}
-                    className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
+                    className={`relative flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
                       isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
                     }`}
                   >
-                    <Icon />
+                    <Icon className="w-4 h-4" />
                     <span>{label}</span>
                     {isActive(href) && (
                       <motion.span
                         layoutId="navUnderline"
                         transition={underlineSpring}
-                        className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
+                        className="absolute inset-0 -z-10 rounded-full bg-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10"
                       />
                     )}
                   </Link>
@@ -150,19 +150,21 @@ export default function Navbar() {
                   <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
                 </button>
                 {openMore && (
-                  <div className="absolute left-0 top-full w-56 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
-                    {moreMenu.map(({ label, href, icon: Icon }) => (
-                      <Link
-                        key={label}
-                        href={href}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-                      >
-                        <span className="text-white/60">
-                          <Icon />
-                        </span>
-                        {label}
-                      </Link>
-                    ))}
+                  <div className="absolute left-0 top-full pt-4">
+                    <div className="w-56 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+                      {moreMenu.map(({ label, href, icon: Icon }) => (
+                        <Link
+                          key={label}
+                          href={href}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
+                        >
+                          <span className="text-white/60">
+                            <Icon />
+                          </span>
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </li>
@@ -196,30 +198,32 @@ export default function Navbar() {
                 )}
               </button>
               {openAccount && (
-                <div className="absolute right-0 top-full w-52 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10">
-                  <div className="px-3 py-2">
-                    <div className="truncate text-sm font-semibold">{user.username}</div>
-                    <div className="truncate text-xs text-white/50">{user.email}</div>
+                <div className="absolute right-0 top-full pt-4">
+                  <div className="w-52 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+                    <div className="px-3 py-2">
+                      <div className="truncate text-sm font-semibold">{user.username}</div>
+                      <div className="truncate text-xs text-white/50">{user.email}</div>
+                    </div>
+                    <div className="my-1 h-px bg-white/10" />
+                    <Link href="/account" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      Account settings
+                    </Link>
+                    <Link href="/daftar-saya" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      My List
+                    </Link>
+                    <Link href="/favorit" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      Favorites
+                    </Link>
+                    <Link href="/riwayat" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      Watch History
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-red-300 hover:bg-white/10"
+                    >
+                      Log Out
+                    </button>
                   </div>
-                  <div className="my-1 h-px bg-white/10" />
-                  <Link href="/account" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                    Account settings
-                  </Link>
-                  <Link href="/daftar-saya" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                    My List
-                  </Link>
-                  <Link href="/favorit" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                    Favorites
-                  </Link>
-                  <Link href="/riwayat" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                    Watch History
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="block w-full rounded-md px-3 py-2 text-left text-sm text-red-300 hover:bg-white/10"
-                  >
-                    Log Out
-                  </button>
                 </div>
               )}
             </div>

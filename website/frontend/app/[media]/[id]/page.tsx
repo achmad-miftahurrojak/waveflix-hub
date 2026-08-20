@@ -77,6 +77,13 @@ export default async function DetailPage({
     .map((m) => ({ ...m, media_type: media }))
     .slice(0, 14);
 
+  const vids = detail.videos?.results ?? [];
+  const yt =
+    vids.find((v) => v.site === "YouTube" && v.type === "Trailer") ??
+    vids.find((v) => v.site === "YouTube" && v.type === "Teaser") ??
+    vids.find((v) => v.site === "YouTube");
+  const trailerKey = yt?.key ?? null;
+
   const Dot = () => <span className="text-white/40">&bull;</span>;
 
   return (
@@ -86,6 +93,7 @@ export default async function DetailPage({
         id={detail.id}
         backdrop={backdropUrl(detail)}
         heightClass="h-screen min-h-[600px]"
+        trailer={trailerKey}
       >
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24">
           {logo ? (
@@ -176,7 +184,7 @@ export default async function DetailPage({
                   src={`https://image.tmdb.org/t/p/w200${s.logo_path}`}
                   alt={s.name}
                   title={s.name}
-                  className="h-7 w-auto object-contain opacity-60 [filter:brightness(0)_invert(1)] md:h-8"
+                  className="h-7 w-auto object-contain opacity-60 transition-all duration-300 hover:scale-110 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] [filter:brightness(0)_invert(1)] md:h-8 cursor-pointer"
                 />
               ))}
             </div>
