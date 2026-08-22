@@ -16,13 +16,31 @@ import {
   isTv,
 } from "./helpers";
 
+import { cookies } from "next/headers";
+
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8080";
 const REVALIDATE = 60 * 15; 
 
 async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promise<T> {
+  let lang = "id";
   try {
-    const res = await fetch(`${BACKEND}${path}`, { next: { revalidate } });
-    if (!res.ok) throw new Error(`Backend ${res.status} @ ${path}`);
+    const cookieStore = await cookies();
+    lang = cookieStore.get("waveflix_lang")?.value || "id";
+  } catch (e) {
+    // cookies() might throw if called outside of request context (e.g. static generation)
+  }
+  const sep = path.includes("?") ? "&" : "?";
+  const p = `${path}${sep}lang=${lang}`;
+
+  try {
+    const res = await fetch(`${BACKEND}${p}`, { next: { revalidate } });
+    if (!res.ok) {
+      // 403 = konten sengaja diblokir (blacklist/adult), 404 = tidak ditemukan — tidak perlu dilog
+      if (res.status !== 403 && res.status !== 404) {
+        console.error(`[tmdb] gagal (${res.status}):`, path);
+      }
+      return fallback;
+    }
     return (await res.json()) as T;
   } catch (e) {
     console.error("[tmdb] gagal:", path, e);
@@ -30,9 +48,9 @@ async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promi
   }
 }
 
-const withPoster = (items: TmdbItem[] = []) => items.filter((m) => m.poster_path);
+const withPoster = (items: TmdbItem[] = []) => (items || []).filter((m) => m.poster_path);
 const tag = (items: TmdbItem[], media: MediaType) =>
-  items.map((m) => ({ ...m, media_type: media }));
+  (items || []).map((m) => ({ ...m, media_type: media }));
 
 /**
  * Trending di Indonesia: yang banyak ditonton penonton Indonesia. Menganyam
@@ -40,22 +58,22 @@ const tag = (items: TmdbItem[], media: MediaType) =>
  * dengan judul populer global, jadi berbeda dari "Trending Now" yang murni global.
  */
 export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
-  const krSince = `${new Date().getFullYear() - 3}-01-01`;
+  const today = new Date().toISOString().slice(0, 10);
   const [movies, tv, krTv, krMovie] = await Promise.all([
     api<TmdbListResponse>(
-      `/api/discover?media=movie&sort_by=popularity.desc&min_votes=150`,
+      `/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=tv&sort_by=popularity.desc&min_votes=150`,
+      `/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=tv&country=KR&sort_by=popularity.desc&min_votes=30&released_after=${krSince}`,
+      `/api/discover?media=tv&country=KR&sort_by=first_air_date.desc&released_before=${today}&without_genres=10764,10767,10763&provider=${MAJOR_PROVIDERS}`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=movie&country=KR&sort_by=popularity.desc&min_votes=30&released_after=${krSince}`,
+      `/api/discover?media=movie&country=KR&sort_by=primary_release_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
       { page: 1, results: [] }
     ),
   ]);
@@ -66,10 +84,13 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
     ...tag(withPoster(movies.results), "movie"),
     ...tag(withPoster(tv.results), "tv"),
   ]);
-  const krPool = byPop([
+
+  const parseDate = (m: TmdbItem) =>
+    new Date(m.first_air_date || m.release_date || "1970-01-01").getTime();
+  const krPool = [
     ...tag(withPoster(krTv.results), "tv"),
     ...tag(withPoster(krMovie.results), "movie"),
-  ]);
+  ].sort((a, b) => parseDate(b) - parseDate(a));
 
   // Anyam: 1 Korea, 1 global, dst. supaya K-drama tampil menonjol + tetap ada hit global.
   const out: TmdbItem[] = [];
@@ -90,16 +111,15 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
   return out.slice(0, 20);
 }
 
-/** Trending global (worldwide) dari endpoint /trending TMDB. */
+/** Trending global (worldwide) diganti dengan discover popularity yang memiliki stream legal */
 export async function getTrendingGlobal(): Promise<TmdbItem[]> {
   const [p1, p2] = await Promise.all([
-    api<TmdbListResponse>(`/api/trending?media=all&page=1`, { page: 1, results: [] }),
-    api<TmdbListResponse>(`/api/trending?media=all&page=2`, { page: 1, results: [] }),
+    api<TmdbListResponse>(`/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`, { page: 1, results: [] }),
+    api<TmdbListResponse>(`/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`, { page: 1, results: [] }),
   ]);
-  const items = [...(p1.results ?? []), ...(p2.results ?? [])].filter(
-    (m) => m.media_type === "movie" || m.media_type === "tv"
-  );
-  return withPoster(items).slice(0, 20);
+  const items = [...tag(p1.results ?? [], "movie"), ...tag(p2.results ?? [], "tv")];
+  const merged = items.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+  return withPoster(merged).slice(0, 20);
 }
 
 export async function discoverByProvider(
@@ -113,8 +133,9 @@ export async function discoverByProvider(
   return tag(withPoster(data.results), media);
 }
 
-// Platform legal besar di Indonesia (Netflix, Disney+, Prime, Apple, HBO, Viu, Vidio).
-export const MAJOR_PROVIDERS = "8|122|119|350|1899|158|489";
+// Platform legal besar: Netflix (8), Disney+ (337), Prime (119), Apple TV+ (350), HBO/Max (384/190).
+// + Asian/Global Drama platforms: Viu(158), Vidio(489), WeTV(623), Rakuten Viki(344), wavve(356), iQIYI(198, 199)
+export const MAJOR_PROVIDERS = "8|119|337|350|384|190|158|489|623|344|356|198|199";
 
 /** Rilisan terbaru (film/series) di platform besar — untuk "Latest Movies/Series". */
 export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
@@ -122,7 +143,7 @@ export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
   const data = await api<TmdbListResponse>(
     `/api/discover?media=${media}&sort_by=${
       media === "tv" ? "first_air_date.desc" : "primary_release_date.desc"
-    }&released_before=${today}&provider=${MAJOR_PROVIDERS}&min_votes=1`,
+    }&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
     { page: 1, results: [] }
   );
   return tag(withPoster(data.results), media).slice(0, 18);
@@ -141,7 +162,7 @@ export interface LatestEpisode {
 export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
   const today = new Date().toISOString().slice(0, 10);
   const list = await api<TmdbListResponse>(
-    `/api/discover?media=tv&sort_by=first_air_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}&min_votes=1`,
+    `/api/discover?media=tv&sort_by=first_air_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
     { page: 1, results: [] }
   );
   const shows = withPoster(list.results).slice(0, count);
@@ -175,7 +196,7 @@ export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const sort = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
   const data = await api<TmdbListResponse>(
-    `/api/discover?media=${media}&sort_by=${sort}&released_before=${today}`,
+    `/api/discover?media=${media}&sort_by=${sort}&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
     { page: 1, results: [] }
   );
   return tag(withPoster(data.results), media);
@@ -192,11 +213,11 @@ export async function discover(params: {
   released_after?: string;
   released_before?: string;
   min_votes?: string;
+  without_genres?: string;
   page?: number;
 }): Promise<TmdbListResponse> {
   const qs = new URLSearchParams({
     media: params.media,
-    min_votes: params.min_votes ?? "30",
   });
   if (params.genre) qs.set("genre", params.genre);
   if (params.year) qs.set("year", params.year);
@@ -205,6 +226,7 @@ export async function discover(params: {
   if (params.sort_by) qs.set("sort_by", params.sort_by);
   if (params.released_after) qs.set("released_after", params.released_after);
   if (params.released_before) qs.set("released_before", params.released_before);
+  if (params.without_genres) qs.set("without_genres", params.without_genres);
   if (params.page) qs.set("page", String(params.page));
   const data = await api<TmdbListResponse>(`/api/discover?${qs}`, {
     page: 1,
@@ -259,16 +281,21 @@ export async function getHeroSlides(
   items: TmdbItem[],
   count = 5
 ): Promise<HeroSlide[]> {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get("waveflix_lang")?.value || "id";
   const picks = withPoster(items).filter((m) => m.backdrop_path).slice(0, count);
   return Promise.all(
     picks.map(async (item) => {
       const media = mediaTypeOf(item);
       const detail = await getDetail(media, String(item.id));
       const logos = detail?.images?.logos ?? [];
-      const enLogo = logos.find((l) => l.iso_639_1 === "en") ?? logos[0];
-      const logo = enLogo
-        ? `https://image.tmdb.org/t/p/w500${enLogo.file_path}`
-        : await getHeroLogo(item);
+      const localizedLogo =
+        logos.find((l) => l.iso_639_1 === lang) ??
+        logos.find((l) => l.iso_639_1 === 'en') ??
+        logos[0];
+      const logo = localizedLogo
+        ? `https://image.tmdb.org/t/p/w500${localizedLogo.file_path}`
+        : await getHeroLogo(item, lang);
       const ov = detail?.overview || item.overview || "";
       const duration = detail
         ? isTv(detail)
@@ -323,7 +350,17 @@ export async function getSeasonEpisodes(id: string, season: number): Promise<Epi
   return data.episodes ?? [];
 }
 
-export async function getHeroLogo(item: TmdbItem): Promise<string | null> {
+export async function getHeroLogo(item: TmdbItem, lang?: string): Promise<string | null> {
+  let finalLang = lang;
+  if (!finalLang) {
+    try {
+      const cookieStore = await cookies();
+      finalLang = cookieStore.get("waveflix_lang")?.value || "id";
+    } catch {
+      finalLang = "id";
+    }
+  }
+
   const media = mediaTypeOf(item);
   const data = await api<TmdbImagesResponse>(
     `/api/images?media=${media}&id=${item.id}`,
@@ -331,6 +368,15 @@ export async function getHeroLogo(item: TmdbItem): Promise<string | null> {
   );
   const logos = data.logos ?? [];
   if (logos.length === 0) return null;
-  const en = logos.find((l) => l.iso_639_1 === "en") ?? logos[0];
-  return `https://image.tmdb.org/t/p/w500${en.file_path}`;
+  const loc = logos.find((l) => l.iso_639_1 === finalLang) ?? logos.find((l) => l.iso_639_1 === 'en') ?? logos[0];
+  return `https://image.tmdb.org/t/p/w500${loc.file_path}`;
+}
+
+export async function getPerson(id: string): Promise<import('./types').TmdbPerson | null> {
+  const data = await api<import('./types').TmdbPerson | { error: string }>(
+    `/api/person?id=${id}`,
+    { error: "kosong" } as { error: string }
+  );
+  if ("error" in data) return null;
+  return data as import('./types').TmdbPerson;
 }

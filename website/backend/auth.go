@@ -44,6 +44,7 @@ type authResponse struct {
 		Username string `json:"username"`
 		Avatar   string `json:"avatar"`
 		Banner   string `json:"banner"`
+		Language string `json:"language"`
 	} `json:"user"`
 }
 
@@ -96,7 +97,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, _ := res.LastInsertId()
-	writeAuth(w, id, body.Email, body.Username, "", "")
+	writeAuth(w, id, body.Email, body.Username, "", "", "id")
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -112,10 +113,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
 
 	var id int64
-	var username, hash, avatar, banner string
+	var username, hash, avatar, banner, language string
 	err := db.QueryRow(
-		"SELECT id, username, password_hash, COALESCE(avatar,''), COALESCE(banner,'') FROM users WHERE email = ?", body.Email,
-	).Scan(&id, &username, &hash, &avatar, &banner)
+		"SELECT id, username, password_hash, COALESCE(avatar,''), COALESCE(banner,''), COALESCE(language,'id') FROM users WHERE email = ?", body.Email,
+	).Scan(&id, &username, &hash, &avatar, &banner, &language)
 	if err != nil {
 		httpError(w, http.StatusUnauthorized, "email atau password salah")
 		return
@@ -124,7 +125,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusUnauthorized, "email atau password salah")
 		return
 	}
-	writeAuth(w, id, body.Email, username, avatar, banner)
+	writeAuth(w, id, body.Email, username, avatar, banner, language)
 }
 
 func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
@@ -145,19 +146,19 @@ func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
 
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
-	var email, username, avatar, banner, bio, nameFont, joined string
+	var email, username, avatar, banner, bio, nameFont, joined, language string
 	if err := db.QueryRow(
 		`SELECT email, username, COALESCE(avatar,''), COALESCE(banner,''),
-		        COALESCE(bio,''), COALESCE(name_font,''), COALESCE(created_at,'')
+		        COALESCE(bio,''), COALESCE(name_font,''), COALESCE(created_at,''), COALESCE(language,'id')
 		 FROM users WHERE id = ?`, uid).
-		Scan(&email, &username, &avatar, &banner, &bio, &nameFont, &joined); err != nil {
+		Scan(&email, &username, &avatar, &banner, &bio, &nameFont, &joined, &language); err != nil {
 		httpError(w, http.StatusNotFound, "user tidak ditemukan")
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"id": uid, "email": email, "username": username,
 		"avatar": avatar, "banner": banner, "bio": bio,
-		"name_font": nameFont, "joined": joined,
+		"name_font": nameFont, "joined": joined, "language": language,
 	})
 }
 
@@ -241,6 +242,7 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		Email    *string `json:"email"`
 		Bio      *string `json:"bio"`
 		NameFont *string `json:"name_font"`
+		Language *string `json:"language"`
 	}
 	if err := decodeJSON(r, &body); err != nil {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
@@ -274,6 +276,10 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	if body.NameFont != nil {
 		sets = append(sets, "name_font = ?")
 		args = append(args, strings.TrimSpace(*body.NameFont))
+	}
+	if body.Language != nil {
+		sets = append(sets, "language = ?")
+		args = append(args, strings.TrimSpace(*body.Language))
 	}
 	if len(sets) == 0 {
 		handleMe(w, r)
@@ -327,7 +333,7 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner string) {
+func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner, language string) {
 	token, err := signToken(id)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal membuat token")
@@ -340,6 +346,7 @@ func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner 
 	resp.User.Username = username
 	resp.User.Avatar = avatar
 	resp.User.Banner = banner
+	resp.User.Language = language
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

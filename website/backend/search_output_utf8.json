@@ -1,0 +1,32 @@
+﻿{
+    "page":  1,
+    "results":  [
+                    {
+                        "adult":  false,
+                        "backdrop_path":  "/22xRAaDSNIwOqFhFDXWp5IMnQPT.jpg",
+                        "id":  294095,
+                        "name":  "A Bona Fide Killer",
+                        "original_name":  "유부녀 킬러",
+                        "overview":  "A seemingly ordinary working mother secretly lives as a legendary sniper who delivers justice where the law fails. After returning from a three-year hiatus, she must balance protecting her family with eliminating dangerous criminals, all while a determined journalist and a relentless detective close in on her hidden identity.",
+                        "poster_path":  "/e9ziA4Y6md4Ytr62r5y9vRdv4ll.jpg",
+                        "media_type":  "tv",
+                        "original_language":  "ko",
+                        "genre_ids":  [
+                                          18,
+                                          10759,
+                                          9648,
+                                          80
+                                      ],
+                        "popularity":  24.9977,
+                        "first_air_date":  "2026-07-31",
+                        "softcore":  false,
+                        "vote_average":  6.5,
+                        "vote_count":  5,
+                        "origin_country":  [
+                                               "KR"
+                                           ]
+                    }
+                ],
+    "total_pages":  1,
+    "total_results":  1
+}

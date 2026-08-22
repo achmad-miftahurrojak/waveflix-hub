@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { TmdbItem, SeasonSummary, Episode } from "@/lib/types";
 import { stillUrl, runtimeText } from "@/lib/helpers";
 import { PlayIcon } from "./Icons";
+import { useTranslation } from "@/lib/i18n";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
@@ -29,6 +30,7 @@ export default function EpisodesSection({
   initialSeason,
   currentEpisode,
 }: Props) {
+  const { t } = useTranslation();
   const valid = seasons.filter((s) => s.season_number > 0);
   const [season, setSeason] = useState(
     valid.find((s) => s.season_number === initialSeason)?.season_number ??
@@ -64,7 +66,7 @@ export default function EpisodesSection({
   return (
     <section className="mt-10">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-xl font-bold">Episodes</h3>
+        <h3 className="text-xl font-bold">{t("ui.episodes")}</h3>
         {valid.length > 1 && (
           <select
             value={season}
@@ -73,7 +75,7 @@ export default function EpisodesSection({
           >
             {valid.map((s) => (
               <option key={s.season_number} value={s.season_number}>
-                {s.name || `Season ${s.season_number}`}
+                {s.name || `${t("ui.season")} ${s.season_number}`}
               </option>
             ))}
           </select>
@@ -81,7 +83,7 @@ export default function EpisodesSection({
       </div>
 
       {loading ? (
-        <p className="py-6 text-white/50">Loading episodes…</p>
+        <p className="py-6 text-white/50">{t("ui.loadingEpisodes")}</p>
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {aired.map((ep) => (
@@ -127,7 +129,7 @@ export default function EpisodesSection({
                 </span>
               </div>
               <h4 className="mt-2 truncate font-semibold">
-                Episode {ep.episode_number}
+                {t("ui.episode")} {ep.episode_number}
               </h4>
               {ep.overview && (
                 <p className="mt-1 line-clamp-2 text-sm text-white/55">

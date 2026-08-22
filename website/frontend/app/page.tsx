@@ -2,6 +2,7 @@ import { getTrendingIndonesia } from "@/lib/tmdb";
 import { backdropUrl } from "@/lib/helpers";
 import Top10Row from "@/components/Top10Row";
 import EmailForm from "@/components/EmailForm";
+import ContinueWatchingRow from "@/components/ContinueWatchingRow";
 
 export default async function LandingPage() {
   // Ambil data untuk "Sedang Tren Sekarang" (Trending Indonesia)
@@ -13,7 +14,7 @@ export default async function LandingPage() {
   return (
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center min-h-[90vh] px-4 pt-24 pb-16 text-center border-b-[8px] border-[#232323]">
+      <section className="relative flex flex-col items-center justify-center min-h-[90vh] px-4 pt-32 pb-24 text-center border-b-[8px] border-[#232323]">
         {/* Background Image & Overlay */}
         {bgImage && (
           <div
@@ -40,15 +41,18 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Section: Continue Watching (only renders if user has unfinished items) */}
+      <ContinueWatchingRow />
+
       {/* Section: Sedang Tren Sekarang */}
-      <section className="bg-black py-12 border-b-[8px] border-[#232323]">
+      <section className="bg-black py-20 border-b-[8px] border-[#232323]">
         <div className="max-w-[1400px] mx-auto">
           <Top10Row items={trending} />
         </div>
       </section>
 
       {/* Section Placeholder tambahan jika diperlukan (Sesuai gaya Netflix) */}
-      <section className="bg-black py-20 px-[4%] text-center border-b-[8px] border-[#232323]">
+      <section className="bg-black py-24 px-[4%] text-center border-b-[8px] border-[#232323]">
         <div className="max-w-4xl mx-auto space-y-4">
           <h2 className="text-3xl md:text-5xl font-extrabold">Buat profil untuk anak</h2>
           <p className="text-lg md:text-2xl text-white/80">

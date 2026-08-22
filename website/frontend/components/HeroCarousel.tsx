@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HeroSlide } from "@/lib/tmdb";
+import { useTranslation } from "@/lib/i18n";
 import {
   backdropUrl,
   itemTitle,
@@ -32,6 +33,7 @@ function VolumeOff() {
 }
 
 export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const [revealed, setRevealed] = useState(false); // gambar sudah fade-out?
   const [muted, setMuted] = useState(true);
@@ -73,28 +75,35 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       if (!iframeRef.current || !(window as any).YT) return;
       player = new (window as any).YT.Player(iframeRef.current, {
         events: {
-          onReady: () => {
-            // Polling waktu setiap 250ms
-            timer = setInterval(() => {
-              if (skipped || !player || typeof player.getCurrentTime !== "function") return;
-              const current = player.getCurrentTime();
-              const duration = player.getDuration();
-              // Skip 1.5 detik sebelum habis
-              if (duration > 0 && duration - current < 1.5) {
-                skipped = true;
-                setActive((prev) => (prev + 1) % total);
-              }
-            }, 250);
-          },
           onStateChange: (e: any) => {
-            // 0 = Ended (buat jaga-jaga kalau polling kelewat)
+            // 0 = Ended
             if (e.data === 0 && !skipped) {
               skipped = true;
-              setActive((prev) => (prev + 1) % total);
+              setRevealed(false);
+              setTimeout(() => {
+                setActive((prev) => (prev + 1) % total);
+              }, 10000);
             }
           }
         }
       });
+
+      // Polling waktu setiap 250ms (dijalankan di luar onReady karena onReady sering terlewat jika iframe sudah loading)
+      timer = setInterval(() => {
+        if (skipped || !player || typeof player.getCurrentTime !== "function") return;
+        try {
+          const current = player.getCurrentTime();
+          const duration = player.getDuration();
+          // Skip 1.5 detik sebelum habis
+          if (duration > 0 && duration - current < 1.5) {
+            skipped = true;
+            setRevealed(false); // Kembali ke foto
+            setTimeout(() => {
+              setActive((prev) => (prev + 1) % total);
+            }, 10000); // Jeda 10 detik
+          }
+        } catch (err) {}
+      }, 250);
     };
 
     if (!(window as any).YT) {
@@ -201,7 +210,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             return (
               <div key={s.item.id} className={i === active ? "block animate-[fadeIn_.5s_ease]" : "hidden"}>
                 <span className="mb-4 inline-block rounded bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-black">
-                  {tv ? "TV Series" : "Movie"}
+                  {tv ? t("ui.tvSeries") : t("ui.movie")}
                 </span>
 
                 {s.tagline && (
@@ -233,7 +242,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 )}
 
                 <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-7 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
-                  <PlayIcon className="text-black" /> Watch Now
+                  <PlayIcon className="text-black" /> {t("ui.watchNow")}
                 </Link>
               </div>
             );

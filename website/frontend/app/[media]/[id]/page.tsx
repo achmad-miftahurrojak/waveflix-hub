@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { MediaType, TmdbItem } from "@/lib/types";
-import { getDetail, getHeroLogo } from "@/lib/tmdb";
+import { getDetail, getHeroLogo, discover } from "@/lib/tmdb";
 import {
   backdropUrl,
   itemTitle,
@@ -55,27 +55,47 @@ export default async function DetailPage({
   // "More Like This": tipe sama (rekomendasi TMDB memang setipe) + negara sama
   // (didekati lewat bahasa asli) supaya nonton Korea tidak dikasih film barat.
   // Animasi/anime dikecualikan dari batasan negara.
-  const detailLang = detail.original_language;
   const isAnimation = (detail.genres ?? []).some((g) => g.id === 16);
+  const originCountry = detail.production_countries?.[0]?.iso_3166_1;
   const similarSeen = new Set<number>([detail.id]);
-  const similar: TmdbItem[] = [
-    ...(detail.recommendations?.results ?? []),
-    ...(detail.similar?.results ?? []),
-  ]
-    .filter((m) => {
-      if (!m.poster_path || similarSeen.has(m.id)) return false;
-      if (
-        !isAnimation &&
-        detailLang &&
-        m.original_language &&
-        m.original_language !== detailLang
-      )
-        return false;
-      similarSeen.add(m.id);
-      return true;
-    })
-    .map((m) => ({ ...m, media_type: media }))
-    .slice(0, 14);
+  
+  let similar: TmdbItem[] = [];
+
+  if (!isAnimation && originCountry) {
+    const discoverData = await discover({ media: media as MediaType, country: originCountry, sort_by: "popularity.desc" });
+    similar = (discoverData.results || [])
+      .filter((m) => {
+        if (!m.poster_path || similarSeen.has(m.id)) return false;
+        similarSeen.add(m.id);
+        return true;
+      })
+      .map((m) => ({ ...m, media_type: media }))
+      .slice(0, 14);
+  }
+
+  // Fallback if not enough similar items or it's animation
+  if (similar.length < 14) {
+    const detailLang = detail.original_language;
+    const fallbackList = [
+      ...(detail.recommendations?.results ?? []),
+      ...(detail.similar?.results ?? []),
+    ]
+      .filter((m) => {
+        if (!m.poster_path || similarSeen.has(m.id)) return false;
+        if (
+          !isAnimation &&
+          detailLang &&
+          m.original_language &&
+          m.original_language !== detailLang
+        )
+          return false;
+        similarSeen.add(m.id);
+        return true;
+      })
+      .map((m) => ({ ...m, media_type: media }));
+    
+    similar = [...similar, ...fallbackList].slice(0, 14);
+  }
 
   const vids = detail.videos?.results ?? [];
   const yt =
@@ -176,7 +196,7 @@ export default async function DetailPage({
           </p>
 
           {studios.length > 0 && (
-            <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               {studios.map((s) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -184,7 +204,7 @@ export default async function DetailPage({
                   src={`https://image.tmdb.org/t/p/w200${s.logo_path}`}
                   alt={s.name}
                   title={s.name}
-                  className="h-7 w-auto object-contain opacity-60 transition-all duration-300 hover:scale-110 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] [filter:brightness(0)_invert(1)] md:h-8 cursor-pointer"
+                  className="h-5 w-auto object-contain opacity-60 transition-all duration-300 hover:scale-110 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] [filter:brightness(0)_invert(1)] md:h-6 cursor-pointer"
                 />
               ))}
             </div>

@@ -33,7 +33,7 @@ export default function QuickViewModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-[#181818] w-full max-w-3xl rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-[#181818] w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition"
@@ -44,7 +44,7 @@ export default function QuickViewModal({
         </button>
 
         {/* Header/Backdrop Image */}
-        <div className="relative aspect-video w-full">
+        <div className="relative aspect-[21/9] w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={backdropUrl(item)} 
@@ -53,16 +53,16 @@ export default function QuickViewModal({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-black/20 to-transparent" />
           
-          <div className="absolute bottom-6 left-8 right-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+          <div className="absolute bottom-4 left-6 right-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-1 drop-shadow-lg">
               {itemTitle(item)}
             </h2>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-8 pt-2">
-          <div className="flex flex-wrap gap-2 mb-6 text-sm font-semibold text-gray-300">
+        <div className="p-6 pt-4">
+          <div className="flex flex-wrap gap-2 mb-4 text-sm font-semibold text-gray-300">
             {itemYear(item) && (
               <span className="px-2 py-1 bg-white/10 rounded">{itemYear(item)}</span>
             )}
@@ -70,7 +70,7 @@ export default function QuickViewModal({
             <span className="px-2 py-1 bg-white/10 rounded">{isTv(item) ? "Serial" : "Film"}</span>
           </div>
           
-          <p className="text-gray-200 text-lg leading-relaxed">
+          <p className="text-gray-200 text-base leading-relaxed">
             {item.overview || "Tidak ada deskripsi tersedia untuk judul ini."}
           </p>
         </div>

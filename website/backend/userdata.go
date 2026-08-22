@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+func getProfileID(r *http.Request) int {
+	pid, _ := strconv.Atoi(r.Header.Get("X-Profile-ID"))
+	return pid
+}
+
 // Bentuk item yang dikirim/diterima frontend (mirip TmdbItem seperlunya).
 type mediaItem struct {
 	TmdbID      int64   `json:"tmdb_id"`
@@ -15,13 +20,16 @@ type mediaItem struct {
 	VoteAverage float64 `json:"vote_average"`
 	Season      int     `json:"season,omitempty"`
 	Episode     int     `json:"episode,omitempty"`
+	Runtime     int     `json:"runtime,omitempty"`
+	Progress    int     `json:"progress,omitempty"`
 }
 
 func getList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
+	pid := getProfileID(r)
 	rows, err := db.Query(
 		"SELECT tmdb_id, media_type, title, poster_path, vote_average FROM "+
-			table+" WHERE user_id = ? ORDER BY added_at DESC", uid)
+			table+" WHERE user_id = ? AND profile_id = ? ORDER BY added_at DESC", uid, pid)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal ambil "+table)
 		return
@@ -45,13 +53,14 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
 		return
 	}
+	pid := getProfileID(r)
 	if it.MediaType != "tv" {
 		it.MediaType = "movie"
 	}
 	_, err := db.Exec(
 		"INSERT OR IGNORE INTO "+table+
-			"(user_id, tmdb_id, media_type, title, poster_path, vote_average) VALUES(?,?,?,?,?,?)",
-		uid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage)
+			"(user_id, profile_id, tmdb_id, media_type, title, poster_path, vote_average) VALUES(?,?,?,?,?,?,?)",
+		uid, pid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal simpan")
 		return
@@ -59,9 +68,9 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-// deleteList: DELETE ?tmdb_id=..&media_type=..
 func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
+	pid := getProfileID(r)
 	q := r.URL.Query()
 	idStr := getIDParam(q)
 	tmdbID, _ := strconv.ParseInt(idStr, 10, 64)
@@ -71,8 +80,8 @@ func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 		return
 	}
 	if _, err := db.Exec(
-		"DELETE FROM "+table+" WHERE user_id = ? AND tmdb_id = ? AND media_type = ?",
-		uid, tmdbID, media); err != nil {
+		"DELETE FROM "+table+" WHERE user_id = ? AND profile_id = ? AND tmdb_id = ? AND media_type = ?",
+		uid, pid, tmdbID, media); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal hapus")
 		return
 	}
@@ -102,9 +111,16 @@ var handleFavorites = listHandler("favorites")
 // GET /api/history  &  POST /api/history
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
+	pid := getProfileID(r)
 
 	if r.Method == http.MethodDelete {
-		db.Exec("DELETE FROM history WHERE user_id = ?", uid)
+		tmdbIDStr := r.URL.Query().Get("tmdb_id")
+		if tmdbIDStr != "" {
+			tmdbID, _ := strconv.ParseInt(tmdbIDStr, 10, 64)
+			db.Exec("DELETE FROM history WHERE user_id = ? AND profile_id = ? AND tmdb_id = ?", uid, pid, tmdbID)
+		} else {
+			db.Exec("DELETE FROM history WHERE user_id = ? AND profile_id = ?", uid, pid)
+		}
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 		return
 	}
@@ -119,9 +135,9 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 			it.MediaType = "movie"
 		}
 		if _, err := db.Exec(
-			`INSERT INTO history(user_id, tmdb_id, media_type, title, poster_path, vote_average, season, episode)
-			 VALUES(?,?,?,?,?,?,?,?)`,
-			uid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage, it.Season, it.Episode); err != nil {
+			`INSERT INTO history(user_id, profile_id, tmdb_id, media_type, title, poster_path, vote_average, season, episode, runtime, progress)
+			 VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+			uid, pid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.VoteAverage, it.Season, it.Episode, it.Runtime, it.Progress); err != nil {
 			httpError(w, http.StatusInternalServerError, "gagal simpan history")
 			return
 		}
@@ -131,9 +147,9 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 
 	// GET: 50 tontonan terakhir (unik per judul, terbaru dulu)
 	rows, err := db.Query(
-		`SELECT tmdb_id, media_type, title, poster_path, vote_average, MAX(watched_at)
-		 FROM history WHERE user_id = ?
-		 GROUP BY tmdb_id, media_type ORDER BY MAX(watched_at) DESC LIMIT 50`, uid)
+		`SELECT tmdb_id, media_type, title, poster_path, vote_average, season, episode, runtime, progress, MAX(watched_at)
+		 FROM history WHERE user_id = ? AND profile_id = ?
+		 GROUP BY tmdb_id, media_type ORDER BY MAX(watched_at) DESC LIMIT 50`, uid, pid)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal ambil history")
 		return
@@ -144,7 +160,7 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var it mediaItem
 		var ts string
-		rows.Scan(&it.TmdbID, &it.MediaType, &it.Title, &it.PosterPath, &it.VoteAverage, &ts)
+		rows.Scan(&it.TmdbID, &it.MediaType, &it.Title, &it.PosterPath, &it.VoteAverage, &it.Season, &it.Episode, &it.Runtime, &it.Progress, &ts)
 		items = append(items, it)
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{"results": items})

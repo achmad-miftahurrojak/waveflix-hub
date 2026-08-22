@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n";
 
 const underlineSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 import {
@@ -22,18 +23,27 @@ import {
 import SearchBox from "./SearchBox";
 import { useAuth } from "./AuthProvider";
 
-const NAV = [
-  { label: "Home", href: "/home", icon: HomeIcon },
-  { label: "Movies", href: "/browse?media=movie", icon: FilmIcon },
-  { label: "Series", href: "/browse?media=tv", icon: TvIcon },
-  { label: "Reality", href: "/reality", icon: SparklesIcon },
-  { label: "My List", href: "/daftar-saya", icon: BookmarkIcon },
-];
+// We move NAV to be a variable inside the component, but wait, it's easier to just translate inline.
 
 export default function Navbar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, ready, logout } = useAuth();
+  const { user, ready, logout, activeProfile } = useAuth();
+  const router = useRouter();
+  const { t } = useTranslation();
+
+  const NAV = [
+    { label: t("nav.home"), href: "/home", icon: HomeIcon },
+    { label: t("nav.movies"), href: "/browse?media=movie", icon: FilmIcon },
+    { label: t("nav.tv"), href: "/browse?media=tv", icon: TvIcon },
+    { label: t("nav.reality"), href: "/reality", icon: SparklesIcon },
+    { label: t("nav.myList"), href: "/daftar-saya", icon: BookmarkIcon },
+  ];
+
+  const handleSwitchProfile = () => {
+    sessionStorage.removeItem("profileSelected");
+    router.push("/profiles");
+  };
   const [scrolled, setScrolled] = useState(false);
   const [openMore, setOpenMore] = useState(false);
   const [openAccount, setOpenAccount] = useState(false);
@@ -64,10 +74,10 @@ export default function Navbar() {
       ));
 
   const moreMenu = [
-    { label: "Genres", href: `/genres?media=${activeMedia}`, icon: TagIcon },
-    { label: "Country", href: `/countries?media=${activeMedia}`, icon: GlobeIcon },
-    { label: "Year", href: `/years?media=${activeMedia}`, icon: CalendarIcon },
-    { label: "Network", href: `/networks?media=${activeMedia}`, icon: NetworkIcon },
+    { label: t("nav.genres"), href: `/genres?media=${activeMedia}`, icon: TagIcon },
+    { label: t("nav.country"), href: `/countries?media=${activeMedia}`, icon: GlobeIcon },
+    { label: t("nav.year"), href: `/years?media=${activeMedia}`, icon: CalendarIcon },
+    { label: t("nav.network"), href: `/networks?media=${activeMedia}`, icon: NetworkIcon },
   ];
 
   const isActive = (href: string) => {
@@ -84,19 +94,31 @@ export default function Navbar() {
     return true;
   };
 
+  const isLandingPage = pathname === "/";
+  if (pathname === "/profiles") return null;
+
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-[1000] transition-all duration-300 ${
-        scrolled ? "px-[3%] pt-3" : "px-0 pt-0"
+      className={`${
+        isLandingPage ? "absolute" : "fixed"
+      } inset-x-0 top-0 z-[1000] transition-all duration-300 ${
+        scrolled && !isLandingPage ? "px-[3%] pt-3" : "px-0 pt-0"
       }`}
     >
-      <nav
-        className={`flex items-center justify-between gap-4 transition-all duration-300 ${
-          scrolled
-            ? "rounded-full border border-white/10 bg-black/60 px-8 py-2.5 scale-[0.98] shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-xl"
-            : "border-0 border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent px-[4%] py-4 shadow-none backdrop-blur-none"
-        }`}
-      >
+      <div className="relative">
+        {/* Glass Background isolated to prevent backdrop-filter CSS bug on dropdowns */}
+        <div 
+          className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
+            scrolled && !isLandingPage
+              ? "rounded-full border border-white/20 bg-black/50 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]"
+              : "border-0 border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent shadow-none backdrop-blur-none"
+          }`}
+        />
+        <nav
+          className={`relative flex items-center justify-between gap-4 transition-all duration-300 ${
+            scrolled && !isLandingPage ? "px-8 py-2.5" : "px-[4%] py-4"
+          }`}
+        >
         <div className="flex items-center gap-8">
           <Link
             href={user ? "/home" : "/"}
@@ -146,12 +168,12 @@ export default function Navbar() {
                     />
                   )}
                   <MoreIcon />
-                  <span>More</span>
+                  <span>{t("nav.more")}</span>
                   <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
                 </button>
                 {openMore && (
                   <div className="absolute left-0 top-full pt-4">
-                    <div className="w-56 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+                    <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]">
                       {moreMenu.map(({ label, href, icon: Icon }) => (
                         <Link
                           key={label}
@@ -186,42 +208,63 @@ export default function Navbar() {
                 aria-label="Account"
                 className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-accent font-bold text-black"
               >
-                {user.avatar ? (
+                {activeProfile ? (
+                  (activeProfile as any).avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={(activeProfile as any).avatar}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    ((activeProfile as any).name || "?").charAt(0).toUpperCase()
+                  )
+                ) : user.avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.avatar}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={user.avatar} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  user.username.charAt(0).toUpperCase()
+                  (user.username || "?").charAt(0).toUpperCase()
                 )}
               </button>
               {openAccount && (
                 <div className="absolute right-0 top-full pt-4">
-                  <div className="w-52 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+                  <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]">
                     <div className="px-3 py-2">
-                      <div className="truncate text-sm font-semibold">{user.username}</div>
+                      <div className="truncate text-sm font-semibold">
+                        {activeProfile ? (activeProfile as any).name : user.username}
+                      </div>
                       <div className="truncate text-xs text-white/50">{user.email}</div>
                     </div>
                     <div className="my-1 h-px bg-white/10" />
-                    <Link href="/account" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                      Account settings
+                    {/* Ganti Profil */}
+                    <button
+                      onClick={handleSwitchProfile}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {t("nav.switchProfile")}
+                    </button>
+                    <div className="my-1 h-px bg-white/10" />
+                    <Link href="/account/settings" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      {t("nav.settings")}
                     </Link>
                     <Link href="/daftar-saya" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                      My List
+                      {t("nav.myList")}
                     </Link>
                     <Link href="/favorit" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                      Favorites
+                      {t("nav.favorites")}
                     </Link>
                     <Link href="/riwayat" className="block rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                      Watch History
+                      {t("nav.history")}
                     </Link>
+                    <div className="my-1 h-px bg-white/10" />
                     <button
                       onClick={logout}
-                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-red-300 hover:bg-white/10"
+                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-red-400 hover:bg-white/10"
                     >
-                      Log Out
+                      {t("nav.logout")}
                     </button>
                   </div>
                 </div>
@@ -232,11 +275,12 @@ export default function Navbar() {
               href="/masuk"
               className="rounded-md bg-[#E50914] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#c10710]"
             >
-              Masuk
+              {t("nav.login")}
             </Link>
           )}
         </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 }

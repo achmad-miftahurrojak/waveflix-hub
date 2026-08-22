@@ -5,8 +5,10 @@ import Link from "next/link";
 import { itemTitle, posterUrl, detailHref } from "@/lib/helpers";
 import type { TmdbItem } from "@/lib/types";
 import QuickViewModal from "@/components/QuickViewModal";
+import { useTranslation } from "@/lib/i18n";
 
 export default function Top10Row({ items }: { items: TmdbItem[] }) {
+  const { t } = useTranslation();
   const top10 = items.slice(0, 10);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -40,7 +42,7 @@ export default function Top10Row({ items }: { items: TmdbItem[] }) {
   };
 
   return (
-    <div className="py-12 relative z-10 w-full px-[4%]">
+    <div className="py-4 relative z-10 w-full px-[4%]">
       {/* Quick view modal */}
       {selectedItem && (
         <QuickViewModal
@@ -119,28 +121,6 @@ export default function Top10Row({ items }: { items: TmdbItem[] }) {
                     />
                     <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  
-                  {/* Angka — Mengambang di kiri bawah (overlapping) */}
-                  <svg
-                    viewBox="0 0 120 100"
-                    className="absolute left-0 bottom-[10%] md:bottom-[15%] h-[60px] md:h-[80px] lg:h-[100px] w-auto select-none pointer-events-none drop-shadow-md z-10"
-                    aria-hidden="true"
-                  >
-                    <text
-                      x="50%"
-                      y="92"
-                      textAnchor="middle"
-                      fontSize="95"
-                      fontWeight="900"
-                      fontFamily="Arial Black, Arial, sans-serif"
-                      fill="black"
-                      stroke="rgba(255,255,255,0.9)"
-                      strokeWidth="3.5"
-                      strokeLinejoin="round"
-                    >
-                      {number}
-                    </text>
-                  </svg>
                 </div>
               </div>
             );

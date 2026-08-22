@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { TmdbItem } from "@/lib/types";
 import { isTv, mediaTypeOf, itemTitle } from "@/lib/helpers";
 import { LIST_KEY, FAV_KEY, migrateStorage } from "@/lib/storage";
 import { useUI } from "./UIProvider";
 import { useAuth } from "./AuthProvider";
+import { useTranslation } from "@/lib/i18n";
 import {
   PlayIcon,
   PlusIcon,
@@ -34,6 +36,7 @@ function toggleLocal(key: string, item: TmdbItem): boolean {
 }
 
 export default function DetailActions({ item }: { item: TmdbItem }) {
+  const { t } = useTranslation();
   const { play } = useUI();
   const { user, authFetch } = useAuth();
   const tv = isTv(item);
@@ -109,29 +112,57 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
     <div className="flex flex-wrap gap-3">
       {/* Movie diputar langsung; series diputar dari halaman episode. */}
       {!tv && (
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => play(item)}
-          className="flex items-center gap-2 rounded-md bg-accent px-7 py-3 font-semibold text-black transition hover:scale-105 hover:bg-accent-dark"
+          className="flex items-center gap-2 rounded-md bg-accent px-7 py-3 font-semibold text-black transition hover:bg-accent-dark"
         >
-          <PlayIcon className="text-black" /> Play
-        </button>
+          <PlayIcon className="text-black" /> {t("ui.play")}
+        </motion.button>
       )}
-      <button
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={toggleSave}
-        className="flex items-center gap-2 rounded-md border-2 border-white/40 px-6 py-3 font-semibold transition hover:bg-white/10"
+        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 ${
+          saved ? "border-white text-white" : "border-white/40"
+        }`}
       >
-        {saved ? <CheckIcon /> : <PlusIcon />}
-        {saved ? "Saved" : "My List"}
-      </button>
-      <button
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={saved ? "saved" : "unsaved"}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {saved ? <CheckIcon /> : <PlusIcon />}
+          </motion.div>
+        </AnimatePresence>
+        {saved ? t("ui.saved") : t("ui.myList")}
+      </motion.button>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={toggleFav}
         className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 ${
           faved ? "border-accent text-accent" : "border-white/40"
         }`}
       >
-        {faved ? <HeartSolidIcon /> : <HeartIcon />}
-        {faved ? "Favorited" : "Favorite"}
-      </button>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={faved ? "faved" : "unfaved"}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {faved ? <HeartSolidIcon /> : <HeartIcon />}
+          </motion.div>
+        </AnimatePresence>
+        {faved ? t("ui.favorited") : t("ui.favorite")}
+      </motion.button>
     </div>
   );
 }

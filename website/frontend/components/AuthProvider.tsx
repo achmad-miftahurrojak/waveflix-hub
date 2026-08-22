@@ -22,6 +22,7 @@ export interface AuthUser {
   banner?: string;
   bio?: string;
   name_font?: string;
+  language?: string;
   joined?: string;
 }
 
@@ -30,6 +31,7 @@ export interface ProfileFields {
   email?: string;
   bio?: string;
   name_font?: string;
+  language?: string;
 }
 
 interface AuthContextValue {
@@ -40,13 +42,15 @@ interface AuthContextValue {
   register: (email: string, username: string, password: string) => Promise<string | null>;
   logout: () => void;
   authFetch: (path: string, init?: RequestInit) => Promise<Response>;
-  recordHistory: (item: TmdbItem, season?: number, episode?: number) => void;
+  recordHistory: (item: TmdbItem, season?: number, episode?: number, currentProgressSeconds?: number) => void;
   updateProfile: (fields: ProfileFields) => Promise<string | null>;
   changePassword: (current: string, next: string) => Promise<string | null>;
   uploadImage: (
     field: "avatar" | "banner",
     dataUrl: string
   ) => Promise<string | null>;
+  activeProfile: any | null;
+  setActiveProfile: (profile: any) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -60,6 +64,7 @@ export function useAuth(): AuthContextValue {
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [activeProfile, setActiveProfile] = useState<any | null>(null);
   const [ready, setReady] = useState(false);
 
   // Muat token dari localStorage saat pertama render.
@@ -75,11 +80,34 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     fetch(`${BACKEND}/api/auth/me`, {
       headers: { Authorization: `Bearer ${saved}` },
     })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((u) => setUser(u))
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
+      .then((r) => {
+        if (!r.ok) return Promise.reject({ status: r.status });
+        return r.json();
+      })
+      .then((u) => {
+        setUser(u);
+        if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
+        const storedProfileId = localStorage.getItem("activeProfileId");
+        if (storedProfileId) {
+          fetch(`${BACKEND}/api/profiles/${storedProfileId}`, {
+            headers: { Authorization: `Bearer ${saved}` },
+          })
+            .then((r) => r.ok ? r.json() : null)
+            .then((p) => {
+              if (p) setActiveProfile(p);
+              else setActiveProfile({ id: parseInt(storedProfileId, 10) });
+            })
+            .catch(() => setActiveProfile({ id: parseInt(storedProfileId, 10) }));
+        }
+      })
+      .catch((err) => {
+        // Hanya hapus token jika server benar-benar menolaknya (401/403)
+        // Jangan hapus token saat network error (backend mungkin sedang restart)
+        if (err?.status === 401 || err?.status === 403) {
+          localStorage.removeItem(TOKEN_KEY);
+          setToken(null);
+        }
+        // Jika network error: token tetap ada, user tetap "logged in"
       })
       .finally(() => setReady(true));
   }, []);
@@ -88,6 +116,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(TOKEN_KEY, tok);
     setToken(tok);
     setUser(u);
+    if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
   };
 
   const login = useCallback(async (email: string, password: string) => {
@@ -99,6 +128,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) return data.error || "Gagal masuk";
+      sessionStorage.removeItem("profileSelected"); // wajib pilih profil setelah login
       persist(data.token, data.user);
       return null;
     } catch {
@@ -116,6 +146,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         });
         const data = await res.json();
         if (!res.ok) return data.error || "Gagal daftar";
+        sessionStorage.removeItem("profileSelected"); // wajib pilih profil setelah daftar
         persist(data.token, data.user);
         return null;
       } catch {
@@ -127,20 +158,34 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("activeProfileId");
+    sessionStorage.removeItem("profileSelected");
     setToken(null);
     setUser(null);
+    setActiveProfile(null);
   }, []);
 
   const authFetch = useCallback(
-    (path: string, init: RequestInit = {}) =>
-      fetch(`${BACKEND}${path}`, {
+    (path: string, init: RequestInit = {}) => {
+      const headers: Record<string, string> = {
+        ...(init.headers as Record<string, string> || {}),
+        "Content-Type": "application/json",
+      };
+      
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const profileId = localStorage.getItem("activeProfileId");
+      if (profileId) {
+        headers["X-Profile-ID"] = profileId;
+      }
+
+      return fetch(`${BACKEND}${path}`, {
         ...init,
-        headers: {
-          ...(init.headers || {}),
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      }),
+        headers,
+      });
+    },
     [token]
   );
 
@@ -198,8 +243,20 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const recordHistory = useCallback(
-    (item: TmdbItem, season?: number, episode?: number) => {
+    (item: TmdbItem, season?: number, episode?: number, currentProgressSeconds?: number) => {
       if (!token) return;
+      
+      const detail = item as any;
+      let runtime = detail.runtime || 0;
+      if (mediaTypeOf(item) === "tv" && (!runtime || runtime === 0)) {
+        runtime = detail.episode_run_time?.[0] || 45;
+      }
+      if (runtime === 0) runtime = 120; // default for movie
+      
+      const progress = currentProgressSeconds !== undefined 
+        ? Math.floor(currentProgressSeconds / 60) 
+        : Math.floor(runtime * 0.7);
+
       authFetch("/api/history", {
         method: "POST",
         body: JSON.stringify({
@@ -210,6 +267,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           vote_average: item.vote_average || 0,
           season,
           episode,
+          runtime,
+          progress,
         }),
       }).catch(() => {});
     },
@@ -230,6 +289,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         updateProfile,
         changePassword,
         uploadImage,
+        activeProfile,
+        setActiveProfile: (profile: any) => {
+          if (profile) {
+            localStorage.setItem("activeProfileId", profile.id.toString());
+          } else {
+            localStorage.removeItem("activeProfileId");
+          }
+          setActiveProfile(profile);
+        }
       }}
     >
       {children}

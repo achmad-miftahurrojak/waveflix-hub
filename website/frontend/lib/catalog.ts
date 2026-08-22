@@ -49,10 +49,10 @@ export const COUNTRIES: { code: string; name: string }[] = [
 
 export const PROVIDERS: { id: number; name: string }[] = [
   { id: 8, name: "Netflix" },
-  { id: 122, name: "Disney+ Hotstar" },
-  { id: 350, name: "Apple TV+" },
-  { id: 1899, name: "HBO Max" },
+  { id: 337, name: "Disney+" },
   { id: 119, name: "Prime Video" },
+  { id: 350, name: "Apple TV+" },
+  { id: 384, name: "HBO Max" },
 ];
 
 export const SORTS: { value: string; label: string }[] = [

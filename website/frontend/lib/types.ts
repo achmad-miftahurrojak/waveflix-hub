@@ -4,6 +4,7 @@ export interface TmdbItem {
   id: number;
   title?: string;
   name?: string;
+  original_name?: string;
   overview?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
@@ -14,6 +15,7 @@ export interface TmdbItem {
   media_type?: string;
   genre_ids?: number[];
   original_language?: string;
+  vidlink_available?: boolean;
 }
 
 export interface TmdbListResponse {
@@ -39,6 +41,7 @@ export interface Genre {
 export interface CastMember {
   id: number;
   name: string;
+  original_name?: string;
   character?: string;
   profile_path?: string | null;
   order?: number;
@@ -47,6 +50,7 @@ export interface CastMember {
 export interface CrewMember {
   id: number;
   name: string;
+  original_name?: string;
   job?: string;
 }
 
@@ -109,4 +113,33 @@ export interface TmdbDetail extends TmdbItem {
   recommendations?: { results?: TmdbItem[] };
   similar?: { results?: TmdbItem[] };
   images?: { logos?: TmdbLogo[]; backdrops?: { file_path: string }[]; posters?: { file_path: string }[] };
+}
+
+export interface PersonCredit extends TmdbItem {
+  character?: string;
+  job?: string;
+  department?: string;
+}
+
+export interface TmdbPerson {
+  id: number;
+  name: string;
+  original_name?: string;
+  biography?: string;
+  profile_path?: string | null;
+  birthday?: string | null;
+  deathday?: string | null;
+  place_of_birth?: string | null;
+  known_for_department?: string;
+  combined_credits?: {
+    cast?: PersonCredit[];
+    crew?: PersonCredit[];
+  };
+}
+
+export interface HistoryItem extends TmdbItem {
+  season?: number;
+  episode?: number;
+  runtime?: number;
+  progress?: number;
 }

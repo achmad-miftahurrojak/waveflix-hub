@@ -32,11 +32,10 @@ export default function MovieCard({ item, rank }: Props) {
           </span>
         )}
 
+
         <span className="pointer-events-none absolute inset-0 ring-0 ring-accent/0 transition group-hover:ring-2 group-hover:ring-accent/60" />
       </div>
 
-      <h4 className="mt-2 truncate text-sm font-semibold">{itemTitle(item)}</h4>
-      <span className="text-xs text-white/50">{itemYear(item)}</span>
     </Link>
   );
 }

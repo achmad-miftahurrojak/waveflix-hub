@@ -26,7 +26,7 @@ function toItem(r: any): TmdbItem {
 }
 
 export default function AccountPage() {
-  const { user, ready, authFetch } = useAuth();
+  const { user, ready, authFetch, activeProfile } = useAuth();
   const router = useRouter();
 
   const [tab, setTab] = useState<Tab>("overview");
@@ -67,9 +67,9 @@ export default function AccountPage() {
     <main className={`min-h-screen pb-16 ${profileFontVars}`}>
       {/* HERO */}
       <div className="relative flex h-[86vh] min-h-[560px] items-end overflow-hidden">
-        {user.banner ? (
+        {(activeProfile as any)?.banner || user.banner ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.banner} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={(activeProfile as any)?.banner || user.banner} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-accent/25 via-bg to-bg" />
         )}
@@ -79,9 +79,9 @@ export default function AccountPage() {
         <div className="relative z-[2] w-full px-[4%] pb-12">
           <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4">
             <div className="flex items-end gap-5">
-              {user.avatar ? (
+              {(activeProfile as any)?.avatar || user.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatar} alt="Avatar" className="h-32 w-32 shrink-0 rounded-full border-4 border-bg object-cover md:h-36 md:w-36" />
+                <img src={(activeProfile as any)?.avatar || user.avatar} alt="Avatar" className="h-32 w-32 shrink-0 rounded-full border-4 border-bg object-cover md:h-36 md:w-36" />
               ) : (
                 <span className="grid h-32 w-32 shrink-0 place-items-center rounded-full border-4 border-bg bg-accent text-4xl font-bold text-black md:h-36 md:w-36">
                   {user.username.charAt(0).toUpperCase()}
@@ -98,8 +98,8 @@ export default function AccountPage() {
               </div>
             </div>
 
-            <Link href="/account/settings" className="mb-2 rounded-lg border border-white/25 bg-black/30 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10">
-              Edit Profile
+            <Link href="/profil/settings" className="mb-2 rounded-lg border border-white/25 bg-black/30 px-5 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/10">
+              Edit Profil
             </Link>
           </div>
         </div>
@@ -107,10 +107,10 @@ export default function AccountPage() {
 
       {/* BELOW: bio + tabs + list */}
       <div className="mx-auto max-w-5xl px-[4%] py-10">
-        {user.bio ? (
-          <p className="max-w-2xl text-[15px] italic leading-7 text-white/70">{user.bio}</p>
+        {(activeProfile as any)?.bio || user.bio ? (
+          <p className="max-w-2xl text-[15px] italic leading-7 text-white/70">{(activeProfile as any)?.bio || user.bio}</p>
         ) : (
-          <p className="text-sm text-white/40">No bio yet. Tap Edit Profile to add one.</p>
+          <p className="text-sm text-white/40">Belum ada bio. Klik Edit Profil untuk menambahkan.</p>
         )}
 
         <div className="mt-6 flex flex-wrap gap-2 border-b border-white/10 pb-3">

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, type ReactNode } from "react"
 import { EMBED_SERVERS } from "@/lib/embed-servers";
 import { getAsianShowSlug } from "@/lib/verified-shows";
 import { useUI } from "./UIProvider";
+import { useAuth } from "./AuthProvider";
 import { MaximizeIcon, MinimizeIcon, CloseIcon } from "./Icons";
 
 interface Props {
@@ -26,6 +27,10 @@ export default function InlineHeroVideo({
   trailer,
 }: Props) {
   const { player, stop } = useUI();
+  const { user, authFetch, recordHistory } = useAuth();
+  
+  const [savedProgressSeconds, setSavedProgressSeconds] = useState(0);
+  const [lastProgressSaved, setLastProgressSaved] = useState(0);
   const active =
     !!player &&
     player.item.id === id &&
@@ -38,6 +43,7 @@ export default function InlineHeroVideo({
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerPlaying, setTrailerPlaying] = useState(false);
+  const [playCount, setPlayCount] = useState(0);
   const trailerIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export default function InlineHeroVideo({
       setShowTrailer(true);
     }, 10000);
     return () => clearTimeout(t);
-  }, [active, trailer]);
+  }, [active, trailer, playCount]);
 
   useEffect(() => {
     if (!showTrailer || !trailer) return;
@@ -61,10 +67,16 @@ export default function InlineHeroVideo({
         events: {
           onStateChange: (e: any) => {
             if (e.data === 1) setTrailerPlaying(true);
+            if (e.data === 0) {
+              setShowTrailer(false);
+              setTrailerPlaying(false);
+              setPlayCount(c => c + 1);
+            }
           },
           onError: () => {
             setShowTrailer(false);
             setTrailerPlaying(false);
+            setPlayCount(c => c + 1);
           }
         }
       });
@@ -112,6 +124,65 @@ export default function InlineHeroVideo({
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setControlsVisible(false), 2600);
   }, []);
+
+  // Fetch initial progress when player becomes active
+  useEffect(() => {
+    if (active && user && player) {
+      if (player.progress !== undefined) {
+         setSavedProgressSeconds(player.progress * 60);
+      } else {
+        authFetch("/api/history")
+          .then(r => r.json())
+          .then(d => {
+             const historyItem = (d.results ?? []).find((x: any) => 
+               x.tmdb_id === player.item.id && 
+               x.season == player.season && 
+               x.episode == player.episode
+             );
+             if (historyItem && historyItem.progress) {
+               setSavedProgressSeconds(historyItem.progress * 60);
+             } else {
+               setSavedProgressSeconds(0);
+             }
+          }).catch(() => setSavedProgressSeconds(0));
+      }
+    } else {
+      setSavedProgressSeconds(0);
+      setLastProgressSaved(0);
+    }
+  }, [active, user, player, authFetch]);
+
+  // Listen to iframe postMessage for time updates
+  useEffect(() => {
+    if (!active || !player) return;
+
+    const handleMessage = (e: MessageEvent) => {
+      let currentTime = 0;
+      if (e.data && e.data.type === 'video.timeupdate') {
+        currentTime = e.data.time;
+      } else if (e.data && e.data.event === 'timeupdate' && e.data.currentTime) {
+        currentTime = e.data.currentTime;
+      }
+
+      if (currentTime > 0) {
+        setLastProgressSaved((prev) => {
+          if (Math.abs(currentTime - prev) > 10) {
+             recordHistory(player.item, player.season, player.episode, currentTime);
+             return currentTime;
+          }
+          return prev;
+        });
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    // Initial record when started
+    recordHistory(player.item, player.season, player.episode, savedProgressSeconds > 0 ? savedProgressSeconds : 0);
+
+    return () => window.removeEventListener('message', handleMessage);
+  }, [active, player, recordHistory, savedProgressSeconds]);
+
 
 
 
@@ -211,6 +282,11 @@ export default function InlineHeroVideo({
     ? asianEmbedUrl
     : (active ? EMBED_SERVERS[serverIdx].getUrl(player!.item, player!.season, player!.episode) : "");
 
+  let finalSrc = currentSrc;
+  if (finalSrc && savedProgressSeconds > 0) {
+      finalSrc += (finalSrc.includes("?") ? "&" : "?") + `t=${savedProgressSeconds}&time=${savedProgressSeconds}`;
+  }
+
   const currentLabel = asianEmbedUrl
     ? "Dramacool"
     : (EMBED_SERVERS[serverIdx]?.name ?? "");
@@ -239,9 +315,9 @@ export default function InlineHeroVideo({
         )}
 
         {/* Jangan render iframe kalau masih asian-loading (belum punya URL) */}
-        {status !== "asian-loading" && currentSrc && (
+        {status !== "asian-loading" && finalSrc && (
           <iframe
-            src={currentSrc}
+            src={finalSrc}
             onLoad={() => setStatus("loaded")}
             onError={switchServer}
             className={`absolute inset-0 h-full w-full transition-opacity duration-500 ${

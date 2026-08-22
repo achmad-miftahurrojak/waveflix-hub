@@ -7,6 +7,7 @@ import { useAuth } from "./AuthProvider";
 import PosterGrid from "./PosterGrid";
 import HeroCarousel from "./HeroCarousel";
 import { mediaTypeOf, durationText, genreNames, statusLabel } from "@/lib/helpers";
+import { useTranslation } from "@/lib/i18n";
 
 // Tipe data yang sama dengan HeroSlide di tmdb.ts
 interface ClientHeroSlide {
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export default function UserLibrary({ title, endpoint, localFallbackKey }: Props) {
+  const { t } = useTranslation();
   const { user, ready, authFetch } = useAuth();
   const [items, setItems] = useState<TmdbItem[] | null>(null);
   const [heroSlides, setHeroSlides] = useState<ClientHeroSlide[]>([]);
@@ -132,16 +134,13 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
         <h1 className="mb-6 text-2xl font-bold">{title}</h1>
 
         {!ready || items === null ? (
-          <p className="py-16 text-center text-white/50">Memuat…</p>
+          <p className="py-16 text-center text-white/50">{t("ui.loading")}</p>
         ) : !user && !localFallbackKey ? (
           <p className="py-16 text-center text-white/50">
-            <Link href="/masuk" className="text-accent hover:underline">
-              Masuk
-            </Link>{" "}
-            untuk melihat {title.toLowerCase()}.
+            {t("ui.loginToView")}
           </p>
         ) : items.length === 0 ? (
-          <p className="py-16 text-center text-white/50">Belum ada apa-apa di sini.</p>
+          <p className="py-16 text-center text-white/50">{t("ui.emptyLibrary")}</p>
         ) : (
           <PosterGrid items={items} />
         )}

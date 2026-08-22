@@ -13,30 +13,33 @@ import SwitchableCarousel, {
 } from "@/components/SwitchableCarousel";
 import LatestEpisodesRow from "@/components/LatestEpisodesRow";
 
+import ContinueWatchingRow from "@/components/ContinueWatchingRow";
+
 // Section "Originals" — switch antar platform besar.
 const ORIGINALS: SwitchGroup[] = [
-  { label: "Netflix Originals", id: 8 },
-  { label: "Disney+ Originals", id: 122 },
-  { label: "HBO Originals", id: 1899 },
-  { label: "Prime Video Originals", id: 119 },
-  { label: "Apple TV+ Originals", id: 350 },
+  { label: "category.netflix", id: 8 },
+  { label: "category.disney", id: 122 },
+  { label: "category.hbo", id: 1899 },
+  { label: "category.prime", id: 119 },
+  { label: "category.apple", id: 350 },
 ].map(
   (p): SwitchGroup => ({
     label: p.label,
     sources: [
-      { media: "movie", params: `provider=${p.id}&sort_by=popularity.desc&min_votes=50` },
-      { media: "tv", params: `provider=${p.id}&sort_by=popularity.desc&min_votes=50` },
+      { media: "movie", params: `provider=${p.id}&sort_by=popularity.desc` },
+      { media: "tv", params: `provider=${p.id}&sort_by=popularity.desc` },
     ],
   })
 );
 
-// Section "Drama by country" — switch antar negara/anime.
+import { MAJOR_PROVIDERS } from "@/lib/tmdb";
+
 const REGIONS: SwitchGroup[] = [
-  { label: "Korean Drama", sources: [{ media: "tv", params: "country=KR&sort_by=popularity.desc&min_votes=10" }] },
-  { label: "Japanese Drama", sources: [{ media: "tv", params: "country=JP&sort_by=popularity.desc&min_votes=5" }] },
-  { label: "Chinese Drama", sources: [{ media: "tv", params: "country=CN&sort_by=popularity.desc&min_votes=5" }] },
-  { label: "Thai Drama", sources: [{ media: "tv", params: "country=TH&sort_by=popularity.desc&min_votes=3" }] },
-  { label: "Anime", sources: [{ media: "tv", params: "genre=16&country=JP&sort_by=popularity.desc&min_votes=20" }] },
+  { label: "category.korean", sources: [{ media: "tv", params: `country=KR&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "category.japanese", sources: [{ media: "tv", params: `country=JP&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "category.chinese", sources: [{ media: "tv", params: `country=CN&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "category.thai", sources: [{ media: "tv", params: `country=TH&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "category.anime", sources: [{ media: "tv", params: `genre=16&country=JP&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
 ];
 
 export default async function Home() {
@@ -57,15 +60,16 @@ export default async function Home() {
       <HeroCarousel slides={heroSlides} />
 
       <div className="relative z-[2] pt-4">
-        <TrendingSection title="Trending Now" items={trendingGlobal} />
+        <ContinueWatchingRow />
+        <TrendingSection title="ui.trendingNow" items={trendingGlobal} />
         <TrendingSection
-          title="Trending in Indonesia"
+          title="ui.trendingIndonesia"
           items={trendingIndonesia}
         />
         <SwitchableCarousel groups={ORIGINALS} />
         <SwitchableCarousel groups={REGIONS} />
-        <MovieRow title="Latest Movies" items={latestMovies} />
-        <MovieRow title="Latest Series" items={latestSeries} />
+        <MovieRow title="ui.latestMovies" items={latestMovies} />
+        <MovieRow title="ui.latestSeries" items={latestSeries} />
         <LatestEpisodesRow episodes={latestEpisodes} />
       </div>
     </main>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { TmdbItem, MediaType } from "@/lib/types";
 import Carousel from "./Carousel";
 import { ChevronRight } from "./Icons";
+import { useTranslation } from "@/lib/i18n";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
@@ -26,6 +27,7 @@ export default function SwitchableCarousel({
 }: {
   groups: SwitchGroup[];
 }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
   const [cache, setCache] = useState<Record<number, TmdbItem[]>>({});
@@ -64,7 +66,7 @@ export default function SwitchableCarousel({
   const items = cache[active] ?? [];
 
   return (
-    <section className="mb-6">
+    <section className="mb-3">
       <div className="mb-1 px-[4%]">
         <div
           className="relative inline-block"
@@ -75,7 +77,7 @@ export default function SwitchableCarousel({
             onMouseEnter={() => setOpen(true)}
             className="flex items-center gap-2 text-xl font-bold"
           >
-            {groups[active].label}
+            {t(groups[active].label)}
             <ChevronRight
               className={`h-5 w-5 transition ${open ? "rotate-90" : ""}`}
             />
@@ -96,7 +98,7 @@ export default function SwitchableCarousel({
                         : "text-white/75 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    {g.label}
+                    {t(g.label)}
                   </button>
                 ))}
               </div>

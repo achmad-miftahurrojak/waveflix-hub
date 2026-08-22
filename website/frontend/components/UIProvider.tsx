@@ -14,10 +14,11 @@ interface PlayerState {
   item: TmdbItem;
   season?: number;
   episode?: number;
+  progress?: number;
 }
 
 interface UIContextValue {
-  play: (m: TmdbItem, season?: number, episode?: number) => void;
+  play: (m: TmdbItem, season?: number, episode?: number, progress?: number) => void;
   stop: () => void;
   player: PlayerState | null;
 }
@@ -35,11 +36,10 @@ export default function UIProvider({ children }: { children: ReactNode }) {
   const { recordHistory } = useAuth();
 
   const play = useCallback(
-    (m: TmdbItem, season?: number, episode?: number) => {
-      setPlayer({ item: m, season, episode });
-      recordHistory(m, season, episode); // dicatat kalau user login
+    (m: TmdbItem, season?: number, episode?: number, progress?: number) => {
+      setPlayer({ item: m, season, episode, progress });
     },
-    [recordHistory]
+    []
   );
 
   const stop = useCallback(() => setPlayer(null), []);

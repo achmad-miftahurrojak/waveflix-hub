@@ -52,8 +52,8 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               {children}
-              <footer className="py-10 text-center text-sm text-white/40">
-                &copy; 2026 Waveflix. Not your average streaming site.
+              <footer className="py-10 text-center text-sm text-white/40 max-w-3xl mx-auto px-4">
+                WAVEFLIX does not host, store, or distribute any media files. All content is automatically fetched from third-party providers on the internet.
               </footer>
             </RouteGuard>
           </UIProvider>

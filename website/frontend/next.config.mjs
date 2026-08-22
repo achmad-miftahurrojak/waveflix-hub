@@ -28,7 +28,7 @@ const nextConfig = {
               "img-src 'self' data: https://image.tmdb.org https://images.unsplash.com https://ui-avatars.com",
               "font-src 'self' https://fonts.gstatic.com",
               // Hanya allow domain embed yang dikenal — jangan 'frame-src *'
-              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vid.srccdn.org https://vidlink.pro https://vidsrc.to https://vidsrc.xyz https://vidsrc.me https://asianc.to https://dramanice.so https://dramacool.com.tr https://watchasian.sh https://myasiantv.cc",
+              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vidlink.pro",
               "connect-src 'self' http://localhost:8080",
             ].join("; "),
           },

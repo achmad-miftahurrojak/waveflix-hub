@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { LatestEpisode } from "@/lib/tmdb";
 import { stillUrl, itemTitle } from "@/lib/helpers";
+import { useTranslation } from "@/lib/i18n";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -9,11 +12,12 @@ export default function LatestEpisodesRow({
 }: {
   episodes: LatestEpisode[];
 }) {
+  const { t } = useTranslation();
   if (episodes.length === 0) return null;
   return (
-    <section className="mb-6">
-      <h2 className="mb-1 px-[4%] text-xl font-bold">Latest Episodes</h2>
-      <div className="no-scrollbar flex gap-3 overflow-x-auto scroll-smooth px-[4%] py-8">
+    <section className="mb-3">
+      <h2 className="mb-1 px-[4%] text-xl font-bold">{t("ui.latestEpisodes")}</h2>
+      <div className="no-scrollbar flex gap-3 overflow-x-auto scroll-smooth px-[4%] py-2">
         {episodes.map((e) => (
           <Link
             key={`${e.show.id}-${e.season}-${e.episode}`}
@@ -34,12 +38,6 @@ export default function LatestEpisodesRow({
                 S{pad(e.season)} E{pad(e.episode)}
               </span>
             </div>
-            <h4 className="mt-2 truncate text-sm font-semibold">
-              S{pad(e.season)}E{pad(e.episode)}: {e.name}
-            </h4>
-            <span className="truncate text-xs text-white/50">
-              {itemTitle(e.show)}
-            </span>
           </Link>
         ))}
       </div>

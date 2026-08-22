@@ -34,9 +34,9 @@ export function stillUrl(path?: string | null): string {
   return path ? `${IMG}/w300${path}` : "";
 }
 
-export function profileUrl(path?: string | null): string {
+export function profileUrl(path?: string | null, size: "w185" | "h632" | "original" = "w185"): string {
   return path
-    ? `${IMG}/w185${path}`
+    ? `${IMG}/${size}${path}`
     : "https://ui-avatars.com/api/?background=1f2833&color=fff&name=%3F";
 }
 
