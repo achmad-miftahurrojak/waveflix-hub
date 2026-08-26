@@ -9,9 +9,9 @@ export default function CastRow({ cast }: { cast: CastMember[] }) {
   return (
     <section className="mt-10">
       <h3 className="mb-4 text-xl font-bold">Cast</h3>
-      <div className="no-scrollbar flex gap-5 overflow-x-auto pb-2">
+      <div className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2">
         {list.map((c) => (
-          <Link href={`/person/${c.id}`} key={c.id} className="w-24 shrink-0 text-center group">
+          <Link href={`/person/${c.id}`} key={c.id} className="w-24 shrink-0 snap-start text-center group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profileUrl(c.profile_path)}

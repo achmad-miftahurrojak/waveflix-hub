@@ -96,6 +96,8 @@ export default function Navbar() {
 
   const isLandingPage = pathname === "/";
   if (pathname === "/profiles") return null;
+  // Halaman auth punya bar atas sendiri (logo + tombol pindah mode).
+  if (pathname === "/masuk" || pathname === "/daftar") return null;
 
   return (
     <header
@@ -110,7 +112,7 @@ export default function Navbar() {
         <div 
           className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
             scrolled && !isLandingPage
-              ? "rounded-full border border-white/20 bg-black/50 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]"
+              ? "rounded-full border border-white/20 bg-black/50 shadow-glass backdrop-blur-[35px]"
               : "border-0 border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent shadow-none backdrop-blur-none"
           }`}
         />
@@ -173,12 +175,12 @@ export default function Navbar() {
                 </button>
                 {openMore && (
                   <div className="absolute left-0 top-full pt-4">
-                    <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]">
+                    <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-glass backdrop-blur-[35px]">
                       {moreMenu.map(({ label, href, icon: Icon }) => (
                         <Link
                           key={label}
                           href={href}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
                         >
                           <span className="text-white/60">
                             <Icon />
@@ -228,7 +230,7 @@ export default function Navbar() {
               </button>
               {openAccount && (
                 <div className="absolute right-0 top-full pt-4">
-                  <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-[35px]">
+                  <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-glass backdrop-blur-[35px]">
                     <div className="px-3 py-2">
                       <div className="truncate text-sm font-semibold">
                         {activeProfile ? (activeProfile as any).name : user.username}
@@ -273,7 +275,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/masuk"
-              className="rounded-md bg-[#E50914] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#c10710]"
+              className="rounded-md bg-accent px-5 py-2 text-sm font-semibold text-black transition hover:bg-accent-dark"
             >
               {t("nav.login")}
             </Link>

@@ -4,11 +4,19 @@
 
 :root {
   color-scheme: dark;
+
+  /* Single source of truth warna — dirujuk tailwind.config.ts */
+  --color-bg: 11 12 16; /* #0b0c10 */
+  --color-surface: 31 40 51; /* #1f2833 */
+  --color-surface-raised: 24 24 24; /* #181818 */
+  --color-surface-overlay: 13 15 20; /* #0d0f14 */
+  --color-accent: 14 255 255; /* #0EFFFF */
+  --color-accent-dark: 11 204 204; /* #0BCCCC */
 }
 
 html,
 body {
-  background-color: #0b0c10;
+  background-color: rgb(var(--color-bg));
   color: #fff;
   overflow-x: hidden;
 }
@@ -43,7 +51,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid #0EFFFF;
+  outline: 2px solid rgb(var(--color-accent));
   outline-offset: 3px;
 }
 

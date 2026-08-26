@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+import { BACKEND } from "@/lib/helpers";
 
 export default function EmailForm() {
   const [email, setEmail] = useState("");
@@ -46,13 +45,13 @@ export default function EmailForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Alamat email"
           required
-          className="w-full rounded-md border border-white/40 bg-black/50 px-4 py-4 text-white placeholder-white/60 focus:border-white focus:outline-none focus:ring-1 focus:ring-white backdrop-blur-sm"
+          className="w-full h-14 flex-1 rounded border border-white/40 bg-black/50 px-4 py-4 text-white placeholder-white/60 backdrop-blur outline-none transition focus:border-white"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="flex w-fit items-center justify-center gap-2 rounded-md bg-[#E50914] px-8 py-4 text-xl font-bold text-white hover:bg-[#c10710] transition whitespace-nowrap disabled:opacity-60"
+        className="flex w-fit items-center justify-center gap-2 rounded bg-accent px-7 h-14 text-xl font-semibold text-black hover:bg-accent-dark transition whitespace-nowrap disabled:opacity-60"
       >
         {loading ? "Mengecek…" : "Mulai"}
         {!loading && (

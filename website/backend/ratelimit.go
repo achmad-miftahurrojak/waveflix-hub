@@ -55,10 +55,12 @@ func clientIP(r *http.Request) string {
 	return host
 }
 
-// rateLimit — max `limit` requests per `window` per IP
-func rateLimit(limit int, window time.Duration, next http.HandlerFunc) http.HandlerFunc {
+// rateLimit — max `limit` requests per `window` per IP, dengan `scope`
+// sebagai pemisah bucket (login punya bucket sendiri, public API punya
+// bucket sendiri — aktivitas browsing tidak menghabiskan kuota login).
+func rateLimit(scope string, limit int, window time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip := clientIP(r)
+		ip := scope + "|" + clientIP(r)
 
 		mu.Lock()
 		v, exists := visitors[ip]

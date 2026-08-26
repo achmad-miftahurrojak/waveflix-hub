@@ -219,14 +219,14 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
                 {s.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] md:max-h-24 md:max-w-[280px]" />
+                  <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-logo md:max-h-24 md:max-w-[280px]" />
                 ) : (
-                  <h1 className="mb-4 max-w-xl text-3xl font-extrabold leading-tight drop-shadow-lg md:text-4xl">
+                  <h1 className="mb-4 max-w-xl text-3xl font-bold leading-tight drop-shadow-lg md:text-4xl">
                     {itemTitle(s.item)}
                   </h1>
                 )}
 
-                <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/90 drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]">
+                <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/90 drop-shadow-meta">
                   <span className="flex items-center gap-1 font-semibold text-[#f5c518]"><StarIcon /> {ratingText(s.item)}</span>
                   <span className="text-white/40">&bull;</span>
                   <span>{itemYear(s.item)}</span>

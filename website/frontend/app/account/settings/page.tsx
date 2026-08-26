@@ -68,6 +68,7 @@ export default function SettingsPage() {
 
   // ---- Per-Account data management ----
   const [histMsg, setHistMsg] = useState<Msg>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
   
   // ---- Language Setting ----
   const [langCode, setLangCode] = useState("id");
@@ -202,6 +203,7 @@ export default function SettingsPage() {
 
   const clearHistory = async () => {
     setHistMsg(null);
+    setClearingHistory(true);
     try {
       const r = await authFetch("/api/history", { method: "DELETE" });
       setHistMsg(r.ok
@@ -209,6 +211,8 @@ export default function SettingsPage() {
         : { ok: false, text: "Gagal menghapus riwayat." });
     } catch {
       setHistMsg({ ok: false, text: "Tidak bisa terhubung ke server." });
+    } finally {
+      setClearingHistory(false);
     }
   };
 
@@ -337,7 +341,7 @@ export default function SettingsPage() {
 
           <div className="mb-4">
             <label className={label}>{t("settings.profile.bio")}</label>
-            <textarea className={`${inputCls} min-h-[90px] resize-y`} maxLength={250} value={profBio} onChange={(e) => setProfBio(e.target.value)} placeholder={t("settings.profile.bioPlaceholder")} />
+            <textarea className={`${inputCls} min-h-24 resize-y`} maxLength={250} value={profBio} onChange={(e) => setProfBio(e.target.value)} placeholder={t("settings.profile.bioPlaceholder")} />
             <div className="mt-1 text-right text-xs text-white/40">{profBio.length}/250</div>
           </div>
 
@@ -413,7 +417,7 @@ export default function SettingsPage() {
               </select>
             </div>
             <button type="submit" disabled={savingLang} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark disabled:opacity-60">
-              {savingLang ? "..." : t("settings.account.saveLanguage")}
+              {savingLang ? "Menyimpan…" : t("settings.account.saveLanguage")}
             </button>
             <Note msg={langMsg} />
           </form>
@@ -440,8 +444,12 @@ export default function SettingsPage() {
             <p className="mb-4 text-sm text-white/60">
               {t("settings.account.historyWarn")}
             </p>
-            <button onClick={clearHistory} className="rounded-lg border border-red-400/40 px-5 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-500/10">
-              {t("settings.account.clearHistory")}
+            <button
+              onClick={clearHistory}
+              disabled={clearingHistory}
+              className="rounded-lg border border-red-400/40 px-5 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {clearingHistory ? "Menghapus…" : t("settings.account.clearHistory")}
             </button>
             <Note msg={histMsg} />
           </div>

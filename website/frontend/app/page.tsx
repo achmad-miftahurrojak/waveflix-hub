@@ -1,65 +1,150 @@
 import { getTrendingIndonesia } from "@/lib/tmdb";
-import { backdropUrl } from "@/lib/helpers";
-import Top10Row from "@/components/Top10Row";
+import Carousel from "@/components/Carousel";
 import EmailForm from "@/components/EmailForm";
-import ContinueWatchingRow from "@/components/ContinueWatchingRow";
+import PosterWall from "@/components/landing/PosterWall";
+import Faq from "@/components/landing/Faq";
+
+const reasons = [
+  {
+    title: "Nikmati di TV-mu",
+    desc: "Tonton di smart TV, PlayStation, Xbox, Chromecast, Apple TV, dan banyak lagi.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10">
+        <rect x="2" y="4" width="20" height="13" rx="2" />
+        <path strokeLinecap="round" d="M8 21h8M12 17v4" />
+      </svg>
+    ),
+  },
+  {
+    title: "Tonton di mana saja",
+    desc: "Streaming film dan serial tanpa batas di ponsel, tablet, laptop, dan TV-mu.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10">
+        <rect x="2" y="5" width="13" height="11" rx="1.5" />
+        <rect x="16" y="9" width="6" height="10" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Buat profil untuk anak",
+    desc: "Kirim anak-anak untuk bertualang bersama karakter favorit mereka di dunia yang dibuat khusus untuk mereka.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10">
+        <circle cx="12" cy="8" r="4" />
+        <path strokeLinecap="round" d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+      </svg>
+    ),
+  },
+];
+
+const footerColumns: { label: string; href: string }[][] = [
+  [
+    { label: "FAQ", href: "#faq" },
+    { label: "Film & Serial", href: "/browse" },
+    { label: "Reality Show", href: "/reality" },
+  ],
+  [
+    { label: "Genre", href: "/genres" },
+    { label: "Negara", href: "/countries" },
+    { label: "Jaringan TV", href: "/networks" },
+  ],
+  [
+    { label: "Tahun Rilis", href: "/years" },
+    { label: "Privasi", href: "/privasi" },
+    { label: "Syarat Penggunaan", href: "/syarat" },
+  ],
+  [
+    { label: "Akun Saya", href: "/account" },
+    { label: "Daftar Saya", href: "/daftar-saya" },
+    { label: "Riwayat Tontonan", href: "/riwayat" },
+  ],
+];
 
 export default async function LandingPage() {
   // Ambil data untuk "Sedang Tren Sekarang" (Trending Indonesia)
   const trending = await getTrendingIndonesia();
-  
-  // Ambil background dari film trending pertama
-  const bgImage = trending.length > 0 ? backdropUrl(trending[0]) : "";
 
   return (
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center min-h-[90vh] px-4 pt-32 pb-24 text-center border-b-[8px] border-[#232323]">
-        {/* Background Image & Overlay */}
-        {bgImage && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('${bgImage}')` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black via-black/40 to-black/80" />
-        
-        {/* Konten Hero */}
-        <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-          <h1 className="text-4xl md:text-5xl lg:text-[4rem] font-extrabold leading-tight tracking-tight text-white drop-shadow-lg">
+      <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden">
+        <PosterWall items={trending} />
+
+        {/* Layer 3 — konten utama */}
+        <div className="relative z-10 mx-auto w-full max-w-[800px] px-6 text-center">
+          <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
             Film dan serial TV tanpa batas, dan lebih banyak lagi
           </h1>
-          <p className="text-lg md:text-2xl font-medium text-white drop-shadow-md">
-            Harga mulai dari Rp54.000. Batalkan kapan pun.
+          <p className="mt-5 text-lg font-bold text-white md:text-2xl">
+            Ribuan film dan serial TV — tonton kapan saja, di mana saja.
           </p>
-          <div className="pt-4">
-            <p className="text-base md:text-lg text-white mb-4 drop-shadow-md">
-              Siap menonton? Masukkan email untuk membuat atau memulai lagi keanggotaanmu.
-            </p>
-            <EmailForm />
-          </div>
-        </div>
-      </section>
-
-      {/* Section: Continue Watching (only renders if user has unfinished items) */}
-      <ContinueWatchingRow />
-
-      {/* Section: Sedang Tren Sekarang */}
-      <section className="bg-black py-20 border-b-[8px] border-[#232323]">
-        <div className="max-w-[1400px] mx-auto">
-          <Top10Row items={trending} />
-        </div>
-      </section>
-
-      {/* Section Placeholder tambahan jika diperlukan (Sesuai gaya Netflix) */}
-      <section className="bg-black py-24 px-[4%] text-center border-b-[8px] border-[#232323]">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <h2 className="text-3xl md:text-5xl font-extrabold">Buat profil untuk anak</h2>
-          <p className="text-lg md:text-2xl text-white/80">
-            Kirim anak-anak untuk bertualang bersama karakter favorit mereka di dunia yang dibuat khusus untuk mereka—gratis dengan keanggotaanmu.
+          <p className="mt-6 text-base text-white/90 md:text-lg">
+            Siap menonton? Masukkan email untuk mulai menonton.
           </p>
+          <EmailForm />
         </div>
       </section>
+
+      {/* Section: Sedang Tren Sekarang — lengkungan adalah tepi section itu sendiri */}
+      <section className="relative z-10 bg-black pt-24 pb-16">
+        {/* Curved top edge — same bg color, blends seamlessly with hero */}
+        <div
+          className="absolute left-0 right-0 top-0 h-16 bg-black"
+          style={{ borderRadius: "50% 50% 0 0 / 100% 100% 0 0" }}
+          aria-hidden
+        />
+        <h2 className="mx-auto mb-4 max-w-[1080px] text-2xl font-bold md:text-3xl">Sedang Tren Sekarang</h2>
+        <Carousel items={trending} small quickView />
+      </section>
+
+      {/* Section: More Reasons to Join */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">Alasan Lebih Banyak untuk Bergabung</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {reasons.map((r) => (
+            <div
+              key={r.title}
+              className="flex min-h-56 flex-col justify-between rounded-2xl bg-gradient-to-br from-cyan-950/80 via-slate-900 to-slate-900 p-6 ring-1 ring-accent/15 transition hover:ring-accent/40"
+            >
+              <div>
+                <h3 className="text-lg font-bold text-white">{r.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">{r.desc}</p>
+              </div>
+              <div className="mt-6 self-end text-accent/70">{r.icon}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Section: FAQ */}
+      <Faq />
+
+      {/* Footer links */}
+      <footer className="mx-auto max-w-6xl px-6 pb-14 pt-10">
+        <p className="text-white/60">
+          Ada pertanyaan? Lihat{" "}
+          <a href="#faq" className="underline hover:text-white">
+            FAQ
+          </a>
+          .
+        </p>
+        <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+          {footerColumns.map((col, i) => (
+            <ul key={i} className="space-y-3">
+              {col.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-sm text-white/60 underline-offset-2 hover:underline"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </footer>
     </main>
   );
 }

@@ -49,6 +49,13 @@ func initDB() {
 		created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
+	CREATE TABLE IF NOT EXISTS email_verifications (
+		email      TEXT PRIMARY KEY,
+		code_hash  TEXT NOT NULL,
+		expires_at INTEGER NOT NULL,
+		attempts   INTEGER DEFAULT 0
+	);
+
 	CREATE TABLE IF NOT EXISTS profiles (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,

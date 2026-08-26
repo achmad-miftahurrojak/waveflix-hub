@@ -121,17 +121,17 @@ export default async function DetailPage({
             <img
               src={logo}
               alt={itemTitle(detail)}
-              className="mb-4 max-h-20 w-auto max-w-[260px] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] md:max-h-28 md:max-w-[340px]"
+              className="mb-4 max-h-20 w-auto max-w-[260px] object-contain object-left drop-shadow-logo md:max-h-28 md:max-w-[340px]"
             />
           ) : (
-            <h1 className="mb-4 text-4xl font-extrabold drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] md:text-5xl">
+            <h1 className="mb-4 text-4xl font-bold drop-shadow-title md:text-5xl">
               {itemTitle(detail)}
             </h1>
           )}
 
           {/* Genre inline (dot-separated) */}
           {genres.length > 0 && (
-            <p className="mb-5 text-base font-medium text-white/85 drop-shadow md:text-lg">
+            <p className="mb-5 text-base font-semibold text-white/85 drop-shadow md:text-lg">
               {genres.join("  ·  ")}
             </p>
           )}
@@ -140,7 +140,7 @@ export default async function DetailPage({
           <DetailActions item={detail} />
 
           {/* Meta: rating · tahun · durasi/musim · negara · bahasa · status */}
-          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/85 drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]">
+          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/85 drop-shadow-meta">
             <span className="flex items-center gap-1 font-semibold text-[#f5c518]">
               <StarIcon /> {ratingText(detail)}
             </span>
@@ -191,7 +191,7 @@ export default async function DetailPage({
             </p>
           )}
 
-          <p className="max-w-2xl text-[15px] leading-7 text-white/75">
+          <p className="max-w-2xl text-base leading-7 text-white/75">
             {detail.overview || "No description available for this title."}
           </p>
 

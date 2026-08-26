@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TmdbItem, MediaType } from "@/lib/types";
 import PosterGrid from "./PosterGrid";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+import { BACKEND } from "@/lib/helpers";
 
 interface Props {
   params: Record<string, string>; // query discover tanpa `page`

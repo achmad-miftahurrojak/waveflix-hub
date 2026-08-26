@@ -9,10 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import type { TmdbItem } from "@/lib/types";
-import { itemTitle, mediaTypeOf } from "@/lib/helpers";
+import { itemTitle, mediaTypeOf, BACKEND } from "@/lib/helpers";
 import { TOKEN_KEY, migrateStorage } from "@/lib/storage";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
 export interface AuthUser {
   id: number;
@@ -39,7 +37,7 @@ interface AuthContextValue {
   token: string | null;
   ready: boolean;
   login: (email: string, password: string) => Promise<string | null>;
-  register: (email: string, username: string, password: string) => Promise<string | null>;
+  register: (email: string, username: string, password: string, code: string) => Promise<string | null>;
   logout: () => void;
   authFetch: (path: string, init?: RequestInit) => Promise<Response>;
   recordHistory: (item: TmdbItem, season?: number, episode?: number, currentProgressSeconds?: number) => void;
@@ -137,12 +135,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (email: string, username: string, password: string) => {
+    async (email: string, username: string, password: string, code: string) => {
       try {
         const res = await fetch(`${BACKEND}/api/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, username, password }),
+          body: JSON.stringify({ email, username, password, code }),
         });
         const data = await res.json();
         if (!res.ok) return data.error || "Gagal daftar";

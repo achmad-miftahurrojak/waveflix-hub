@@ -88,7 +88,7 @@ export default function AccountPage() {
                 </span>
               )}
               <div className="mb-1">
-                <h1 className="pb-1 text-4xl font-extrabold drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] md:text-5xl" style={{ fontFamily: nameFontCss(user.name_font), lineHeight: 1.45 }}>
+                <h1 className="pb-1 text-4xl font-bold drop-shadow-title md:text-5xl" style={{ fontFamily: nameFontCss(user.name_font), lineHeight: 1.45 }}>
                   {user.username}
                 </h1>
                 <p className="text-sm text-white/70 drop-shadow">
@@ -108,7 +108,7 @@ export default function AccountPage() {
       {/* BELOW: bio + tabs + list */}
       <div className="mx-auto max-w-5xl px-[4%] py-10">
         {(activeProfile as any)?.bio || user.bio ? (
-          <p className="max-w-2xl text-[15px] italic leading-7 text-white/70">{(activeProfile as any)?.bio || user.bio}</p>
+          <p className="max-w-2xl text-base italic leading-7 text-white/70">{(activeProfile as any)?.bio || user.bio}</p>
         ) : (
           <p className="text-sm text-white/40">Belum ada bio. Klik Edit Profil untuk menambahkan.</p>
         )}

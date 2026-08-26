@@ -50,7 +50,7 @@ export default async function PersonPage({
     .slice(0, 20);
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
+    <main className="min-h-screen bg-bg">
       <Navbar />
       
       <div className="pt-24 px-[4%] max-w-7xl mx-auto pb-20">
@@ -67,7 +67,7 @@ export default async function PersonPage({
 
           {/* Right Column: Name & Tabs */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-6">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">
               {person.original_name || person.name}
             </h1>
 

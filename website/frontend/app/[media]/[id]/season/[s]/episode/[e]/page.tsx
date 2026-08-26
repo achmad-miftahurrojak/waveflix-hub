@@ -59,7 +59,7 @@ export default async function EpisodePage({
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24 pt-28">
           <Link
             href={`/tv/${id}`}
-            className="mb-5 inline-flex items-center gap-1 text-sm font-medium text-white/70 transition hover:text-accent"
+            className="mb-5 inline-flex items-center gap-1 text-sm font-semibold text-white/70 transition hover:text-accent"
           >
             <ChevronLeft className="h-4 w-4" /> {itemTitle(detail)}
           </Link>
@@ -69,11 +69,11 @@ export default async function EpisodePage({
             <img
               src={logo}
               alt={itemTitle(detail)}
-              className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] md:max-h-20 md:max-w-[260px]"
+              className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-logo md:max-h-20 md:max-w-[260px]"
             />
           ) : null}
 
-          <h1 className="text-3xl font-extrabold drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] md:text-4xl">
+          <h1 className="text-3xl font-bold drop-shadow-title md:text-4xl">
             Season {season} Episode {episode}
           </h1>
           <p className="mb-5 mt-1 text-lg text-white/80 drop-shadow">
@@ -84,7 +84,7 @@ export default async function EpisodePage({
             <EpisodePlayButton show={detail} season={season} episode={episode} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/85 drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/85 drop-shadow-meta">
             {ep.runtime ? (
               <>
                 <span>{runtimeText(ep.runtime)}</span>
@@ -155,7 +155,7 @@ export default async function EpisodePage({
 
         <section className="max-w-3xl">
           <h2 className="mb-3 text-xl font-bold">Overview</h2>
-          <p className="text-[15px] leading-7 text-white/75">
+          <p className="text-base leading-7 text-white/75">
             {ep.overview ||
               detail.overview ||
               "No description available for this episode."}

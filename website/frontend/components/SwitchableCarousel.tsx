@@ -5,8 +5,7 @@ import type { TmdbItem, MediaType } from "@/lib/types";
 import Carousel from "./Carousel";
 import { ChevronRight } from "./Icons";
 import { useTranslation } from "@/lib/i18n";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+import { BACKEND } from "@/lib/helpers";
 
 interface Source {
   media: MediaType;
@@ -84,7 +83,7 @@ export default function SwitchableCarousel({
           </button>
           {open && (
             <div className="absolute left-0 top-full z-30 pt-4">
-              <div className="w-56 rounded-xl border border-white/10 bg-[#0d0f14]/90 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+              <div className="w-56 rounded-xl border border-white/10 bg-surface-overlay/90 p-2 shadow-glass backdrop-blur-2xl">
                 {groups.map((g, i) => (
                   <button
                     key={g.label}

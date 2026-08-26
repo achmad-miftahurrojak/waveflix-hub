@@ -43,7 +43,7 @@ export default function TrendingSection({
             <button
               key={tabItem.id}
               onClick={() => setTab(tabItem.id)}
-              className={`relative rounded-full px-4 py-1 text-sm font-medium transition ${
+              className={`relative rounded-full px-4 py-1 text-sm font-semibold transition ${
                 tab === tabItem.id ? "text-black" : "text-white/60 hover:text-white"
               }`}
             >

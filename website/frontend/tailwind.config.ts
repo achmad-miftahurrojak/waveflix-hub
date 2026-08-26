@@ -8,12 +8,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Ganti nilai `accent` di sini kalau mau warna brand lain (mis. merah IDLIX).
-        bg: "#0b0c10",
-        surface: "#1f2833",
+        // Ganti nilai variabel di globals.css (`:root`) kalau mau ubah warna brand.
+        bg: "rgb(var(--color-bg) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        // Hierarki surface: bg (dasar) → surface (card) → surface-raised (modal)
+        // → surface-overlay (dropdown/search). Semua near-black wajib lewat token ini.
+        "surface-raised": "rgb(var(--color-surface-raised) / <alpha-value>)",
+        "surface-overlay": "rgb(var(--color-surface-overlay) / <alpha-value>)",
         accent: {
-          DEFAULT: "#0EFFFF",
-          dark: "#0BCCCC",
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          dark: "rgb(var(--color-accent-dark) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -22,7 +26,14 @@ const config: Config = {
         logo: ["var(--font-logo)", "Impact", "Arial Narrow", "sans-serif"],
       },
       boxShadow: {
-        card: "0 20px 30px rgba(0,0,0,0.7)",
+        // Shadow card dibuat subtle — depth pendukung, bukan pesaing konten.
+        card: "0 10px 20px rgba(0,0,0,0.5)",
+        glass: "0 12px 40px rgba(0,0,0,0.7)",
+      },
+      dropShadow: {
+        logo: "0 2px 10px rgba(0,0,0,0.8)",
+        title: "0 2px 10px rgba(0,0,0,0.9)",
+        meta: "0 1px 5px rgba(0,0,0,0.9)",
       },
     },
   },

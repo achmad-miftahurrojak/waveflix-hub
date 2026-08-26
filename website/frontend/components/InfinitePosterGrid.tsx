@@ -84,7 +84,7 @@ export default function InfinitePosterGrid({
       
       {hasMore && (
         <div ref={observerTarget} className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
         </div>
       )}
       

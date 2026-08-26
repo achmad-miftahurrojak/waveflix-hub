@@ -67,14 +67,20 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Code     string `json:"code"`
 	}
 	if err := decodeJSON(r, &body); err != nil {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
 		return
 	}
 	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
+	body.Code = strings.TrimSpace(body.Code)
 	if body.Email == "" || len(body.Password) < 8 || body.Username == "" {
 		httpError(w, http.StatusBadRequest, "email/username wajib, password minimal 8 karakter")
+		return
+	}
+	if !verifyEmailCode(body.Email, body.Code) {
+		httpError(w, http.StatusForbidden, "kode verifikasi tidak valid atau kedaluwarsa")
 		return
 	}
 

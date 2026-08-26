@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { SearchIcon } from "./Icons";
-import { posterUrl, itemTitle, detailHref, isTv } from "@/lib/helpers";
+import { posterUrl, itemTitle, detailHref, isTv, BACKEND } from "@/lib/helpers";
 import type { TmdbItem } from "@/lib/types";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
 export default function SearchBox() {
   const router = useRouter();
@@ -103,7 +101,7 @@ export default function SearchBox() {
 
       {/* Instant results dropdown */}
       {open && value.trim() && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-[#0d0f14] p-2 shadow-xl ring-1 ring-white/10 z-50">
+        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-surface-overlay p-2 shadow-xl ring-1 ring-white/10 z-50">
           {loading ? (
             <p className="px-3 py-4 text-sm text-white/50">Mencari…</p>
           ) : results.length === 0 ? (

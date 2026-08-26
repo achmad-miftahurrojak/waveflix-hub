@@ -9,10 +9,10 @@ import { useTranslation } from "@/lib/i18n";
 
 export default function ContinueWatchingRow() {
   const { user, ready, authFetch, activeProfile } = useAuth();
+  const { t } = useTranslation();
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
 
   useEffect(() => {
     if (!ready || !user) {
@@ -71,34 +71,11 @@ export default function ContinueWatchingRow() {
     }
   };
 
-  if (loading) {
-    return (
-      <section className="mb-6">
-        <div className="mb-1 px-[4%]">
-          <h2 className="text-xl font-bold">{t("ui.continueWatching")}</h2>
-          <p className="text-white/50 text-sm">{t("ui.loadingHistory")}</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <section className="mb-6">
-        <div className="mb-1 px-[4%]">
-          <h2 className="text-xl font-bold">{t("ui.continueWatching")}</h2>
-          <p className="text-white/50 text-sm py-4">{t("ui.emptyHistory")}</p>
-        </div>
-      </section>
-    );
-  }
+  if (loading || items.length === 0) return null;
 
   return (
     <section className="mb-3">
-      <div className="mb-1 px-[4%]">
-        <h2 className="text-xl font-bold">{t("ui.continueWatching")}</h2>
-      </div>
-      
+      <h2 className="mb-1 px-[4%] text-xl font-bold">{t("ui.continueWatching")}</h2>
       <div className="group/car relative">
         <button
           onClick={() => scroll(-1)}
@@ -110,10 +87,10 @@ export default function ContinueWatchingRow() {
 
         <div
           ref={ref}
-          className="no-scrollbar flex gap-4 overflow-x-auto py-2 px-[4%]"
+          className="no-scrollbar flex snap-x snap-mandatory scroll-pl-[4%] gap-4 overflow-x-auto py-2 px-[4%]"
         >
           {items.map((m, i) => (
-            <div key={`${m.id}-${i}`} className="w-[280px] shrink-0">
+            <div key={`${m.id}-${i}`} className="w-[280px] shrink-0 snap-start">
               <ContinueWatchingCard item={m} onRemove={handleRemove} />
             </div>
           ))}

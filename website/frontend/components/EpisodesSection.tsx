@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { TmdbItem, SeasonSummary, Episode } from "@/lib/types";
-import { stillUrl, runtimeText } from "@/lib/helpers";
+import { stillUrl, runtimeText, BACKEND } from "@/lib/helpers";
 import { PlayIcon } from "./Icons";
 import { useTranslation } from "@/lib/i18n";
-
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
 /** "2026-08-07" -> "7 Aug 26" (ala IDLIX). */
 function formatAirDate(iso: string): string {
@@ -71,7 +69,7 @@ export default function EpisodesSection({
           <select
             value={season}
             onChange={(e) => setSeason(Number(e.target.value))}
-            className="rounded-md border border-white/20 bg-surface px-4 py-2 text-sm font-medium outline-none focus:border-accent"
+            className="rounded-md border border-white/20 bg-surface px-4 py-2 text-sm font-semibold outline-none focus:border-accent"
           >
             {valid.map((s) => (
               <option key={s.season_number} value={s.season_number}>
@@ -108,17 +106,17 @@ export default function EpisodesSection({
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
                 ) : null}
-                <span className="absolute left-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-[0.65rem] font-bold tracking-wide">
+                <span className="absolute left-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-bold tracking-wide">
                   S{String(season).padStart(2, "0")}E
                   {String(ep.episode_number).padStart(2, "0")}
                 </span>
                 {ep.air_date && (
-                  <span className="absolute right-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-[0.65rem] font-medium text-white/80">
+                  <span className="absolute right-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white/80">
                     {formatAirDate(ep.air_date)}
                   </span>
                 )}
                 {ep.runtime ? (
-                  <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-[0.65rem] font-medium text-white/80">
+                  <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white/80">
                     {runtimeText(ep.runtime)}
                   </span>
                 ) : null}

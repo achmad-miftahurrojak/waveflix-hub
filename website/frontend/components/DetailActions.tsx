@@ -42,6 +42,7 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
   const tv = isTv(item);
   const [saved, setSaved] = useState(false);
   const [faved, setFaved] = useState(false);
+  const [pending, setPending] = useState<"save" | "fav" | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -91,18 +92,30 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
   };
 
   const toggleSave = async () => {
+    if (pending) return;
     if (user) {
-      await remoteToggle("/api/watchlist", saved);
-      setSaved(!saved);
+      setPending("save");
+      try {
+        await remoteToggle("/api/watchlist", saved);
+        setSaved(!saved);
+      } finally {
+        setPending(null);
+      }
     } else {
       setSaved(toggleLocal(LIST_KEY, item));
     }
   };
 
   const toggleFav = async () => {
+    if (pending) return;
     if (user) {
-      await remoteToggle("/api/favorites", faved);
-      setFaved(!faved);
+      setPending("fav");
+      try {
+        await remoteToggle("/api/favorites", faved);
+        setFaved(!faved);
+      } finally {
+        setPending(null);
+      }
     } else {
       setFaved(toggleLocal(FAV_KEY, item));
     }
@@ -125,7 +138,8 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleSave}
-        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 ${
+        disabled={pending !== null}
+        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 ${
           saved ? "border-white text-white" : "border-white/40"
         }`}
       >
@@ -146,7 +160,8 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleFav}
-        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 ${
+        disabled={pending !== null}
+        className={`flex items-center gap-2 rounded-md border-2 px-6 py-3 font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 ${
           faved ? "border-accent text-accent" : "border-white/40"
         }`}
       >

@@ -35,7 +35,7 @@ export default function FilterBar() {
           <button
             key={m}
             onClick={() => update("media", m)}
-            className={`px-4 py-2 text-sm font-medium transition ${
+            className={`px-4 py-2 text-sm font-semibold transition ${
               media === m ? "bg-accent text-black" : "text-white/70 hover:bg-white/10"
             }`}
           >
