@@ -169,6 +169,7 @@ func uploadImage(column string) http.HandlerFunc {
 			return
 		}
 		uid := r.Context().Value(userIDKey).(int64)
+		r.Body = http.MaxBytesReader(w, r.Body, 8_000_000) // ~6MB file + overhead base64
 		var body struct {
 			Image string `json:"image"`
 		}

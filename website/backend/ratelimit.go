@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -34,24 +35,30 @@ func init() {
 	}()
 }
 
+// clientIP — ambil IP klien. Header X-Forwarded-For/X-Real-IP hanya dipercaya
+// jika env TRUST_PROXY diset (backend berada di belakang reverse proxy).
+// Tanpa itu, header tersebut bisa di-spoof client untuk bypass rate limit.
+func clientIP(r *http.Request) string {
+	if os.Getenv("TRUST_PROXY") != "" {
+		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+			ips := strings.Split(ip, ",")
+			return strings.TrimSpace(ips[0])
+		}
+		if ip := r.Header.Get("X-Real-IP"); ip != "" {
+			return strings.TrimSpace(ip)
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
 // rateLimit — max `limit` requests per `window` per IP
 func rateLimit(limit int, window time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip := r.Header.Get("X-Forwarded-For")
-		if ip == "" {
-			ip = r.Header.Get("X-Real-IP")
-		}
-		if ip == "" {
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				ip = r.RemoteAddr
-			} else {
-				ip = host
-			}
-		} else {
-			ips := strings.Split(ip, ",")
-			ip = strings.TrimSpace(ips[0])
-		}
+		ip := clientIP(r)
 
 		mu.Lock()
 		v, exists := visitors[ip]

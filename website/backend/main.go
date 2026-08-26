@@ -492,15 +492,44 @@ func handleDetail(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
+// maxBatchIDs — batas jumlah ID per request detail-batch (anti DoS).
+const maxBatchIDs = 20
+
+// parseBatchIDs — pecah "1,2,3" menjadi daftar ID numerik yang valid.
+// ID non-numerik dibuang agar tidak bisa menyuntik path ke URL TMDB.
+func parseBatchIDs(idsStr string) []string {
+	if idsStr == "" {
+		return nil
+	}
+	parts := strings.Split(idsStr, ",")
+	if len(parts) > maxBatchIDs {
+		parts = parts[:maxBatchIDs]
+	}
+	var ids []string
+	for _, id := range parts {
+		id = strings.TrimSpace(id)
+		valid := id != ""
+		for _, c := range id {
+			if c < '0' || c > '9' {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
 func handleDetailBatch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	media := getMediaParam(q)
-	idsStr := q.Get("ids")
-	if idsStr == "" {
+	ids := parseBatchIDs(q.Get("ids"))
+	if len(ids) == 0 {
 		writeJSON(w, `{"error":"ids kosong"}`)
 		return
 	}
-	ids := strings.Split(idsStr, ",")
 
 	type result struct {
 		id   string
