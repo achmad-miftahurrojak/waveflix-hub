@@ -2,6 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  expect: {
+    timeout: 10000,
+  },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -20,7 +23,8 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "set E2E_TEST_MODE=1&& cd ../backend && go run .",
+      command: "cd ../backend && go run .",
+      env: { E2E_TEST_MODE: "1" },
       url: "http://localhost:8080/health",
       reuseExistingServer: true,
       timeout: 120_000,

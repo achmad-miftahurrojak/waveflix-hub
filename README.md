@@ -56,6 +56,7 @@ Konfigurasi `website/backend/.env`:
 | `JWT_SECRET` | Ya | String acak minimal 32 karakter |
 | `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Opsional | Integrasi Trakt.tv |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Opsional | Email verification |
+| `SMTP_FROM` | Prod | Alamat pengirim email verifikasi |
 | `PORT` | Tidak | Default `8080` |
 | `ALLOWED_ORIGIN` | Prod | CORS origin frontend |
 | `TRUSTED_PROXY_IPS` | Prod | IP/CIDR reverse proxy, comma-separated |
@@ -75,6 +76,8 @@ Konfigurasi `website/frontend/.env.local`:
 - `NEXT_PUBLIC_BACKEND_URL` — dipakai browser (default `http://localhost:8080`)
 
 Di production, isi `BACKEND_URL` dan `NEXT_PUBLIC_BACKEND_URL` dengan URL HTTPS backend yang sebenarnya.
+
+Untuk Gmail, gunakan App Password, bukan password akun utama. Setelah mengisi variabel SMTP di `website/backend/.env`, restart backend lalu gunakan tombol kirim ulang kode.
 
 Buka http://localhost:3000.
 
