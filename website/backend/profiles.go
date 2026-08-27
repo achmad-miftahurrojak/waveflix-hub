@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -52,6 +51,7 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(profiles)
 
 	case "POST":
+		r.Body = http.MaxBytesReader(w, r.Body, 64_000)
 		var p Profile
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -62,6 +62,11 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 		if p.Name == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			writeJSON(w, `{"error":"name is required"}`)
+			return
+		}
+		if len([]rune(p.Name)) > 80 || len([]rune(p.Bio)) > 500 {
+			w.WriteHeader(http.StatusBadRequest)
+			writeJSON(w, `{"error":"profile fields terlalu panjang"}`)
 			return
 		}
 
@@ -142,6 +147,11 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, `{"error":"invalid request"}`)
 			return
 		}
+		if len([]rune(p.Name)) > 80 || len([]rune(p.Bio)) > 500 {
+			w.WriteHeader(http.StatusBadRequest)
+			writeJSON(w, `{"error":"profile fields terlalu panjang"}`)
+			return
+		}
 
 		if strings.HasPrefix(p.Avatar, "data:image/") {
 			p.Avatar = processProfileImage(p.Avatar, "avatar", profileID)
@@ -185,22 +195,7 @@ func processProfileImage(data, prefix string, id int) string {
 	if data == "" {
 		return ""
 	}
-	var ext string
-	var rawBase64 string
-	if strings.HasPrefix(data, "data:image/png;base64,") {
-		ext = "png"
-		rawBase64 = strings.TrimPrefix(data, "data:image/png;base64,")
-	} else if strings.HasPrefix(data, "data:image/jpeg;base64,") {
-		ext = "jpg"
-		rawBase64 = strings.TrimPrefix(data, "data:image/jpeg;base64,")
-	} else if strings.HasPrefix(data, "data:image/gif;base64,") {
-		ext = "gif"
-		rawBase64 = strings.TrimPrefix(data, "data:image/gif;base64,")
-	} else {
-		return "" // Invalid format, skip
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(rawBase64)
+	ext, decoded, err := validateImageData(data)
 	if err != nil {
 		return ""
 	}
@@ -208,7 +203,7 @@ func processProfileImage(data, prefix string, id int) string {
 	filename := fmt.Sprintf("profile_%s_%d_%d.%s", prefix, id, time.Now().Unix(), ext)
 	filepath := fmt.Sprintf("./uploads/%s", filename)
 
-	if err := os.WriteFile(filepath, decoded, 0644); err != nil {
+	if err := os.WriteFile(filepath, decoded, 0600); err != nil {
 		return ""
 	}
 	return fmt.Sprintf("/uploads/%s", filename)

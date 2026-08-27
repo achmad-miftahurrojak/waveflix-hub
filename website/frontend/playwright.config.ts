@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "cd ../backend && go run .",
+      command: "set E2E_TEST_MODE=1&& cd ../backend && go run .",
       url: "http://localhost:8080/health",
       reuseExistingServer: true,
       timeout: 120_000,

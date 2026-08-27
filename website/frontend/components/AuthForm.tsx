@@ -45,6 +45,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       }
       setError(null);
       setStep("code");
+      if (data.test_code) setCode(data.test_code);
       return true;
     } catch {
       setError("Tidak bisa terhubung ke server.");

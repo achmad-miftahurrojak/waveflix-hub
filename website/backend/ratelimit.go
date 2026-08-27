@@ -9,6 +9,34 @@ import (
 	"time"
 )
 
+func trustedProxy(remoteAddr string) bool {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		host = remoteAddr
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	for _, entry := range strings.Split(os.Getenv("TRUSTED_PROXY_IPS"), ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		if strings.Contains(entry, "/") {
+			_, network, err := net.ParseCIDR(entry)
+			if err == nil && network.Contains(ip) {
+				return true
+			}
+			continue
+		}
+		if net.ParseIP(entry) != nil && net.ParseIP(entry).Equal(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 type visitor struct {
 	count    int
 	lastSeen time.Time
@@ -39,7 +67,7 @@ func init() {
 // jika env TRUST_PROXY diset (backend berada di belakang reverse proxy).
 // Tanpa itu, header tersebut bisa di-spoof client untuk bypass rate limit.
 func clientIP(r *http.Request) string {
-	if os.Getenv("TRUST_PROXY") != "" {
+	if trustedProxy(r.RemoteAddr) {
 		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
 			ips := strings.Split(ip, ",")
 			return strings.TrimSpace(ips[0])

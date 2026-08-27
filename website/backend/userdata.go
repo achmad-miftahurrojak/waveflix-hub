@@ -48,6 +48,7 @@ func getList(w http.ResponseWriter, r *http.Request, table string) {
 // addList: POST {tmdb_id, media_type, title, poster_path, vote_average}
 func addList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
+	r.Body = http.MaxBytesReader(w, r.Body, 64_000)
 	var it mediaItem
 	if err := json.NewDecoder(r.Body).Decode(&it); err != nil || it.TmdbID == 0 {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
@@ -126,6 +127,7 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		r.Body = http.MaxBytesReader(w, r.Body, 64_000)
 		var it mediaItem
 		if err := json.NewDecoder(r.Body).Decode(&it); err != nil || it.TmdbID == 0 {
 			httpError(w, http.StatusBadRequest, "data tidak valid")

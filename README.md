@@ -58,7 +58,8 @@ Konfigurasi `website/backend/.env`:
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Opsional | Email verification |
 | `PORT` | Tidak | Default `8080` |
 | `ALLOWED_ORIGIN` | Prod | CORS origin frontend |
-| `TRUST_PROXY` | Prod | Set jika di balik reverse proxy |
+| `TRUSTED_PROXY_IPS` | Prod | IP/CIDR reverse proxy, comma-separated |
+| `AUTH_COOKIE_SECURE` | Prod | Set `1` saat memakai HTTPS |
 
 ### 2. Frontend (:3000)
 
@@ -72,6 +73,8 @@ Konfigurasi `website/frontend/.env.local`:
 
 - `BACKEND_URL` — dipakai server-side
 - `NEXT_PUBLIC_BACKEND_URL` — dipakai browser (default `http://localhost:8080`)
+
+Di production, isi `BACKEND_URL` dan `NEXT_PUBLIC_BACKEND_URL` dengan URL HTTPS backend yang sebenarnya.
 
 Buka http://localhost:3000.
 

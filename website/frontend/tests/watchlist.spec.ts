@@ -15,27 +15,31 @@ test.describe("Waveflix Watchlist E2E Tests", () => {
     await page.fill('input[placeholder="Your name"]', username);
     await page.fill('input[type="password"]', password);
     await page.click('button[type="submit"]');
+    await expect(page.getByRole("textbox", { name: "Verification code" })).toHaveValue(/\d{6}/);
+    await page.getByRole("button", { name: "Verify & Create Account" }).click();
 
-    // 3. Wait for redirect to /home
+    // 3. New accounts must choose a profile before entering the app.
+    await page.waitForURL(/\/profiles/);
+    await page.locator('button.group').first().click();
     await page.waitForURL(/\/home/);
 
     // 4. Navigate to a movie detail (ID 550 - Fight Club)
     await page.goto("/movie/550");
     
     // Wait for watchlist button and verify it's visible
-    const watchlistBtn = page.locator('button:has-text("My List")');
+    const watchlistBtn = page.getByRole("button", { name: "Daftar Saya" });
     await expect(watchlistBtn).toBeVisible();
 
     // 5. Add to watchlist
     await watchlistBtn.click();
 
     // Verify button changes to "Saved"
-    const savedBtn = page.locator('button:has-text("Saved")');
+    const savedBtn = page.getByRole("button", { name: "Disimpan" });
     await expect(savedBtn).toBeVisible();
 
     // 6. Go to /daftar-saya and verify Fight Club is listed
     await page.goto("/daftar-saya");
-    await expect(page.locator("h4:has-text('Fight Club')")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Fight Club" })).toBeVisible();
 
     // 7. Go back to movie detail and remove
     await page.goto("/movie/550");
@@ -45,6 +49,6 @@ test.describe("Waveflix Watchlist E2E Tests", () => {
 
     // 8. Go to /daftar-saya and verify it's gone
     await page.goto("/daftar-saya");
-    await expect(page.locator("h4:has-text('Fight Club')")).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "Fight Club" })).not.toBeVisible();
   });
 });

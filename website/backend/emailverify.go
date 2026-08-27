@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	codeTTL        = 10 * time.Minute
+	codeTTL         = 10 * time.Minute
 	maxCodeAttempts = 5
 )
 
@@ -78,17 +78,25 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 		// Fallback dev tanpa SMTP: kode hanya muncul di log server.
 		log.Printf("[auth] SMTP belum dikonfigurasi — kode verifikasi %s untuk %s", code, email)
 	}
-
+	if os.Getenv("E2E_TEST_MODE") == "1" {
+		writeJSON(w, fmt.Sprintf(`{"ok":true,"test_code":%q}`, code))
+		return
+	}
 	writeJSON(w, `{"ok":true}`)
 }
 
 // verifyEmailCode — cek kode untuk email. Sekali valid, baris dihapus (sekali pakai).
 // Salah kode menaikkan attempts; melebihi batas = kode mati.
 func verifyEmailCode(email, code string) bool {
+	tx, err := db.Begin()
+	if err != nil {
+		return false
+	}
+	defer tx.Rollback()
 	var hash string
 	var expiresAt int64
 	var attempts int
-	err := db.QueryRow(
+	err = tx.QueryRow(
 		"SELECT code_hash, expires_at, attempts FROM email_verifications WHERE email = ?", email,
 	).Scan(&hash, &expiresAt, &attempts)
 	if err != nil {
@@ -98,11 +106,14 @@ func verifyEmailCode(email, code string) bool {
 		return false
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(code+email)) != nil {
-		db.Exec("UPDATE email_verifications SET attempts = attempts + 1 WHERE email = ?", email)
+		tx.Exec("UPDATE email_verifications SET attempts = attempts + 1 WHERE email = ? AND attempts < ?", email, maxCodeAttempts)
+		tx.Commit()
 		return false
 	}
-	db.Exec("DELETE FROM email_verifications WHERE email = ?", email)
-	return true
+	if _, err := tx.Exec("DELETE FROM email_verifications WHERE email = ?", email); err != nil {
+		return false
+	}
+	return tx.Commit() == nil
 }
 
 func generateCode() (string, error) {

@@ -11,7 +11,7 @@ const nextConfig = {
     return [
       {
         source: "/uploads/:path*",
-        destination: "http://localhost:8080/uploads/:path*",
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "http://localhost:8080"}/uploads/:path*`,
       },
     ];
   },
@@ -30,7 +30,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               // Hanya allow domain embed yang dikenal — jangan 'frame-src *'
               "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vidlink.pro",
-              "connect-src 'self' http://localhost:8080",
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "http://localhost:8080"}`,
             ].join("; "),
           },
           {

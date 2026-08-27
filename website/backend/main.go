@@ -19,10 +19,10 @@ import (
 var (
 	vidlinkCache = make(map[string]bool)
 	vidlinkMu    sync.RWMutex
-	
+
 	providerCache = make(map[string]bool)
 	providerMu    sync.RWMutex
-	
+
 	// Netflix(8), Prime(119), Disney(337), Apple(350), HBO(384), Curiosity(190)
 	// Asian/Global Drama platforms: Viu(158), Vidio(489), WeTV(623), Rakuten Viki(344), wavve(356), iQIYI(198, 199)
 	majorProvidersRegex = regexp.MustCompile(`"provider_id"\s*:\s*(8|119|337|350|384|190|158|489|623|344|356|198|199)\b`)
@@ -52,7 +52,7 @@ func checkVidlinkAvailability(mediaType string, tmdbId string) bool {
 
 	cmd := exec.CommandContext(ctx, "curl", "-I", "-s", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", targetUrl)
 	out, err := cmd.CombinedOutput()
-	
+
 	// A 200 OK means the movie exists. 500 means it doesn't.
 	available := err == nil && strings.Contains(string(out), "200 OK")
 
@@ -81,14 +81,14 @@ func checkMajorProvider(mediaType string, tmdbId string) bool {
 		return false
 	}
 	defer resp.Body.Close()
-	
+
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	isMajor := majorProvidersRegex.Match(bodyBytes)
-		
+
 	providerMu.Lock()
 	providerCache[cacheKey] = isMajor
 	providerMu.Unlock()
-	
+
 	return isMajor
 }
 
@@ -104,7 +104,7 @@ func filterSafeContent(results []interface{}, rootMedia string) []interface{} {
 				continue
 			}
 			idStr := fmt.Sprintf("%.0f", idFloat)
-			
+
 			itemMedia := rootMedia
 			if m, ok := item["media_type"].(string); ok && m != "" {
 				itemMedia = m
@@ -121,25 +121,25 @@ func filterSafeContent(results []interface{}, rootMedia string) []interface{} {
 				defer wg.Done()
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				
+
 				// 1. Strictly filter to only the 5 major platforms (Skip if it's a direct search, rootMedia == "multi")
 				if rootMedia != "multi" && !checkMajorProvider(mediaType, tmdbId) {
 					return
 				}
-				
+
 				// 2. Cek apakah playable di Vidlink
 				isAvail := checkVidlinkAvailability(mediaType, tmdbId)
-				
+
 				// Set flag vidlink_available ke map (aman karena map berbeda setiap index)
 				itemMap["vidlink_available"] = isAvail
-				
+
 				// Tetap loloskan ke hasil akhir selama lolos filter provider (atau jika itu search)
 				available[idx] = true
 			}(i, item, itemMedia, idStr)
 		}
 	}
 	wg.Wait()
-	
+
 	var orderedFiltered []interface{}
 	for i, v := range results {
 		if available[i] {
@@ -301,12 +301,11 @@ func filterAdult(results []interface{}) []interface{} {
 	return filtered
 }
 
-
 func sanitizeTMDBData(data map[string]interface{}, rootMedia string) {
 	if results, ok := data["results"].([]interface{}); ok {
 		data["results"] = filterSafeContent(filterAdult(results), rootMedia)
 	}
-	
+
 	// Sanitize recommendations and similar
 	for _, key := range []string{"recommendations", "similar"} {
 		if nested, ok := data[key].(map[string]interface{}); ok {
@@ -459,7 +458,7 @@ func handleDetail(w http.ResponseWriter, r *http.Request) {
 
 	base := tmdbBaseUrl + "/" + media + "/" + id
 	imageLangs := getImageLangs(q)
-	data, err := fetchJSON(base + "?language=" + getTmdbLang(q) + "&append_to_response=credits,videos,recommendations,similar,images&include_image_language=" + imageLangs + "&api_key=" + tmdbApiKey, media)
+	data, err := fetchJSON(base+"?language="+getTmdbLang(q)+"&append_to_response=credits,videos,recommendations,similar,images&include_image_language="+imageLangs+"&api_key="+tmdbApiKey, media)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, `{"error":"gagal ambil detail"}`)
@@ -583,7 +582,7 @@ func handlePerson(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"error":"id kosong"}`)
 		return
 	}
-	
+
 	targetUrl := tmdbBaseUrl + "/person/" + id + "?language=" + getTmdbLang(q) + "&append_to_response=combined_credits&api_key=" + tmdbApiKey
 	data, err := fetchJSON(targetUrl, "person")
 	if err != nil {
@@ -672,13 +671,13 @@ func fetchSafeRecommendations(media string, q url.Values, data map[string]interf
 		}
 	}
 
-	discoverUrl := tmdbBaseUrl + "/discover/" + media + "?api_key=" + tmdbApiKey + 
-		"&language=" + getTmdbLang(q) + 
+	discoverUrl := tmdbBaseUrl + "/discover/" + media + "?api_key=" + tmdbApiKey +
+		"&language=" + getTmdbLang(q) +
 		"&watch_region=" + watchRegion +
 		"&sort_by=popularity.desc" +
 		"&include_adult=false" +
 		"&with_watch_providers=8|119|337|350|384|190"
-	
+
 	if genres != "" {
 		discoverUrl += "&with_genres=" + genres
 	}
@@ -720,7 +719,7 @@ func fetchJSON(targetUrl string, rootMedia string) (map[string]interface{}, erro
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, err := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 2_000_000))
 	if err != nil {
 		return nil, err
 	}
@@ -736,7 +735,7 @@ func fetchJSON(targetUrl string, rootMedia string) (map[string]interface{}, erro
 	if err := json.Unmarshal(bodyBytes, &out); err != nil {
 		return nil, err
 	}
-	
+
 	// Block explicit adult content or obscure content at the root level
 	if adultVal, ok := out["adult"].(bool); ok && adultVal {
 		return nil, fmt.Errorf("content restricted")
@@ -769,7 +768,7 @@ func proxyRequest(w http.ResponseWriter, targetUrl string, rootMedia string) {
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
+	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 2_000_000))
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(bodyBytes, &data); err == nil {
@@ -782,7 +781,7 @@ func proxyRequest(w http.ResponseWriter, targetUrl string, rootMedia string) {
 		if vc, ok := data["vote_count"].(float64); ok && vc < 300 {
 			// Removed vote_count filter
 		}
-		
+
 		sanitizeTMDBData(data, rootMedia)
 		if sanitizedBytes, err := json.Marshal(data); err == nil {
 			bodyBytes = sanitizedBytes
@@ -826,6 +825,7 @@ func main() {
 	mux.HandleFunc("/api/auth/register", rateLimit("auth-reg", 3, time.Minute, handleRegister))
 	mux.HandleFunc("/api/auth/send-code", rateLimit("auth-code", 3, time.Minute, handleSendCode))
 	mux.HandleFunc("/api/auth/login", rateLimit("auth-login", 5, time.Minute, handleLogin))
+	mux.HandleFunc("/api/auth/logout", handleLogout)
 	mux.HandleFunc("/api/auth/check-email", rateLimit("auth-email", 5, time.Minute, handleCheckEmail))
 	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
 	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
@@ -837,7 +837,7 @@ func main() {
 	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
 	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
 	mux.HandleFunc("/api/history", requireAuth(handleHistory))
-	
+
 	// Profiles
 	mux.HandleFunc("/api/profiles", requireAuth(handleProfiles))
 	mux.HandleFunc("/api/profiles/", requireAuth(handleProfileDetail))
@@ -903,8 +903,7 @@ func enableCORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if allowedOrigins[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
-		} else if origin != "" && len(allowedOrigins) == 2 { // fallback untuk dev lokal jika belum set origin produksi
-			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Profile-ID")

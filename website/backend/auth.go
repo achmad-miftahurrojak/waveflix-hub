@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +19,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const authCookieName = "waveflix_auth"
 
 var jwtSecretValue []byte
 
@@ -75,7 +82,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
 	body.Code = strings.TrimSpace(body.Code)
-	if body.Email == "" || len(body.Password) < 8 || body.Username == "" {
+	if body.Email == "" || len(body.Password) < 8 || body.Username == "" || len([]rune(body.Email)) > 254 || len([]rune(body.Username)) > 80 {
 		httpError(w, http.StatusBadRequest, "email/username wajib, password minimal 8 karakter")
 		return
 	}
@@ -103,6 +110,10 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, _ := res.LastInsertId()
+	if _, err := db.Exec("INSERT INTO profiles (user_id, name) VALUES (?, ?)", id, body.Username); err != nil {
+		httpError(w, http.StatusInternalServerError, "gagal membuat profil awal")
+		return
+	}
 	writeAuth(w, id, body.Email, body.Username, "", "", "id")
 }
 
@@ -193,37 +204,21 @@ func uploadImage(column string) http.HandlerFunc {
 			return
 		}
 
-		var ext string
-		var rawBase64 string
-		if strings.HasPrefix(body.Image, "data:image/png;base64,") {
-			ext = "png"
-			rawBase64 = strings.TrimPrefix(body.Image, "data:image/png;base64,")
-		} else if strings.HasPrefix(body.Image, "data:image/jpeg;base64,") {
-			ext = "jpg"
-			rawBase64 = strings.TrimPrefix(body.Image, "data:image/jpeg;base64,")
-		} else if strings.HasPrefix(body.Image, "data:image/gif;base64,") {
-			ext = "gif"
-			rawBase64 = strings.TrimPrefix(body.Image, "data:image/gif;base64,")
-		} else {
-			httpError(w, http.StatusBadRequest, "format harus JPG, PNG, atau GIF")
-			return
-		}
-
 		if len(body.Image) > 8_000_000 { // ~6MB file
 			httpError(w, http.StatusRequestEntityTooLarge, "ukuran gambar terlalu besar (maks ~6MB)")
 			return
 		}
 
-		data, err := base64.StdEncoding.DecodeString(rawBase64)
+		ext, data, err := validateImageData(body.Image)
 		if err != nil {
-			httpError(w, http.StatusBadRequest, "data base64 tidak valid")
+			httpError(w, http.StatusBadRequest, "gambar tidak valid atau terlalu besar")
 			return
 		}
 
 		filename := fmt.Sprintf("%s_%d.%s", column, uid, ext)
 		filepath := fmt.Sprintf("./uploads/%s", filename)
 
-		if err := os.WriteFile(filepath, data, 0644); err != nil {
+		if err := os.WriteFile(filepath, data, 0600); err != nil {
 			httpError(w, http.StatusInternalServerError, "gagal simpan gambar ke disk")
 			return
 		}
@@ -269,7 +264,7 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.Email != nil {
 		e := strings.TrimSpace(strings.ToLower(*body.Email))
-		if e == "" {
+		if e == "" || len([]rune(e)) > 254 {
 			httpError(w, http.StatusBadRequest, "email wajib diisi")
 			return
 		}
@@ -277,10 +272,18 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		args = append(args, e)
 	}
 	if body.Bio != nil {
+		if len([]rune(*body.Bio)) > 500 {
+			httpError(w, http.StatusBadRequest, "bio terlalu panjang")
+			return
+		}
 		sets = append(sets, "bio = ?")
 		args = append(args, strings.TrimSpace(*body.Bio))
 	}
 	if body.NameFont != nil {
+		if len([]rune(*body.NameFont)) > 80 {
+			httpError(w, http.StatusBadRequest, "font terlalu panjang")
+			return
+		}
 		sets = append(sets, "name_font = ?")
 		args = append(args, strings.TrimSpace(*body.NameFont))
 	}
@@ -346,6 +349,8 @@ func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner,
 		httpError(w, http.StatusInternalServerError, "gagal membuat token")
 		return
 	}
+	secure := os.Getenv("AUTH_COOKIE_SECURE") == "1" || strings.EqualFold(os.Getenv("AUTH_COOKIE_SECURE"), "true")
+	http.SetCookie(w, &http.Cookie{Name: authCookieName, Value: token, Path: "/", MaxAge: 30 * 24 * 60 * 60, HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode})
 	var resp authResponse
 	resp.Token = token
 	resp.User.ID = id
@@ -358,6 +363,12 @@ func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner,
 	json.NewEncoder(w).Encode(resp)
 }
 
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	secure := os.Getenv("AUTH_COOKIE_SECURE") == "1" || strings.EqualFold(os.Getenv("AUTH_COOKIE_SECURE"), "true")
+	http.SetCookie(w, &http.Cookie{Name: authCookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode})
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
 func httpError(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -367,6 +378,11 @@ func httpError(w http.ResponseWriter, code int, msg string) {
 func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			if cookie, err := r.Cookie(authCookieName); err == nil {
+				authHeader = "Bearer " + cookie.Value
+			}
+		}
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 			httpError(w, http.StatusUnauthorized, "token tidak ada")
@@ -395,4 +411,42 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), userIDKey, int64(sub))
 		next(w, r.WithContext(ctx))
 	}
+}
+
+func validateImageData(dataURL string) (string, []byte, error) {
+	var ext, rawBase64 string
+	switch {
+	case strings.HasPrefix(dataURL, "data:image/png;base64,"):
+		ext, rawBase64 = "png", strings.TrimPrefix(dataURL, "data:image/png;base64,")
+	case strings.HasPrefix(dataURL, "data:image/jpeg;base64,"):
+		ext, rawBase64 = "jpg", strings.TrimPrefix(dataURL, "data:image/jpeg;base64,")
+	case strings.HasPrefix(dataURL, "data:image/gif;base64,"):
+		ext, rawBase64 = "gif", strings.TrimPrefix(dataURL, "data:image/gif;base64,")
+	default:
+		return "", nil, fmt.Errorf("unsupported image format")
+	}
+	raw, err := base64.StdEncoding.DecodeString(rawBase64)
+	if err != nil || len(raw) > 6_000_000 {
+		return "", nil, fmt.Errorf("invalid image data")
+	}
+	img, format, err := image.Decode(bytes.NewReader(raw))
+	if err != nil || (format != "png" && format != "jpeg" && format != "gif") {
+		return "", nil, fmt.Errorf("invalid image signature")
+	}
+	if img.Bounds().Dx() > 2048 || img.Bounds().Dy() > 2048 {
+		return "", nil, fmt.Errorf("image dimensions too large")
+	}
+	var encoded bytes.Buffer
+	switch ext {
+	case "png":
+		err = png.Encode(&encoded, img)
+	case "jpg":
+		err = jpeg.Encode(&encoded, img, &jpeg.Options{Quality: 85})
+	case "gif":
+		err = gif.Encode(&encoded, img, nil)
+	}
+	if err != nil || encoded.Len() > 6_000_000 {
+		return "", nil, fmt.Errorf("image encoding failed")
+	}
+	return ext, encoded.Bytes(), nil
 }

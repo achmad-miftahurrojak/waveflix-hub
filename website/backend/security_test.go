@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ func TestClientIgnoresForwardedHeaderByDefault(t *testing.T) {
 }
 
 func TestClientUsesForwardedHeaderWhenProxyTrusted(t *testing.T) {
-	t.Setenv("TRUST_PROXY", "1")
+	t.Setenv("TRUSTED_PROXY_IPS", "10.0.0.1/32")
 
 	r := httptest.NewRequest(http.MethodGet, "/api/auth/login", nil)
 	r.RemoteAddr = "10.0.0.1:4444"
@@ -25,6 +26,37 @@ func TestClientUsesForwardedHeaderWhenProxyTrusted(t *testing.T) {
 
 	if got := clientIP(r); got != "198.51.100.7" {
 		t.Errorf("clientIP() = %q; want %q (proxy tepercaya)", got, "198.51.100.7")
+	}
+}
+
+func TestClientIgnoresForwardedHeaderFromUntrustedProxy(t *testing.T) {
+	t.Setenv("TRUSTED_PROXY_IPS", "10.0.0.1/32")
+
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.RemoteAddr = "203.0.113.10:4444"
+	r.Header.Set("X-Forwarded-For", "198.51.100.7")
+
+	if got := clientIP(r); got != "203.0.113.10" {
+		t.Errorf("clientIP() = %q; want untrusted proxy address", got)
+	}
+}
+
+func TestValidateImageDataRejectsSpoofedMime(t *testing.T) {
+	data := "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte("not an image"))
+	if _, _, err := validateImageData(data); err == nil {
+		t.Fatal("validateImageData accepted non-image bytes")
+	}
+}
+
+func TestWriteAuthSetsHttpOnlyCookie(t *testing.T) {
+	t.Setenv("JWT_SECRET", "super-secret-key-minimum-32-characters-long")
+	t.Setenv("AUTH_COOKIE_SECURE", "1")
+	initJWTSecret()
+	recorder := httptest.NewRecorder()
+	writeAuth(recorder, 7, "user@example.com", "user", "", "", "id")
+	cookies := recorder.Result().Cookies()
+	if len(cookies) != 1 || cookies[0].Name != authCookieName || !cookies[0].HttpOnly || !cookies[0].Secure {
+		t.Fatalf("auth cookie missing secure attributes: %#v", cookies)
 	}
 }
 

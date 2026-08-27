@@ -32,6 +32,14 @@ export interface ProfileFields {
   language?: string;
 }
 
+export interface ActiveProfile {
+  id: number;
+  name?: string;
+  avatar?: string;
+  banner?: string;
+  bio?: string;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
@@ -47,8 +55,8 @@ interface AuthContextValue {
     field: "avatar" | "banner",
     dataUrl: string
   ) => Promise<string | null>;
-  activeProfile: any | null;
-  setActiveProfile: (profile: any) => void;
+  activeProfile: ActiveProfile | null;
+  setActiveProfile: (profile: ActiveProfile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -62,33 +70,30 @@ export function useAuth(): AuthContextValue {
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [activeProfile, setActiveProfile] = useState<any | null>(null);
+  const [activeProfile, setActiveProfile] = useState<ActiveProfile | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Muat token dari localStorage saat pertama render.
-  // localStorage = sesi persisten across browser restarts.
+  // Cookie HttpOnly is the normal session. A legacy token is read once for migration.
   useEffect(() => {
-    migrateStorage(); // pindahkan kunci lama (summertide_*) → baru sekali saja
+    migrateStorage();
     const saved = localStorage.getItem(TOKEN_KEY);
-    if (!saved) {
-      setReady(true);
-      return;
-    }
-    setToken(saved);
     fetch(`${BACKEND}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${saved}` },
+      credentials: "include",
+      headers: saved ? { Authorization: `Bearer ${saved}` } : undefined,
     })
       .then((r) => {
         if (!r.ok) return Promise.reject({ status: r.status });
         return r.json();
       })
       .then((u) => {
+        setToken(saved || "cookie");
         setUser(u);
         if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
         const storedProfileId = localStorage.getItem("activeProfileId");
         if (storedProfileId) {
           fetch(`${BACKEND}/api/profiles/${storedProfileId}`, {
-            headers: { Authorization: `Bearer ${saved}` },
+            credentials: "include",
+            headers: saved ? { Authorization: `Bearer ${saved}` } : undefined,
           })
             .then((r) => r.ok ? r.json() : null)
             .then((p) => {
@@ -111,8 +116,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persist = (tok: string, u: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, tok);
-    setToken(tok);
+    // The backend sets the HttpOnly cookie. Keep the token in memory only for legacy fallback.
+    setToken(tok || null);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(u);
     if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
   };
@@ -121,6 +127,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${BACKEND}/api/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -139,6 +146,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await fetch(`${BACKEND}/api/auth/register`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, username, password, code }),
         });
@@ -155,6 +163,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    fetch(`${BACKEND}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem("activeProfileId");
     sessionStorage.removeItem("profileSelected");
@@ -170,7 +179,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         "Content-Type": "application/json",
       };
       
-      if (token) {
+      if (token && token !== "cookie") {
         headers["Authorization"] = `Bearer ${token}`;
       }
       
@@ -181,6 +190,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
       return fetch(`${BACKEND}${path}`, {
         ...init,
+        credentials: "include",
         headers,
       });
     },
@@ -244,7 +254,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     (item: TmdbItem, season?: number, episode?: number, currentProgressSeconds?: number) => {
       if (!token) return;
       
-      const detail = item as any;
+      const detail = item as TmdbItem & { runtime?: number; episode_run_time?: number[] };
       let runtime = detail.runtime || 0;
       if (mediaTypeOf(item) === "tv" && (!runtime || runtime === 0)) {
         runtime = detail.episode_run_time?.[0] || 45;
@@ -288,7 +298,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         changePassword,
         uploadImage,
         activeProfile,
-        setActiveProfile: (profile: any) => {
+        setActiveProfile: (profile: ActiveProfile | null) => {
           if (profile) {
             localStorage.setItem("activeProfileId", profile.id.toString());
           } else {
