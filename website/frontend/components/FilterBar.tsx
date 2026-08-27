@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { MediaType } from "@/lib/types";
 import { genresFor, COUNTRIES, SORTS, YEARS } from "@/lib/catalog";
 import { useTranslation } from "@/lib/i18n";
+import { GlassButton } from "@/components/ui/glass-button";
 
 export default function FilterBar() {
   const router = useRouter();
@@ -30,17 +31,16 @@ export default function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="flex overflow-hidden rounded-md border border-white/15">
+      <div className="flex gap-2">
         {(["movie", "tv"] as const).map((m) => (
-          <button
+          <GlassButton
             key={m}
+            size="sm"
+            active={media === m}
             onClick={() => update("media", m)}
-            className={`px-4 py-2 text-sm font-semibold transition ${
-              media === m ? "bg-accent text-black" : "text-white/70 hover:bg-white/10"
-            }`}
           >
             {m === "movie" ? t("filter.movies") : t("filter.series")}
-          </button>
+          </GlassButton>
         ))}
       </div>
 

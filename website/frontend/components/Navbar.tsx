@@ -5,6 +5,7 @@ import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/lib/i18n";
+import { GlassButton } from "@/components/ui/glass-button";
 
 const underlineSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 import {
@@ -273,11 +274,10 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <Link
-              href="/masuk"
-              className="rounded-md bg-accent px-5 py-2 text-sm font-semibold text-black transition hover:bg-accent-dark"
-            >
-              {t("nav.login")}
+            <Link href="/masuk">
+              <GlassButton size="sm" contentClassName="px-2">
+                {t("nav.login")}
+              </GlassButton>
             </Link>
           )}
         </div>
