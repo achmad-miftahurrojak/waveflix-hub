@@ -46,7 +46,6 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [openMore, setOpenMore] = useState(false);
   const [openAccount, setOpenAccount] = useState(false);
-  const [openMobileMenu, setOpenMobileMenu] = useState(false);
   // Cegah mismatch hydration: UI akun baru dirender setelah mount di client.
   const [mounted, setMounted] = useState(false);
 
@@ -58,21 +57,6 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  // Tutup mobile menu saat navigasi
-  useEffect(() => {
-    setOpenMobileMenu(false);
-  }, [pathname, searchParams]);
-
-  // Kunci scroll body saat mobile menu terbuka
-  useEffect(() => {
-    if (openMobileMenu) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [openMobileMenu]);
 
   // Pertahankan media yang sedang aktif (movie/tv) di dropdown filter.
   const activeMedia = searchParams.get("media") === "tv" ? "tv" : "movie";
@@ -145,19 +129,20 @@ export default function Navbar() {
             >
               Waveflix
             </Link>
-            {/* Desktop nav tabs — hanya muncul di lg ke atas */}
+            {/* Nav tabs — selalu tampil, label disembunyikan di layar kecil */}
             {user && (
-              <ul className="hidden items-center gap-1.5 lg:flex">
+              <ul className="flex items-center gap-0 md:gap-1">
                 {NAV.map(({ label, href, icon: Icon }) => (
                   <li key={label}>
                     <Link
                       href={href}
-                      className={`relative flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+                      title={label}
+                      className={`relative flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
                         isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{label}</span>
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="hidden md:inline">{label}</span>
                       {isActive(href) && (
                         <motion.span
                           layoutId="navUnderline"
@@ -175,7 +160,8 @@ export default function Navbar() {
                   onMouseLeave={() => setOpenMore(false)}
                 >
                   <button
-                    className={`relative flex items-center gap-2 px-2 pb-2 pt-1 text-sm font-semibold transition ${
+                    title={t("nav.more")}
+                    className={`relative flex items-center gap-1.5 px-2 md:px-2 pb-2 pt-1 text-sm font-semibold transition ${
                       onCategory ? "text-accent" : "text-white/70 hover:text-white"
                     }`}
                   >
@@ -187,7 +173,7 @@ export default function Navbar() {
                       />
                     )}
                     <MoreIcon />
-                    <span>{t("nav.more")}</span>
+                    <span className="hidden md:inline">{t("nav.more")}</span>
                     <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
                   </button>
                   {openMore && (
@@ -297,178 +283,13 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Hamburger button — hanya muncul di bawah lg, hanya jika user login */}
-            {user && (
-              <button
-                aria-label="Open menu"
-                onClick={() => setOpenMobileMenu((v) => !v)}
-                className="relative flex lg:hidden h-9 w-9 shrink-0 flex-col items-center justify-center gap-[5px] rounded-full transition hover:bg-white/10"
-              >
-                <motion.span
-                  animate={openMobileMenu ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="block h-0.5 w-5 rounded-full bg-white"
-                />
-                <motion.span
-                  animate={openMobileMenu ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-                  transition={{ duration: 0.15 }}
-                  className="block h-0.5 w-5 rounded-full bg-white"
-                />
-                <motion.span
-                  animate={openMobileMenu ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="block h-0.5 w-5 rounded-full bg-white"
-                />
-              </button>
-            )}
+
           </div>
           </nav>
         </div>
       </header>
 
-      {/* Mobile Drawer Menu */}
-      <AnimatePresence>
-        {openMobileMenu && user && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="mobile-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setOpenMobileMenu(false)}
-              className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm lg:hidden"
-            />
-            {/* Drawer */}
-            <motion.div
-              key="mobile-drawer"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 350, damping: 35 }}
-              className="fixed left-0 top-0 z-[1001] h-full w-72 bg-[#0a0a0f] border-r border-white/10 shadow-2xl lg:hidden flex flex-col"
-            >
-              {/* Header drawer */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-                <Link
-                  href={user ? "/home" : "/"}
-                  className="text-3xl uppercase leading-none tracking-[-0.03em] text-accent"
-                  style={{ fontFamily: "var(--font-logo)" }}
-                  onClick={() => setOpenMobileMenu(false)}
-                >
-                  Waveflix
-                </Link>
-                <button
-                  onClick={() => setOpenMobileMenu(false)}
-                  className="grid h-8 w-8 place-items-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition"
-                  aria-label="Close menu"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
 
-              {/* Profile info */}
-              <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10">
-                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-accent font-bold text-black text-sm">
-                  {activeProfile ? (
-                    (activeProfile as any).avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={(activeProfile as any).avatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      ((activeProfile as any).name || "?").charAt(0).toUpperCase()
-                    )
-                  ) : user.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatar} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    (user.username || "?").charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-white">
-                    {activeProfile ? (activeProfile as any).name : user.username}
-                  </div>
-                  <div className="truncate text-xs text-white/50">{user.email}</div>
-                </div>
-              </div>
-
-              {/* Nav Links */}
-              <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-                  Menu
-                </p>
-                {NAV.map(({ label, href, icon: Icon }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
-                      isActive(href)
-                        ? "bg-accent/15 text-accent"
-                        : "text-white/70 hover:bg-white/8 hover:text-white"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {label}
-                    {isActive(href) && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-                    )}
-                  </Link>
-                ))}
-
-                {/* More section */}
-                <p className="px-3 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-                  {t("nav.more")}
-                </p>
-                {moreMenu.map(({ label, href, icon: Icon }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-all hover:bg-white/8 hover:text-white"
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Footer drawer */}
-              <div className="border-t border-white/10 px-3 py-4 space-y-1">
-                <button
-                  onClick={handleSwitchProfile}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/8 hover:text-white transition"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  {t("nav.switchProfile")}
-                </button>
-                <Link
-                  href="/account/settings"
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/8 hover:text-white transition"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {t("nav.settings")}
-                </Link>
-                <button
-                  onClick={logout}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  {t("nav.logout")}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </>
   );
 }
