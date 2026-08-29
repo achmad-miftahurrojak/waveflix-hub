@@ -27,10 +27,10 @@ export default function FilterBar() {
   };
 
   const selectCls =
-    "rounded-md border border-white/15 bg-surface px-3 py-2 text-sm outline-none focus:border-accent";
+    "rounded-md border border-white/15 bg-surface px-4 py-2 text-sm outline-none focus:border-accent";
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-4">
       <div className="flex gap-2">
         {(["movie", "tv"] as const).map((m) => (
           <GlassButton

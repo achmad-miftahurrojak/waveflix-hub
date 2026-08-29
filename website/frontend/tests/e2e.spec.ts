@@ -8,7 +8,7 @@ test.describe("Waveflix-Web E2E Tests", () => {
   });
 
   test("should check navigation to search page", async ({ page }) => {
-    await page.goto("/search");
+    await page.goto("/search", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/search/);
   });
 });

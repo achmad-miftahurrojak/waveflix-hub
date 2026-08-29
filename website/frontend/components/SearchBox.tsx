@@ -93,8 +93,8 @@ export default function SearchBox() {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Cari film atau series…"
-          className={`ml-2 rounded-full bg-white/10 text-sm text-white outline-none transition-all duration-300 focus:ring-1 focus:ring-accent ${
-            open ? "w-44 px-4 py-1.5 md:w-56" : "w-0 px-0 py-0"
+          className={`ml-2 rounded-full bg-white/10 text-sm text-white outline-none transition-all duration-200 focus:ring-1 focus:ring-accent ${
+            open ? "w-48 px-4 py-2 md:w-64" : "w-0 px-0 py-0"
           }`}
         />
       </form>
@@ -112,7 +112,7 @@ export default function SearchBox() {
                 key={item.id}
                 href={detailHref(item)}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-white/10"
+                className="flex items-center gap-4 rounded-lg px-4 py-2 transition hover:bg-white/10"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

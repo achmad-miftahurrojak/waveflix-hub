@@ -125,7 +125,7 @@ export default function QuickViewModal({
         <button
           onClick={onClose}
           aria-label="Tutup"
-          className="absolute top-3 right-3 z-20 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition"
+          className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -163,8 +163,8 @@ export default function QuickViewModal({
           </div>
 
           {/* Content */}
-          <div className="px-5 pb-6 pt-3">
-            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-gray-300">
+          <div className="px-6 pb-6 pt-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-300">
               {itemYear(item) && (
                 <span className="rounded bg-white/10 px-2 py-1">{itemYear(item)}</span>
               )}
@@ -197,7 +197,7 @@ export default function QuickViewModal({
 
             <Link
               href="/masuk"
-              className="inline-flex items-center gap-1.5 rounded bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark"
+              className="inline-flex items-center gap-2 rounded bg-accent px-6 py-3 text-sm font-semibold text-black transition hover:bg-accent-dark"
             >
               Mulai
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden>

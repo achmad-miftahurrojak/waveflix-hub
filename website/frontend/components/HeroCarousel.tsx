@@ -209,7 +209,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             const desc = s.overview.length > 220 ? s.overview.slice(0, 220) + "…" : s.overview;
             return (
               <div key={s.item.id} className={i === active ? "block animate-[fadeIn_.5s_ease]" : "hidden"}>
-                <span className="mb-4 inline-block rounded bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-black">
+                <span className="mb-4 inline-block rounded bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">
                   {tv ? t("ui.tvSeries") : t("ui.movie")}
                 </span>
 
@@ -226,7 +226,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   </h1>
                 )}
 
-                <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/90 drop-shadow-meta">
+                <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 drop-shadow-meta">
                   <span className="flex items-center gap-1 font-semibold text-[#f5c518]"><StarIcon /> {ratingText(s.item)}</span>
                   <span className="text-white/40">&bull;</span>
                   <span>{itemYear(s.item)}</span>
@@ -241,7 +241,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   <p className="mb-6 max-w-lg text-xs leading-relaxed text-white/75 drop-shadow md:text-sm">{desc}</p>
                 )}
 
-                <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-7 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
+                <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
                   <PlayIcon className="text-black" /> {t("ui.watchNow")}
                 </Link>
               </div>

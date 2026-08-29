@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 className="mt-4 text-2xl font-bold text-white md:text-3xl">
         Halaman tidak ditemukan
       </h1>
-      <p className="mt-3 max-w-md text-white/60">
+      <p className="mt-4 max-w-md text-white/60">
         Halaman yang kamu cari hilang, dipindahkan, atau memang tidak pernah
         ada.
       </p>

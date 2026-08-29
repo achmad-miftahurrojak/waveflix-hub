@@ -6,7 +6,7 @@ function cn(...inputs: (string | undefined | null | false)[]): string {
 }
 
 const glassButtonVariants = cva(
-  "relative isolate all-unset cursor-pointer rounded-full transition-all duration-300",
+  "relative isolate all-unset cursor-pointer rounded-full transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
   {
     variants: {
       size: {
@@ -32,7 +32,7 @@ const glassButtonTextVariants = cva(
   {
     variants: {
       size: {
-        default: "px-6 py-3.5",
+        default: "px-6 py-3",
         sm: "px-4 py-2",
         lg: "px-8 py-4",
         icon: "flex h-10 w-10 items-center justify-center",
@@ -52,17 +52,19 @@ export interface GlassButtonProps
 }
 
 const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
-  ({ className, children, size, active, contentClassName, ...props }, ref) => {
+  ({ className, children, size, active, contentClassName, disabled, ...props }, ref) => {
     return (
       <div
         className={cn(
           "glass-button-wrap cursor-pointer rounded-full relative group backdrop-blur-md",
+          disabled && "opacity-50 pointer-events-none",
           className
         )}
       >
         <button
           className={cn("glass-button w-full h-full", glassButtonVariants({ size, active }))}
           ref={ref}
+          disabled={disabled}
           {...props}
         >
           <span
@@ -74,7 +76,7 @@ const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
             {children}
           </span>
         </button>
-        <div className="glass-button-shadow absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.15)] ring-1 ring-white/20"></div>
+        <div className="glass-button-shadow absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.15)] ring-1 ring-white/20"></div>
       </div>
     );
   }
