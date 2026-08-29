@@ -29,7 +29,7 @@ const nextConfig = {
               "img-src 'self' data: https://image.tmdb.org https://images.unsplash.com https://ui-avatars.com",
               "font-src 'self' https://fonts.gstatic.com",
               // Hanya allow domain embed yang dikenal — jangan 'frame-src *'
-              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vidlink.pro",
+              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vidlink.pro https://vidsrc.to https://multiembed.mov https://2embed.cc",
               `connect-src 'self' ${process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "http://localhost:8080"}`,
             ].join("; "),
           },

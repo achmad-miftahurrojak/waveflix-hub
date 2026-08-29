@@ -36,6 +36,8 @@ export default function Navbar() {
     { label: t("nav.movies"), href: "/browse?media=movie", icon: FilmIcon },
     { label: t("nav.tv"), href: "/browse?media=tv", icon: TvIcon },
     { label: t("nav.reality"), href: "/reality", icon: SparklesIcon },
+    { label: t("nav.asian"), href: "/asian", icon: GlobeIcon },
+    { label: t("nav.anime"), href: "/anime", icon: SparklesIcon },
     { label: t("nav.myList"), href: "/daftar-saya", icon: BookmarkIcon },
   ];
 
