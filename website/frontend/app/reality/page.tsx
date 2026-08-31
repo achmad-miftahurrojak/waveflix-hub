@@ -4,7 +4,6 @@ import InfiniteGrid from "@/components/InfiniteGrid";
 
 export const dynamic = "force-dynamic";
 
-// Reality/variety show Korea saja: TV, genre Reality(10764)|Talk(10767), origin KR.
 export default async function RealityPage() {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -13,19 +12,19 @@ export default async function RealityPage() {
     genre: "10764|10767",
     country: "KR",
     sort_by: "popularity.desc",
-    min_votes: "1", // Penting: Jangan dihapus! TMDB mem-filter min 30 votes secara default, padahal Variety Korea votes-nya sedikit.
-    // Sengaja provider dilepas agar mencakup semua Variety Korea (ratusan halaman)
+    min_votes: "1", 
+
   };
 
   const [heroData, gridData] = await Promise.all([
-    // Hero = yang BARU rilis (bukan yang sudah punya nama seperti Running Man).
+
     discover({
       media: "tv",
       genre: "10764|10767",
       country: "KR",
       sort_by: "first_air_date.desc",
       released_before: today,
-      provider: MAJOR_PROVIDERS, // Hero tetap dibatasi provider besar agar poster HD
+      provider: MAJOR_PROVIDERS, 
       min_votes: "1",
     }),
     discover({

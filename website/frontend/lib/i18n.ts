@@ -378,7 +378,7 @@ const translations: Dictionary = {
 
 export function useTranslation() {
   const { user } = useAuth();
-  // Default to 'id' if no user or language is set
+
   const lang = user?.language && translations[user.language] ? user.language : "id";
 
   const t = useCallback(

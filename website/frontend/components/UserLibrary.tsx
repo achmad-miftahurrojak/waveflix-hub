@@ -9,7 +9,6 @@ import HeroCarousel from "./HeroCarousel";
 import { mediaTypeOf, durationText, genreNames, statusLabel } from "@/lib/helpers";
 import { useTranslation } from "@/lib/i18n";
 
-// Tipe data yang sama dengan HeroSlide di tmdb.ts
 interface ClientHeroSlide {
   item: TmdbItem;
   logo: string | null;
@@ -36,7 +35,7 @@ function toItem(r: any): TmdbItem {
 interface Props {
   title: string;
   endpoint: "/api/watchlist" | "/api/favorites" | "/api/history";
-  /** Untuk watchlist: tampilkan localStorage saat belum login. */
+
   localFallbackKey?: string;
 }
 
@@ -50,9 +49,9 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
     if (!ready) return;
 
     const fetchHeroDetails = async (listItems: TmdbItem[]) => {
-      // Ambil maksimal 5 item teratas untuk hero
+
       const top5 = listItems.slice(0, 5);
-      
+
       const slides = await Promise.all(
         top5.map(async (item) => {
           const media = mediaTypeOf(item);
@@ -61,7 +60,7 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
               authFetch(`/api/detail?media=${media}&id=${item.id}`),
               authFetch(`/api/images?media=${media}&id=${item.id}`)
             ]);
-            
+
             const detail = await detailRes.json();
             const images = await imagesRes.json();
 
@@ -73,7 +72,6 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
               (v: any) => v.type === "Trailer" && v.site === "YouTube"
             );
 
-            // Karena data list mungkin cuma punya poster, kita update backdrop-nya dari detail
             const itemWithBackdrop = {
               ...item,
               backdrop_path: detail.backdrop_path || item.backdrop_path,
@@ -96,7 +94,6 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
         })
       );
 
-      // Filter out yang gagal
       setHeroSlides(slides.filter((s): s is ClientHeroSlide => s !== null));
     };
 
@@ -127,7 +124,7 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
 
   return (
     <div>
-      {/* Jika ada hero, tampilkan di atas */}
+      {}
       {hasHero && <HeroCarousel slides={heroSlides} />}
 
       <div className={`px-[4%] ${hasHero ? "pt-8" : "pt-28"}`}>

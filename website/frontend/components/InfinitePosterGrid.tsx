@@ -32,9 +32,9 @@ export default function InfinitePosterGrid({
     try {
       const nextPage = page + 1;
       const res = await fetchBrowsePage(sp, nextPage);
-      
+
       setItems((prev) => {
-        // filter out duplicates
+
         const existingIds = new Set(prev.map(i => i.id));
         const newItems = res.results.filter(i => !existingIds.has(i.id));
         return [...prev, ...newItems];
@@ -43,7 +43,7 @@ export default function InfinitePosterGrid({
       setPage(nextPage);
     } catch (err) {
       console.error("Failed to load more:", err);
-      setHasMore(false); // Stop trying on error
+      setHasMore(false); 
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function InfinitePosterGrid({
           loadMore();
         }
       },
-      { rootMargin: "400px" } // load before it actually reaches the very bottom
+      { rootMargin: "400px" } 
     );
 
     if (observerTarget.current) {
@@ -81,13 +81,13 @@ export default function InfinitePosterGrid({
           <MovieCard key={`${m.id}-${i}`} item={m} />
         ))}
       </div>
-      
+
       {hasMore && (
         <div ref={observerTarget} className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
         </div>
       )}
-      
+
       {!hasMore && items.length > 0 && (
         <p className="py-8 text-center text-sm text-white/40">
           Semua konten telah dimuat.

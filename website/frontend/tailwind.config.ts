@@ -8,11 +8,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Ganti nilai variabel di globals.css (`:root`) kalau mau ubah warna brand.
+
         bg: "rgb(var(--color-bg) / <alpha-value>)",
         surface: "rgb(var(--color-surface) / <alpha-value>)",
-        // Hierarki surface: bg (dasar) → surface (card) → surface-raised (modal)
-        // → surface-overlay (dropdown/search). Semua near-black wajib lewat token ini.
+
         "surface-raised": "rgb(var(--color-surface-raised) / <alpha-value>)",
         "surface-overlay": "rgb(var(--color-surface-overlay) / <alpha-value>)",
         accent: {
@@ -26,7 +25,7 @@ const config: Config = {
         logo: ["var(--font-logo)", "Impact", "Arial Narrow", "sans-serif"],
       },
       boxShadow: {
-        // Shadow card dibuat subtle — depth pendukung, bukan pesaing konten.
+
         card: "0 10px 20px rgba(0,0,0,0.5)",
         glass: "0 12px 40px rgba(0,0,0,0.7)",
       },

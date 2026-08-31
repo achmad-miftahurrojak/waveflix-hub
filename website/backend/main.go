@@ -1,17 +1,3 @@
-// Package main adalah entry point backend WaveFlix Hub.
-//
-// Server ini menyediakan REST API untuk:
-//   - Autentikasi pengguna (register, login, logout)
-//   - Data TMDB (trending, discover, detail, search)
-//   - User data (watchlist, history, profiles)
-//   - Health checks dan readiness probes
-//   - Prometheus metrics untuk monitoring
-//
-// Arsitektur:
-//   - PostgreSQL sebagai database utama
-//   - Redis untuk caching dan message queue
-//   - Sentry untuk error tracking
-//   - Prometheus untuk metrics
 package main
 
 import (
@@ -22,7 +8,6 @@ import (
 )
 
 func main() {
-	// ─── Inisialisasi semua komponen ──────────────────────────────────────────
 	log.Println("[main] Starting WaveFlix Hub backend...")
 
 	initSentry()
@@ -32,35 +17,28 @@ func main() {
 	initDB()
 	log.Println("[main] Database connected")
 
-	// Inisialisasi Redis cache
 	cache = NewRedisCacheManager()
 	log.Println("[main] Cache initialized")
 
-	// Inisialisasi message queue
 	messageQueue = NewMessageQueue()
 	log.Println("[main] Message queue initialized")
 
-	// Inisialisasi worker pool manager
 	workerPoolManager = &WorkerPoolManager{}
 	log.Println("[main] Worker pool manager initialized")
 
-	// Inisialisasi Prometheus metrics
 	initMetrics()
 	go collectSystemMetrics()
 	log.Println("[main] Metrics initialized")
 
-	// ─── Router ──────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 	setupRoutes(mux)
 
-	// ─── Middleware stack ──────────────────────────────────────────────────────
 	handler := withRateLimit(mux)
 	handler = withMetrics(handler)
 	handler = withSecurity(handler)
 	handler = withCORS(handler)
 	handler = sentryMiddleware(handler)
 
-	// ─── Server ───────────────────────────────────────────────────────────────
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -80,9 +58,7 @@ func main() {
 	}
 }
 
-// setupRoutes mendaftarkan semua route ke mux.
 func setupRoutes(mux *http.ServeMux) {
-	// ── Auth endpoints ────────────────────────────────────────────────────────
 	mux.HandleFunc("/api/register", handleRegister)
 	mux.HandleFunc("/api/login", handleLogin)
 	mux.HandleFunc("/api/logout", handleLogout)
@@ -91,18 +67,14 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/update-profile", handleUpdateProfile)
 	mux.HandleFunc("/api/change-password", handleChangePassword)
 
-	// ── Email verification ───────────────────────────────────────────────────
 	mux.HandleFunc("/api/send-code", handleSendCode)
 	mux.HandleFunc("/api/send-code-async", handleSendCodeAsync)
 
-	// ── User data ────────────────────────────────────────────────────────────
 	mux.HandleFunc("/api/history", handleHistory)
 
-	// ── Profiles ─────────────────────────────────────────────────────────────
 	mux.HandleFunc("/api/profiles", handleProfiles)
 	mux.HandleFunc("/api/profiles/", handleProfileDetail)
 
-	// ── TMDB data (via TMDBClient) ────────────────────────────────────────────
 	tmdbClient := NewTMDBClient(cache)
 	mux.HandleFunc("/api/trending", tmdbClient.HandleTrending)
 	mux.HandleFunc("/api/detail", tmdbClient.HandleDetail)
@@ -111,14 +83,12 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/discover", handleDiscoverParallel)
 	mux.HandleFunc("/api/batch", handleDetailBatchParallel)
 
-	// ── Static / CDN ─────────────────────────────────────────────────────────
 	mux.HandleFunc("/uploads/", handleUploadsWithOptimization)
 	mux.HandleFunc("/api/images/", handleCachedImages)
 	mux.HandleFunc("/api/image-proxy", handleImageProxy)
 	mux.HandleFunc("/api/cdn-status", handleCDNStatus)
 	mux.HandleFunc("/api/preload", handlePreload)
 
-	// ── Observability ────────────────────────────────────────────────────────
 	hc := NewHealthChecker(db, cache, "1.0.0")
 	mux.HandleFunc("/health", hc.HealthCheckHandler)
 	mux.HandleFunc("/ready", hc.ReadinessHandler)
@@ -127,11 +97,6 @@ func setupRoutes(mux *http.ServeMux) {
 	log.Printf("[main] %d routes registered", 23)
 }
 
-
-
-// ─── Middleware helpers ───────────────────────────────────────────────────────
-
-// withCORS menambahkan CORS headers untuk frontend Next.js.
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := os.Getenv("ALLOWED_ORIGIN")
@@ -152,7 +117,6 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
-// withSecurity menambahkan security headers standar.
 func withSecurity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -162,12 +126,10 @@ func withSecurity(next http.Handler) http.Handler {
 	})
 }
 
-// withRateLimit membungkus handler dengan rate limiter.
 func withRateLimit(next http.Handler) http.Handler {
 	return rateLimit("global", 100, time.Minute, next.ServeHTTP)
 }
 
-// withMetrics membungkus handler dengan Prometheus metrics middleware.
 func withMetrics(next http.Handler) http.Handler {
 	return metricsMiddleware(next.ServeHTTP)
 }

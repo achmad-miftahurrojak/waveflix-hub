@@ -28,7 +28,7 @@ export default function InlineHeroVideo({
 }: Props) {
   const { player, stop } = useUI();
   const { user, authFetch, recordHistory } = useAuth();
-  
+
   const [savedProgressSeconds, setSavedProgressSeconds] = useState(0);
   const [lastProgressSaved, setLastProgressSaved] = useState(0);
   const active =
@@ -104,12 +104,10 @@ export default function InlineHeroVideo({
     };
   }, [showTrailer, trailer]);
 
-  // Auto-failover states
   const [serverIdx, setServerIdx] = useState(0);
   const [status, setStatus] = useState<"loading" | "loaded" | "asian-loading" | "asian-failed">("loading");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Asian scraper states
   const [asianEmbedUrl, setAsianEmbedUrl] = useState<string | null>(null);
   const [serverLabel, setServerLabel] = useState("");
 
@@ -125,7 +123,6 @@ export default function InlineHeroVideo({
     hideTimer.current = setTimeout(() => setControlsVisible(false), 2600);
   }, []);
 
-  // Fetch initial progress when player becomes active
   useEffect(() => {
     if (active && user && player) {
       if (player.progress !== undefined) {
@@ -152,7 +149,6 @@ export default function InlineHeroVideo({
     }
   }, [active, user, player, authFetch]);
 
-  // Listen to iframe postMessage for time updates
   useEffect(() => {
     if (!active || !player) return;
 
@@ -174,22 +170,16 @@ export default function InlineHeroVideo({
         });
       }
     };
-    
+
     window.addEventListener('message', handleMessage);
-    
-    // Initial record when started
+
     recordHistory(player.item, player.season, player.episode, savedProgressSeconds > 0 ? savedProgressSeconds : 0);
 
     return () => window.removeEventListener('message', handleMessage);
   }, [active, player, recordHistory, savedProgressSeconds]);
 
-
-
-
-  // Tentukan apakah ini Variety Show terverifikasi (via Whitelist atau Dinamis)
   const slug = active ? getAsianShowSlug(player!.item) : null;
 
-  // Fetch Asian embed ketika ini variety show terverifikasi
   useEffect(() => {
     if (!active || !slug) return;
 
@@ -207,13 +197,13 @@ export default function InlineHeroVideo({
         const data = await res.json();
         if (!cancelled && data.url) {
           setAsianEmbedUrl(data.url);
-          setStatus("loading"); // sekarang loading iframe dari dramacool
+          setStatus("loading"); 
         } else {
           throw new Error("empty url");
         }
       } catch {
         if (!cancelled) {
-          // Asian scraper gagal, fallback ke sistem embed biasa
+
           setStatus("loading");
           setServerIdx(0);
         }
@@ -222,10 +212,9 @@ export default function InlineHeroVideo({
 
     fetchAsianEmbed();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [active, slug]);
 
-  // Reset untuk NON-variety show
   useEffect(() => {
     if (!active) {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -233,16 +222,15 @@ export default function InlineHeroVideo({
       return;
     }
     if (!slug) {
-      // Bukan variety show → langsung pakai embed server biasa
+
       setServerIdx(0);
       setStatus("loading");
       setAsianEmbedUrl(null);
     }
     revealControls();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [active]);
 
-  // Auto-failover timer (hanya untuk embed server biasa, bukan asian)
   useEffect(() => {
     if (!active || status === "loaded" || status === "asian-loading" || asianEmbedUrl) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -259,7 +247,7 @@ export default function InlineHeroVideo({
   }, [active, status, serverIdx, asianEmbedUrl]);
 
   const switchServer = () => {
-    // Jika sedang di mode Asian, pindah ke embed server biasa
+
     if (asianEmbedUrl) {
       setAsianEmbedUrl(null);
       setServerIdx(0);
@@ -277,7 +265,6 @@ export default function InlineHeroVideo({
     else el.requestFullscreen().catch(() => {});
   };
 
-  // Tentukan URL dan label yang ditampilkan
   const currentSrc = asianEmbedUrl
     ? asianEmbedUrl
     : (active ? EMBED_SERVERS[serverIdx].getUrl(player!.item, player!.season, player!.episode) : "");
@@ -314,7 +301,7 @@ export default function InlineHeroVideo({
           </div>
         )}
 
-        {/* Jangan render iframe kalau masih asian-loading (belum punya URL) */}
+        {}
         {status !== "asian-loading" && finalSrc && (
           <iframe
             src={finalSrc}
@@ -328,7 +315,7 @@ export default function InlineHeroVideo({
           />
         )}
 
-        {/* Zona atas deteksi hover */}
+        {}
         <div
           className="absolute inset-x-0 top-0 z-20 h-32"
           onMouseMove={revealControls}

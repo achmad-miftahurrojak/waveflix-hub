@@ -1,4 +1,4 @@
-// Package config provides comprehensive tests for configuration management functionality.
+
 package config
 
 import (
@@ -15,7 +15,7 @@ import (
 )
 
 func TestNewManager(t *testing.T) {
-	// Test basic manager creation
+
 	manager, err := NewManager()
 	if err != nil {
 		t.Fatalf("Failed to create manager: %v", err)
@@ -25,13 +25,11 @@ func TestNewManager(t *testing.T) {
 		t.Fatal("Manager should not be nil")
 	}
 
-	// Verify environment detection worked
 	env := manager.GetCurrentEnvironment()
 	if env == "" {
 		t.Error("Environment should not be empty")
 	}
 
-	// Verify configuration loaded
 	config := manager.GetCurrentConfig()
 	if config == nil {
 		t.Error("Configuration should not be nil")
@@ -90,10 +88,9 @@ func TestDetectEnvironment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear environment
+
 			clearEnv()
-			
-			// Set test environment variables
+
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
 				defer os.Unsetenv(key)
@@ -115,7 +112,6 @@ func TestDetectEnvironment(t *testing.T) {
 func TestLoadEnvironmentConfig(t *testing.T) {
 	manager := &Manager{}
 
-	// Test loading configuration for each environment
 	environments := []interfaces.Environment{
 		interfaces.EnvDevelopment,
 		interfaces.EnvStaging,
@@ -140,7 +136,6 @@ func TestLoadEnvironmentConfig(t *testing.T) {
 				t.Errorf("Configuration environment = %v, want %v", config.Environment, env)
 			}
 
-			// Verify all components are configured
 			if config.Redis == nil {
 				t.Error("Redis configuration should not be nil")
 			}
@@ -167,7 +162,6 @@ func TestConfigurationFileSupport(t *testing.T) {
 	manager := &Manager{}
 	tempDir := t.TempDir()
 
-	// Test YAML configuration
 	t.Run("YAML configuration", func(t *testing.T) {
 		yamlConfig := &interfaces.EnvironmentConfig{
 			Environment: interfaces.EnvDevelopment,
@@ -191,7 +185,6 @@ func TestConfigurationFileSupport(t *testing.T) {
 		}
 	})
 
-	// Test JSON configuration
 	t.Run("JSON configuration", func(t *testing.T) {
 		jsonConfig := &interfaces.EnvironmentConfig{
 			Environment: interfaces.EnvStaging,
@@ -219,7 +212,6 @@ func TestConfigurationFileSupport(t *testing.T) {
 func TestValidateConfiguration(t *testing.T) {
 	manager := &Manager{validator: NewValidator()}
 
-	// Test configuration validation for each environment
 	environments := []interfaces.Environment{
 		interfaces.EnvDevelopment,
 		interfaces.EnvStaging,
@@ -244,13 +236,11 @@ func TestValidateConfiguration(t *testing.T) {
 				t.Errorf("Validation environment = %v, want %v", validation.Environment, env)
 			}
 
-			// Check if validation has meaningful results
 			if len(validation.Errors) == 0 && len(validation.Warnings) == 0 {
-				// This is actually good for most cases with default config
+
 				t.Logf("No errors or warnings for environment %s", env)
 			}
 
-			// Log errors and warnings for debugging
 			for _, err := range validation.Errors {
 				t.Logf("Validation error for %s: %s", env, err)
 			}
@@ -267,8 +257,6 @@ func TestConnectivityCheck(t *testing.T) {
 		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	// Note: This test may fail if external services are not available
-	// In a real environment, mock these connections
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -283,7 +271,6 @@ func TestConnectivityCheck(t *testing.T) {
 		return
 	}
 
-	// Verify structure
 	t.Logf("Overall status: %s", check.OverallStatus)
 	t.Logf("Redis status: %s", check.Redis.Status)
 	t.Logf("PostgreSQL status: %s", check.PostgreSQL.Status)
@@ -293,7 +280,6 @@ func TestConnectivityCheck(t *testing.T) {
 func TestConfigurationMerging(t *testing.T) {
 	manager := &Manager{}
 
-	// Create base configuration
 	envConfig := &interfaces.EnvironmentConfig{
 		Environment: interfaces.EnvDevelopment,
 		Redis: &interfaces.RedisConfig{
@@ -305,18 +291,16 @@ func TestConfigurationMerging(t *testing.T) {
 		},
 	}
 
-	// Create file configuration
 	fileConfig := &interfaces.EnvironmentConfig{
 		Redis: &interfaces.RedisConfig{
 			URL:     "file.redis.com:6379",
 			Enabled: false,
 		},
-		// TMDB intentionally not overridden
+
 	}
 
 	merged := manager.mergeConfigs(envConfig, fileConfig)
 
-	// Verify merging behavior
 	if merged.Redis.URL != "file.redis.com:6379" {
 		t.Errorf("Redis URL not overridden, got: %s", merged.Redis.URL)
 	}
@@ -336,7 +320,6 @@ func TestConfigurationSaving(t *testing.T) {
 
 	tempDir := t.TempDir()
 
-	// Test saving as YAML
 	t.Run("Save as YAML", func(t *testing.T) {
 		yamlFile := filepath.Join(tempDir, "output.yaml")
 		err := manager.SaveConfigToFile(yamlFile)
@@ -344,13 +327,11 @@ func TestConfigurationSaving(t *testing.T) {
 			t.Errorf("Failed to save YAML config: %v", err)
 		}
 
-		// Verify file exists and is readable
 		if _, err := os.Stat(yamlFile); os.IsNotExist(err) {
 			t.Error("YAML config file was not created")
 		}
 	})
 
-	// Test saving as JSON
 	t.Run("Save as JSON", func(t *testing.T) {
 		jsonFile := filepath.Join(tempDir, "output.json")
 		err := manager.SaveConfigToFile(jsonFile)
@@ -358,7 +339,6 @@ func TestConfigurationSaving(t *testing.T) {
 			t.Errorf("Failed to save JSON config: %v", err)
 		}
 
-		// Verify file exists and is readable
 		if _, err := os.Stat(jsonFile); os.IsNotExist(err) {
 			t.Error("JSON config file was not created")
 		}
@@ -384,12 +364,10 @@ func TestTemplateGeneration(t *testing.T) {
 				t.Errorf("Failed to generate template for %s: %v", env, err)
 			}
 
-			// Verify file exists
 			if _, err := os.Stat(templateFile); os.IsNotExist(err) {
 				t.Errorf("Template file for %s was not created", env)
 			}
 
-			// Verify template can be loaded back
 			config, err := manager.loadConfigFile(templateFile)
 			if err != nil {
 				t.Errorf("Failed to load generated template for %s: %v", env, err)
@@ -413,17 +391,14 @@ func TestBackwardCompatibility(t *testing.T) {
 		t.Error("Legacy config should not be nil")
 	}
 
-	// Verify legacy structure has expected fields
 	if legacy.Environment == "" {
 		t.Error("Legacy environment should not be empty")
 	}
 
-	// Verify Redis configuration is mapped
 	if legacy.Redis.URL == "" {
 		t.Error("Legacy Redis URL should not be empty")
 	}
 
-	// Verify TMDB configuration is mapped
 	if legacy.TMDB.BaseURL == "" {
 		t.Error("Legacy TMDB base URL should not be empty")
 	}
@@ -460,7 +435,6 @@ func TestReloadConfiguration(t *testing.T) {
 
 	originalConfig := manager.GetCurrentConfig()
 
-	// Reload configuration
 	err = manager.ReloadConfiguration()
 	if err != nil {
 		t.Errorf("ReloadConfiguration error = %v", err)
@@ -472,13 +446,11 @@ func TestReloadConfiguration(t *testing.T) {
 		t.Error("Reloaded config should not be nil")
 	}
 
-	// Verify environment is consistent
 	if newConfig.Environment != originalConfig.Environment {
 		t.Error("Environment should remain consistent after reload")
 	}
 }
 
-// Helper function to clear environment variables
 func clearEnv() {
 	envVars := []string{
 		"ENVIRONMENT", "CI", "GITHUB_ACTIONS", "KUBERNETES_SERVICE_HOST", 
@@ -491,7 +463,6 @@ func clearEnv() {
 	}
 }
 
-// Benchmarks
 func BenchmarkNewManager(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -506,7 +477,7 @@ func BenchmarkNewManager(b *testing.B) {
 func BenchmarkLoadEnvironmentConfig(b *testing.B) {
 	manager := &Manager{}
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		config, err := manager.LoadEnvironmentConfig(interfaces.EnvDevelopment)
 		if err != nil {
@@ -518,7 +489,7 @@ func BenchmarkLoadEnvironmentConfig(b *testing.B) {
 
 func BenchmarkValidateConfiguration(b *testing.B) {
 	manager := &Manager{validator: NewValidator()}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		validation, err := manager.ValidateConfiguration(interfaces.EnvDevelopment)

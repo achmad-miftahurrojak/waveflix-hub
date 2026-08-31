@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// HealthStatus represents the overall health status
 type HealthStatus string
 
 const (
@@ -19,7 +18,6 @@ const (
 	StatusUnhealthy HealthStatus = "unhealthy"
 )
 
-// ComponentHealth represents health of individual component
 type ComponentHealth struct {
 	Status      HealthStatus `json:"status"`
 	Message     string       `json:"message,omitempty"`
@@ -28,7 +26,6 @@ type ComponentHealth struct {
 	Details     interface{}  `json:"details,omitempty"`
 }
 
-// HealthResponse represents the complete health check response
 type HealthResponse struct {
 	Status     HealthStatus               `json:"status"`
 	Timestamp  time.Time                  `json:"timestamp"`
@@ -38,7 +35,6 @@ type HealthResponse struct {
 	System     SystemHealth               `json:"system"`
 }
 
-// SystemHealth represents system-level metrics
 type SystemHealth struct {
 	Memory    MemoryStats    `json:"memory"`
 	Runtime   RuntimeStats   `json:"runtime"`
@@ -83,7 +79,6 @@ type ExternalStats struct {
 	TMDBResponseTime string       `json:"tmdb_response_time,omitempty"`
 }
 
-// HealthChecker manages all health check operations
 type HealthChecker struct {
 	db          DatabaseAdapter
 	redisClient *RedisCacheManager
@@ -93,7 +88,6 @@ type HealthChecker struct {
 	lastChecks  map[string]ComponentHealth
 }
 
-// NewHealthChecker creates a new health checker instance
 func NewHealthChecker(db DatabaseAdapter, redisClient *RedisCacheManager, version string) *HealthChecker {
 	hc := &HealthChecker{
 		db:          db,
@@ -102,11 +96,10 @@ func NewHealthChecker(db DatabaseAdapter, redisClient *RedisCacheManager, versio
 		version:     version,
 		lastChecks:  make(map[string]ComponentHealth),
 	}
-	
+
 	return hc
 }
 
-// RegisterHealthRoutes registers health check endpoints
 func (hc *HealthChecker) RegisterHealthRoutes(router *http.ServeMux) {
 	router.HandleFunc("/health", hc.HealthCheckHandler)
 	router.HandleFunc("/health/live", hc.LivenessHandler)
@@ -114,10 +107,9 @@ func (hc *HealthChecker) RegisterHealthRoutes(router *http.ServeMux) {
 	router.HandleFunc("/health/detailed", hc.DetailedHealthHandler)
 }
 
-// HealthCheckHandler provides basic health status
 func (hc *HealthChecker) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	
+
 	response := HealthResponse{
 		Status:    StatusHealthy,
 		Timestamp: time.Now(),
@@ -125,12 +117,11 @@ func (hc *HealthChecker) HealthCheckHandler(w http.ResponseWriter, r *http.Reque
 		Uptime:    time.Since(hc.startTime).String(),
 		Components: make(map[string]ComponentHealth),
 	}
-	
-	// Quick checks for basic health
+
 	if hc.checkDatabase() != StatusHealthy {
 		response.Status = StatusDegraded
 	}
-	
+
 	if hc.checkRedis() != StatusHealthy {
 		if response.Status == StatusDegraded {
 			response.Status = StatusUnhealthy
@@ -138,100 +129,93 @@ func (hc *HealthChecker) HealthCheckHandler(w http.ResponseWriter, r *http.Reque
 			response.Status = StatusDegraded
 		}
 	}
-	
-	// Add basic component status
+
 	response.Components["database"] = ComponentHealth{
 		Status:      hc.checkDatabase(),
 		LastChecked: time.Now(),
 		Duration:    time.Since(start).String(),
 	}
-	
+
 	response.Components["cache"] = ComponentHealth{
 		Status:      hc.checkRedis(),
 		LastChecked: time.Now(),
 		Duration:    time.Since(start).String(),
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	switch response.Status {
 	case StatusHealthy:
 		w.WriteHeader(http.StatusOK)
 	case StatusDegraded:
-		w.WriteHeader(http.StatusOK) // Still return 200 for degraded
+		w.WriteHeader(http.StatusOK) 
 	case StatusUnhealthy:
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
-// LivenessHandler for Kubernetes liveness probe
 func (hc *HealthChecker) LivenessHandler(w http.ResponseWriter, r *http.Request) {
-	// Liveness should only check if the application is alive, not dependencies
+
 	response := map[string]interface{}{
 		"status":    "alive",
 		"timestamp": time.Now(),
 		"uptime":    time.Since(hc.startTime).String(),
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 
-// ReadinessHandler for Kubernetes readiness probe
 func (hc *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request) {
 	ready := true
 	issues := []string{}
-	
-	// Check critical dependencies for readiness
+
 	if hc.checkDatabase() != StatusHealthy {
 		ready = false
 		issues = append(issues, "database connection failed")
 	}
-	
+
 	if hc.checkRedis() != StatusHealthy {
 		ready = false
 		issues = append(issues, "cache connection failed")
 	}
-	
+
 	response := map[string]interface{}{
 		"ready":     ready,
 		"timestamp": time.Now(),
 	}
-	
+
 	if len(issues) > 0 {
 		response["issues"] = issues
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	if ready {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
-// DetailedHealthHandler provides comprehensive health information
 func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Request) {
-	_ = time.Now() // reserved for future latency tracking
-	
+	_ = time.Now() 
+
 	response := HealthResponse{
 		Timestamp: time.Now(),
 		Version:   hc.version,
 		Uptime:    time.Since(hc.startTime).String(),
 		Components: make(map[string]ComponentHealth),
 	}
-	
-	// Perform all health checks concurrently
+
 	var wg sync.WaitGroup
 	healthChan := make(chan map[string]ComponentHealth, 10)
-	
-	// Database health check
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -239,8 +223,7 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 			"database": hc.checkDatabaseDetailed(),
 		}
 	}()
-	
-	// Redis health check
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -248,8 +231,7 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 			"cache": hc.checkRedisDetailed(),
 		}
 	}()
-	
-	// TMDB API health check
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -257,8 +239,7 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 			"tmdb_api": hc.checkTMDBAPI(),
 		}
 	}()
-	
-	// System health
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -266,21 +247,19 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 			"system": hc.checkSystem(),
 		}
 	}()
-	
-	// Wait for all checks to complete
+
 	go func() {
 		wg.Wait()
 		close(healthChan)
 	}()
-	
-	// Collect results
+
 	unhealthyCount := 0
 	degradedCount := 0
-	
+
 	for healthMap := range healthChan {
 		for component, health := range healthMap {
 			response.Components[component] = health
-			
+
 			switch health.Status {
 			case StatusUnhealthy:
 				unhealthyCount++
@@ -289,8 +268,7 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 			}
 		}
 	}
-	
-	// Determine overall status
+
 	if unhealthyCount > 0 {
 		response.Status = StatusUnhealthy
 	} else if degradedCount > 0 {
@@ -298,12 +276,11 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 	} else {
 		response.Status = StatusHealthy
 	}
-	
-	// Add system information
+
 	response.System = hc.getSystemHealth()
-	
+
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	switch response.Status {
 	case StatusHealthy:
 		w.WriteHeader(http.StatusOK)
@@ -312,16 +289,15 @@ func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Re
 	case StatusUnhealthy:
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
-// Basic health check methods
 func (hc *HealthChecker) checkDatabase() HealthStatus {
 	if hc.db == nil {
 		return StatusUnhealthy
 	}
-	
+
 	if err := hc.db.Ping(); err != nil {
 		return StatusUnhealthy
 	}
@@ -332,19 +308,18 @@ func (hc *HealthChecker) checkRedis() HealthStatus {
 	if hc.redisClient == nil {
 		return StatusUnhealthy
 	}
-	
+
 	stats := hc.redisClient.GetStats()
 	if !stats.RedisConnected {
 		return StatusUnhealthy
 	}
-	
+
 	return StatusHealthy
 }
 
-// Detailed health check methods
 func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 	start := time.Now()
-	
+
 	if hc.db == nil {
 		return ComponentHealth{
 			Status:      StatusUnhealthy,
@@ -353,8 +328,7 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 			Duration:    time.Since(start).String(),
 		}
 	}
-	
-	// Check basic connectivity
+
 	if err := hc.db.Ping(); err != nil {
 		return ComponentHealth{
 			Status:      StatusUnhealthy,
@@ -363,8 +337,7 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 			Duration:    time.Since(start).String(),
 		}
 	}
-	
-	// Get database statistics
+
 	stats := hc.db.Stats()
 	var details DatabaseStats
 	if stats != nil {
@@ -376,16 +349,15 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 			MaxIdle:        stats.MaxIdle,
 		}
 	}
-	
-	// Check if we're running low on connections
+
 	status := StatusHealthy
 	message := "Database connection healthy"
-	
-	if stats != nil && stats.OpenConnections > 80 { // Assuming max 100 connections
+
+	if stats != nil && stats.OpenConnections > 80 { 
 		status = StatusDegraded
 		message = "High database connection usage"
 	}
-	
+
 	return ComponentHealth{
 		Status:      status,
 		Message:     message,
@@ -397,7 +369,7 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 
 func (hc *HealthChecker) checkRedisDetailed() ComponentHealth {
 	start := time.Now()
-	
+
 	if hc.redisClient == nil {
 		return ComponentHealth{
 			Status:      StatusUnhealthy,
@@ -406,7 +378,7 @@ func (hc *HealthChecker) checkRedisDetailed() ComponentHealth {
 			Duration:    time.Since(start).String(),
 		}
 	}
-	
+
 	cacheStats := hc.redisClient.GetStats()
 	if !cacheStats.RedisConnected {
 		return ComponentHealth{
@@ -429,11 +401,10 @@ func (hc *HealthChecker) checkRedisDetailed() ComponentHealth {
 
 func (hc *HealthChecker) checkTMDBAPI() ComponentHealth {
 	start := time.Now()
-	
-	// Direct HTTP check instead of circuit breaker
+
 	var checkErr error
 	func() {
-		// Simple health check - try to get configuration
+
 		client := &http.Client{Timeout: 5 * time.Second}
 
 		tmdbAPIKey := os.Getenv("TMDB_API_KEY")
@@ -478,7 +449,7 @@ func (hc *HealthChecker) checkTMDBAPI() ComponentHealth {
 
 func (hc *HealthChecker) checkSystem() ComponentHealth {
 	start := time.Now()
-	
+
 	return ComponentHealth{
 		Status:      StatusHealthy,
 		Message:     "System resources normal",
@@ -491,7 +462,7 @@ func (hc *HealthChecker) checkSystem() ComponentHealth {
 func (hc *HealthChecker) getSystemHealth() SystemHealth {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	return SystemHealth{
 		Memory: MemoryStats{
 			Alloc:        m.Alloc,

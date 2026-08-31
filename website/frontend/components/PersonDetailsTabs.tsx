@@ -17,7 +17,7 @@ export default function PersonDetailsTabs({ biography, knownForDept, birthday, p
 
   return (
     <div>
-      {/* Toggle */}
+      {}
       <div className="inline-flex bg-white/5 backdrop-blur-md border border-white/10 rounded-full p-1 mb-6 relative">
         {(["bio", "info"] as const).map((tab) => (
           <button
@@ -41,7 +41,7 @@ export default function PersonDetailsTabs({ biography, knownForDept, birthday, p
         ))}
       </div>
 
-      {/* Content */}
+      {}
       <div className="text-white/80">
         {activeTab === "bio" ? (
           <div>

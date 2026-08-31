@@ -47,7 +47,6 @@ export function ratingText(m: TmdbItem): string {
   return m.vote_average ? m.vote_average.toFixed(1) : "N/A";
 }
 
-/** Durasi menit -> "2h 25m". */
 export function runtimeText(minutes?: number | null): string {
   if (!minutes || minutes <= 0) return "";
   const h = Math.floor(minutes / 60);
@@ -55,7 +54,6 @@ export function runtimeText(minutes?: number | null): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-/** Ringkasan durasi/musim untuk baris meta. */
 export function durationText(d: TmdbDetail): string {
   if (isTv(d)) {
     if (d.number_of_seasons) return `${d.number_of_seasons} Seasons`;
@@ -69,7 +67,6 @@ export function genreNames(d: TmdbDetail): string[] {
   return (d.genres ?? []).map((g) => g.name);
 }
 
-/** Meta jumlah untuk TV: "4 Seasons • 19 Episodes" (ala IDLIX). */
 export function tvCountsText(d: TmdbDetail): string {
   const parts: string[] = [];
   if (d.number_of_seasons) parts.push(`${d.number_of_seasons} Seasons`);
@@ -77,7 +74,6 @@ export function tvCountsText(d: TmdbDetail): string {
   return parts.join(" • ");
 }
 
-/** Status jadi label badge: ONGOING / ENDED. */
 export function statusLabel(d: TmdbDetail): string {
   switch ((d.status || "").toLowerCase()) {
     case "returning series":

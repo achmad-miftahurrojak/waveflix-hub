@@ -14,7 +14,7 @@ import {
 } from "@/lib/helpers";
 import { StarIcon, PlayIcon } from "./Icons";
 
-const IMAGE_MS = 5000; // video main di belakang gambar dulu, baru gambar fade-out
+const IMAGE_MS = 5000; 
 const IMAGE_ONLY_MS = 10000;
 
 function VolumeOn() {
@@ -35,7 +35,7 @@ function VolumeOff() {
 export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const { t } = useTranslation();
   const [active, setActive] = useState(0);
-  const [revealed, setRevealed] = useState(false); // gambar sudah fade-out?
+  const [revealed, setRevealed] = useState(false); 
   const [muted, setMuted] = useState(true);
   const [inView, setInView] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
@@ -53,18 +53,15 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     return () => io.disconnect();
   }, []);
 
-  // Auto-geser slide (hanya jika TIDAK ada trailer).
-  // Jika ada trailer, perpindahan slide di-handle oleh event "infoDelivery" dari YouTube saat video selesai (state = 0).
   useEffect(() => {
     if (total <= 1) return;
-    if (slides[active]?.trailer) return; // tunggu video selesai
+    if (slides[active]?.trailer) return; 
 
     const t = setTimeout(() => setActive((i) => (i + 1) % total), IMAGE_ONLY_MS);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [active, total]);
 
-  // Dengarkan progress video menggunakan YouTube IFrame API resmi
   useEffect(() => {
     if (!playVideo) return;
     let player: any;
@@ -76,7 +73,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       player = new (window as any).YT.Player(iframeRef.current, {
         events: {
           onStateChange: (e: any) => {
-            // 0 = Ended
+
             if (e.data === 0 && !skipped) {
               skipped = true;
               setRevealed(false);
@@ -88,19 +85,18 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         }
       });
 
-      // Polling waktu setiap 250ms (dijalankan di luar onReady karena onReady sering terlewat jika iframe sudah loading)
       timer = setInterval(() => {
         if (skipped || !player || typeof player.getCurrentTime !== "function") return;
         try {
           const current = player.getCurrentTime();
           const duration = player.getDuration();
-          // Skip 1.5 detik sebelum habis
+
           if (duration > 0 && duration - current < 1.5) {
             skipped = true;
-            setRevealed(false); // Kembali ke foto
+            setRevealed(false); 
             setTimeout(() => {
               setActive((prev) => (prev + 1) % total);
-            }, 10000); // Jeda 10 detik
+            }, 10000); 
           }
         } catch (err) {}
       }, 250);
@@ -113,7 +109,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
       (window as any).onYouTubeIframeAPIReady = attachAPI;
     } else if (!(window as any).YT.Player) {
-      // Script loaded but API not ready yet, wait for it
+
       (window as any).onYouTubeIframeAPIReady = attachAPI;
     } else {
       attachAPI();
@@ -124,13 +120,12 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     };
   }, [active, playVideo, total]);
 
-  // Reveal: video main dulu 5 detik di belakang gambar, lalu gambar fade-out.
   useEffect(() => {
     setRevealed(false);
     if (!playVideo) return;
     const t = setTimeout(() => setRevealed(true), IMAGE_MS);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [active, playVideo]);
 
   const sendCmd = (func: string, args: any[] = []) =>
@@ -153,7 +148,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section ref={sectionRef} className="relative h-[86vh] min-h-[560px] w-full overflow-hidden bg-black">
-      {/* Video (base) — main di belakang gambar */}
+      {}
       {playVideo && current && (
         <div key={current.item.id} className="absolute inset-0 overflow-hidden">
           <iframe
@@ -163,8 +158,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             allow="autoplay; encrypted-media"
             onLoad={() => {
               if (!muted) sendCmd("unMute");
-              
-              // Matikan subtitle secara paksa via JS API (Fallback)
+
               sendCmd("unloadModule", ["captions"]);
               sendCmd("setOption", ["captions", "track", {}]);
             }}
@@ -174,7 +168,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         </div>
       )}
 
-      {/* Gambar per-slide (di atas video, fade-out untuk mengungkap video) */}
+      {}
       {slides.map((s, i) => (
         <div
           key={s.item.id}
@@ -186,11 +180,11 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         />
       ))}
 
-      {/* Redup + fade bawah (di atas video & gambar) */}
+      {}
       <div className="pointer-events-none absolute inset-0 bg-black/35" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent" />
 
-      {/* Mute/unmute (saat trailer terlihat) */}
+      {}
       {revealed && playVideo && (
         <button
           onClick={toggleMute}
@@ -201,7 +195,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         </button>
       )}
 
-      {/* Konten slide aktif */}
+      {}
       <div className="relative z-[2] flex h-full items-end">
         <div className="w-full max-w-2xl px-[4%] pb-[8vh]">
           {slides.map((s, i) => {
@@ -218,7 +212,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 )}
 
                 {s.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+
                   <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-logo md:max-h-24 md:max-w-[280px]" />
                 ) : (
                   <h1 className="mb-4 max-w-xl text-3xl font-bold leading-tight drop-shadow-lg md:text-4xl">

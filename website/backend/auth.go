@@ -70,7 +70,7 @@ func decodeJSON(r *http.Request, dst interface{}) error {
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) // 1MB max
+	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) 
 	var body struct {
 		Email    string `json:"email"`
 		Username string `json:"username"`
@@ -98,7 +98,6 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PostgreSQL: gunakan RETURNING id untuk mendapat ID baru
 	var id int64
 	err = db.QueryRow(
 		"INSERT INTO users(email, username, password_hash) VALUES($1,$2,$3) RETURNING id",
@@ -113,7 +112,6 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Buat profil default dengan is_default = true
 	if _, err := db.Exec(
 		"INSERT INTO profiles (user_id, name, is_default) VALUES ($1, $2, true)",
 		id, body.Username,
@@ -125,7 +123,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) // 1MB max
+	r.Body = http.MaxBytesReader(w, r.Body, 1_000_000) 
 	var body struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -194,7 +192,7 @@ func uploadImage(column string) http.HandlerFunc {
 			return
 		}
 		uid := r.Context().Value(userIDKey).(int64)
-		r.Body = http.MaxBytesReader(w, r.Body, 8_000_000) // ~6MB file + overhead base64
+		r.Body = http.MaxBytesReader(w, r.Body, 8_000_000) 
 		var body struct {
 			Image string `json:"image"`
 		}
@@ -426,7 +424,6 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Synchronize with database identity to ensure user still exists
 		var exists bool
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", int64(sub)).Scan(&exists)
 		if err != nil || !exists {
@@ -439,7 +436,6 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// requireRole is a middleware that ensures the user has a specific role (RBAC)
 func requireRole(role string, next http.HandlerFunc) http.HandlerFunc {
 	return requireAuth(func(w http.ResponseWriter, r *http.Request) {
 		uid := r.Context().Value(userIDKey).(int64)

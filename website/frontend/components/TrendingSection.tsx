@@ -17,7 +17,6 @@ const TABS: { id: Tab; labelKey: string }[] = [
   { id: "tv", labelKey: "nav.tv" },
 ];
 
-/** Baris trending dengan toggle All/Movies/TV + penomoran ranking 1-N. */
 export default function TrendingSection({
   items,
   title,

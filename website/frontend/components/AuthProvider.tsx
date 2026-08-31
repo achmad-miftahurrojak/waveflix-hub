@@ -73,7 +73,6 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [activeProfile, setActiveProfile] = useState<ActiveProfile | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Cookie HttpOnly is the normal session. A legacy token is read once for migration.
   useEffect(() => {
     migrateStorage();
     const saved = localStorage.getItem(TOKEN_KEY);
@@ -104,19 +103,18 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((err) => {
-        // Hanya hapus token jika server benar-benar menolaknya (401/403)
-        // Jangan hapus token saat network error (backend mungkin sedang restart)
+
         if (err?.status === 401 || err?.status === 403) {
           localStorage.removeItem(TOKEN_KEY);
           setToken(null);
         }
-        // Jika network error: token tetap ada, user tetap "logged in"
+
       })
       .finally(() => setReady(true));
   }, []);
 
   const persist = (tok: string, u: AuthUser) => {
-    // The backend sets the HttpOnly cookie. Keep the token in memory only for legacy fallback.
+
     setToken(tok || null);
     localStorage.removeItem(TOKEN_KEY);
     setUser(u);
@@ -133,7 +131,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) return data.error || "Gagal masuk";
-      sessionStorage.removeItem("profileSelected"); // wajib pilih profil setelah login
+      sessionStorage.removeItem("profileSelected"); 
       persist(data.token, data.user);
       return null;
     } catch {
@@ -152,7 +150,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         });
         const data = await res.json();
         if (!res.ok) return data.error || "Gagal daftar";
-        sessionStorage.removeItem("profileSelected"); // wajib pilih profil setelah daftar
+        sessionStorage.removeItem("profileSelected"); 
         persist(data.token, data.user);
         return null;
       } catch {
@@ -178,11 +176,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         ...(init.headers as Record<string, string> || {}),
         "Content-Type": "application/json",
       };
-      
+
       if (token && token !== "cookie") {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const profileId = localStorage.getItem("activeProfileId");
       if (profileId) {
         headers["X-Profile-ID"] = profileId;
@@ -253,14 +251,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const recordHistory = useCallback(
     (item: TmdbItem, season?: number, episode?: number, currentProgressSeconds?: number) => {
       if (!token) return;
-      
+
       const detail = item as TmdbItem & { runtime?: number; episode_run_time?: number[] };
       let runtime = detail.runtime || 0;
       if (mediaTypeOf(item) === "tv" && (!runtime || runtime === 0)) {
         runtime = detail.episode_run_time?.[0] || 45;
       }
-      if (runtime === 0) runtime = 120; // default for movie
-      
+      if (runtime === 0) runtime = 120; 
+
       const progress = currentProgressSeconds !== undefined 
         ? Math.floor(currentProgressSeconds / 60) 
         : Math.floor(runtime * 0.7);

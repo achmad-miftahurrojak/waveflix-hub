@@ -19,7 +19,7 @@ export default async function AnimePage() {
       media: "tv",
       genre: "16",
       country: "JP",
-      sort_by: "popularity.desc", // Populer untuk hero, bukan cuma yang baru rilis agar bagus posternya
+      sort_by: "popularity.desc", 
       released_before: today,
       provider: MAJOR_PROVIDERS,
     }),

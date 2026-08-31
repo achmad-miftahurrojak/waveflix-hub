@@ -15,21 +15,21 @@ export default function EmailForm() {
 
     setLoading(true);
     try {
-      // Cek apakah email sudah terdaftar di database
+
       const res = await fetch(
         `${BACKEND}/api/auth/check-email?email=${encodeURIComponent(email)}`
       );
       const data = await res.json();
 
       if (data.exists) {
-        // Email sudah ada → arahkan ke halaman Login dengan email pre-filled
+
         router.push(`/masuk?email=${encodeURIComponent(email)}`);
       } else {
-        // Email belum ada → arahkan ke halaman Daftar dengan email pre-filled
+
         router.push(`/daftar?email=${encodeURIComponent(email)}`);
       }
     } catch {
-      // Kalau server mati, fallback ke halaman daftar
+
       router.push(`/daftar?email=${encodeURIComponent(email)}`);
     } finally {
       setLoading(false);

@@ -26,7 +26,6 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Tutup dropdown saat klik di luar
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -41,7 +40,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
     <div className="flex items-center gap-2" ref={ref}>
       <span className="text-sm text-white/60">Urutkan:</span>
 
-      {/* Trigger button */}
+      {}
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -65,7 +64,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
           </svg>
         </button>
 
-        {/* Dropdown panel */}
+        {}
         {open && (
           <ul
             role="listbox"
@@ -85,7 +84,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
                       : "text-white/60 hover:bg-white/[0.08] hover:text-white"
                   }`}
                 >
-                  {/* Accent indicator */}
+                  {}
                   <span
                     className={`h-1.5 w-1.5 flex-none rounded-full transition-all ${
                       isActive ? "bg-cyan-400 scale-110" : "bg-transparent"

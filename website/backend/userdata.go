@@ -11,7 +11,6 @@ func getProfileID(r *http.Request) int {
 	return pid
 }
 
-// Bentuk item yang dikirim/diterima frontend.
 type mediaItem struct {
 	TmdbID      int64   `json:"tmdb_id"`
 	MediaType   string  `json:"media_type"`
@@ -47,7 +46,6 @@ func getList(w http.ResponseWriter, r *http.Request, table string) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"results": items})
 }
 
-// addList: POST {tmdb_id, media_type, title, poster_path, vote_average}
 func addList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	r.Body = http.MaxBytesReader(w, r.Body, 64_000)
@@ -61,7 +59,6 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 		it.MediaType = "movie"
 	}
 
-	// PostgreSQL: ON CONFLICT DO NOTHING (menggantikan INSERT OR IGNORE)
 	_, err := db.Exec(
 		"INSERT INTO "+table+
 			"(user_id, profile_id, tmdb_id, media_type, title, poster_path) VALUES($1,$2,$3,$4,$5,$6)"+
@@ -96,7 +93,6 @@ func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-// listHandler membuat router GET/POST/DELETE untuk satu tabel daftar.
 func listHandler(table string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -112,11 +108,9 @@ func listHandler(table string) http.HandlerFunc {
 	}
 }
 
-// Router /api/watchlist & /api/favorites.
 var handleWatchlist = listHandler("watchlist")
 var handleFavorites = listHandler("favorites")
 
-// GET /api/history  &  POST /api/history
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
 	pid := getProfileID(r)
@@ -155,8 +149,6 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// GET: 50 tontonan terakhir (unik per judul, terbaru dulu)
-	// PostgreSQL: gunakan DISTINCT ON atau subquery; pakai pendekatan subquery yang portable
 	rows, err := db.Query(
 		`SELECT DISTINCT ON (tmdb_id, media_type) 
 		  tmdb_id, media_type, title, poster_path, season_number, episode_number, progress_seconds, duration_seconds, watched_at

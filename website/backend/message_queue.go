@@ -1,8 +1,5 @@
-// Package main provides Redis-based message queue for WaveFlix Hub async processing.
-//
-// The message queue system handles background jobs like email notifications,
-// data synchronization, image processing, and other async tasks that should
-// not block HTTP request handling.
+
+
 package main
 
 import (
@@ -17,14 +14,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// MessageQueue provides async job processing capabilities.
-//
-// The queue system supports:
-// - Job priorities and delayed execution
-// - Retry policies with exponential backoff
-// - Dead letter queue for failed jobs
-// - Worker pool management
-// - Job status tracking and metrics
 type MessageQueue struct {
 	client       *redis.Client
 	enabled      bool
@@ -33,22 +22,19 @@ type MessageQueue struct {
 	mu           sync.RWMutex
 }
 
-// Job represents a queued job with metadata.
 type Job struct {
 	ID          string                 `json:"id"`
 	Type        string                 `json:"type"`
 	Payload     map[string]interface{} `json:"payload"`
-	Priority    int                    `json:"priority"` // 1-10, higher = more priority
+	Priority    int                    `json:"priority"` 
 	MaxRetries  int                    `json:"max_retries"`
 	RetryCount  int                    `json:"retry_count"`
 	ScheduledAt time.Time              `json:"scheduled_at"`
 	CreatedAt   time.Time              `json:"created_at"`
 }
 
-// JobHandler defines the interface for job processing functions.
 type JobHandler func(ctx context.Context, job *Job) error
 
-// JobResult tracks job execution results.
 type JobResult struct {
 	JobID      string        `json:"job_id"`
 	Success    bool          `json:"success"`
@@ -57,7 +43,6 @@ type JobResult struct {
 	CompletedAt time.Time    `json:"completed_at"`
 }
 
-// QueueMetrics provides queue performance statistics.
 type QueueMetrics struct {
 	PendingJobs    int64     `json:"pending_jobs"`
 	ActiveJobs     int64     `json:"active_jobs"`
@@ -67,7 +52,6 @@ type QueueMetrics struct {
 	LastProcessed  time.Time `json:"last_processed"`
 }
 
-// WorkerPool manages a pool of workers for job processing.
 type WorkerPool struct {
 	workerCount int
 	jobChan     chan *Job
@@ -78,14 +62,13 @@ type WorkerPool struct {
 }
 
 const (
-	// Queue names
+
 	QueueDefault    = "waveflix:queue:default"
 	QueueHighPrio   = "waveflix:queue:high"
 	QueueLowPrio    = "waveflix:queue:low"
 	QueueScheduled  = "waveflix:queue:scheduled"
 	QueueDeadLetter = "waveflix:queue:failed"
-	
-	// Job types
+
 	JobTypeEmail          = "email_notification"
 	JobTypeDataSync       = "data_sync"
 	JobTypeImageProcess   = "image_process"
@@ -93,21 +76,18 @@ const (
 	JobTypeCacheWarm      = "cache_warm"
 )
 
-// NewMessageQueue creates a new message queue instance.
 func NewMessageQueue() *MessageQueue {
 	config := loadQueueConfig()
-	
-	// Create Redis client (reuse existing client if available)
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         config.RedisURL,
 		Password:     config.Password,
-		DB:           config.DB + 1, // Use different DB for queue
+		DB:           config.DB + 1, 
 		MaxRetries:   3,
 		PoolSize:     config.PoolSize,
 		PoolTimeout:  30 * time.Second,
 	})
 
-	// Test Redis connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -126,7 +106,6 @@ func NewMessageQueue() *MessageQueue {
 		jobHandlers: make(map[string]JobHandler),
 	}
 
-	// Initialize worker pool
 	if enabled {
 		mq.workerPool = NewWorkerPool(config.WorkerCount, mq)
 		mq.registerDefaultHandlers()
@@ -136,7 +115,6 @@ func NewMessageQueue() *MessageQueue {
 	return mq
 }
 
-// QueueConfig holds message queue configuration.
 type QueueConfig struct {
 	RedisURL     string
 	Password     string
@@ -145,7 +123,6 @@ type QueueConfig struct {
 	WorkerCount  int
 }
 
-// loadQueueConfig loads queue configuration from environment.
 func loadQueueConfig() *QueueConfig {
 	return &QueueConfig{
 		RedisURL:    getEnvDefault("REDIS_URL", "localhost:6379"),
@@ -156,20 +133,17 @@ func loadQueueConfig() *QueueConfig {
 	}
 }
 
-// EnqueueJob adds a job to the appropriate queue based on priority.
 func (mq *MessageQueue) EnqueueJob(ctx context.Context, job *Job) error {
 	if !mq.enabled {
-		// Execute synchronously if queue is disabled
+
 		log.Printf("[queue] Executing job %s synchronously (queue disabled)", job.Type)
 		return mq.executeJobSync(ctx, job)
 	}
 
-	// Generate job ID if not provided
 	if job.ID == "" {
 		job.ID = generateJobID()
 	}
 
-	// Set defaults
 	if job.MaxRetries == 0 {
 		job.MaxRetries = 3
 	}
@@ -180,17 +154,15 @@ func (mq *MessageQueue) EnqueueJob(ctx context.Context, job *Job) error {
 		job.ScheduledAt = time.Now()
 	}
 
-	// Serialize job
 	jobData, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
 
-	// Choose queue based on priority and scheduling
 	queueName := mq.selectQueue(job)
-	
+
 	if job.ScheduledAt.After(time.Now()) {
-		// Schedule for future execution
+
 		score := float64(job.ScheduledAt.Unix())
 		return mq.client.ZAdd(ctx, QueueScheduled, redis.Z{
 			Score:  score,
@@ -198,11 +170,9 @@ func (mq *MessageQueue) EnqueueJob(ctx context.Context, job *Job) error {
 		}).Err()
 	}
 
-	// Immediate execution
 	return mq.client.LPush(ctx, queueName, jobData).Err()
 }
 
-// selectQueue determines the appropriate queue for a job.
 func (mq *MessageQueue) selectQueue(job *Job) string {
 	switch {
 	case job.Priority >= 8:
@@ -214,7 +184,6 @@ func (mq *MessageQueue) selectQueue(job *Job) string {
 	}
 }
 
-// RegisterHandler registers a job handler for a specific job type.
 func (mq *MessageQueue) RegisterHandler(jobType string, handler JobHandler) {
 	mq.mu.Lock()
 	defer mq.mu.Unlock()
@@ -222,7 +191,6 @@ func (mq *MessageQueue) RegisterHandler(jobType string, handler JobHandler) {
 	log.Printf("[queue] Registered handler for job type: %s", jobType)
 }
 
-// executeJobSync executes a job synchronously (fallback when queue disabled).
 func (mq *MessageQueue) executeJobSync(ctx context.Context, job *Job) error {
 	mq.mu.RLock()
 	handler, exists := mq.jobHandlers[job.Type]
@@ -230,13 +198,12 @@ func (mq *MessageQueue) executeJobSync(ctx context.Context, job *Job) error {
 
 	if !exists {
 		log.Printf("[queue] No handler registered for job type: %s", job.Type)
-		return nil // Don't fail for missing handlers
+		return nil 
 	}
 
 	return handler(ctx, job)
 }
 
-// processJob processes a single job with the registered handler.
 func (mq *MessageQueue) processJob(ctx context.Context, job *Job) *JobResult {
 	start := time.Now()
 	result := &JobResult{
@@ -255,7 +222,6 @@ func (mq *MessageQueue) processJob(ctx context.Context, job *Job) *JobResult {
 		return result
 	}
 
-	// Execute job with timeout
 	jobCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
@@ -274,7 +240,6 @@ func (mq *MessageQueue) processJob(ctx context.Context, job *Job) *JobResult {
 	return result
 }
 
-// GetMetrics returns current queue metrics.
 func (mq *MessageQueue) GetMetrics(ctx context.Context) (*QueueMetrics, error) {
 	if !mq.enabled {
 		return &QueueMetrics{WorkersActive: 0}, nil
@@ -282,7 +247,6 @@ func (mq *MessageQueue) GetMetrics(ctx context.Context) (*QueueMetrics, error) {
 
 	metrics := &QueueMetrics{}
 
-	// Count pending jobs in all queues
 	pipe := mq.client.Pipeline()
 	defaultLen := pipe.LLen(ctx, QueueDefault)
 	highLen := pipe.LLen(ctx, QueueHighPrio)
@@ -298,7 +262,6 @@ func (mq *MessageQueue) GetMetrics(ctx context.Context) (*QueueMetrics, error) {
 	metrics.PendingJobs = defaultLen.Val() + highLen.Val() + lowLen.Val()
 	metrics.FailedJobs = failedLen.Val()
 
-	// Active workers
 	if mq.workerPool != nil {
 		metrics.WorkersActive = mq.workerPool.workerCount
 	}
@@ -306,7 +269,6 @@ func (mq *MessageQueue) GetMetrics(ctx context.Context) (*QueueMetrics, error) {
 	return metrics, nil
 }
 
-// Close gracefully shuts down the message queue.
 func (mq *MessageQueue) Close() error {
 	if mq.workerPool != nil {
 		mq.workerPool.Stop()
@@ -319,10 +281,9 @@ func (mq *MessageQueue) Close() error {
 	return nil
 }
 
-// NewWorkerPool creates a new worker pool.
 func NewWorkerPool(workerCount int, mq *MessageQueue) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	wp := &WorkerPool{
 		workerCount: workerCount,
 		jobChan:     make(chan *Job, 100),
@@ -331,32 +292,28 @@ func NewWorkerPool(workerCount int, mq *MessageQueue) *WorkerPool {
 		cancel:      cancel,
 	}
 
-	// Start workers
 	for i := 0; i < workerCount; i++ {
 		wp.wg.Add(1)
 		go wp.worker(i, mq)
 	}
 
-	// Start job fetcher
 	go wp.fetchJobs(mq)
 
-	// Start result processor
 	go wp.processResults()
 
 	return wp
 }
 
-// worker processes jobs from the job channel.
 func (wp *WorkerPool) worker(id int, mq *MessageQueue) {
 	defer wp.wg.Done()
-	
+
 	for {
 		select {
 		case <-wp.ctx.Done():
 			return
 		case job := <-wp.jobChan:
 			result := mq.processJob(wp.ctx, job)
-			
+
 			select {
 			case wp.resultChan <- result:
 			case <-wp.ctx.Done():
@@ -366,7 +323,6 @@ func (wp *WorkerPool) worker(id int, mq *MessageQueue) {
 	}
 }
 
-// fetchJobs continuously fetches jobs from Redis queues.
 func (wp *WorkerPool) fetchJobs(mq *MessageQueue) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -381,21 +337,18 @@ func (wp *WorkerPool) fetchJobs(mq *MessageQueue) {
 	}
 }
 
-// fetchFromQueues fetches jobs from Redis queues with priority.
 func (wp *WorkerPool) fetchFromQueues(mq *MessageQueue) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Check scheduled jobs first
 	wp.processScheduledJobs(ctx, mq)
 
-	// Fetch from queues in priority order
 	queues := []string{QueueHighPrio, QueueDefault, QueueLowPrio}
-	
+
 	for _, queueName := range queues {
 		result := mq.client.BRPop(ctx, 100*time.Millisecond, queueName)
 		if result.Err() != nil {
-			continue // No jobs or timeout
+			continue 
 		}
 
 		var job Job
@@ -409,17 +362,15 @@ func (wp *WorkerPool) fetchFromQueues(mq *MessageQueue) {
 		case <-wp.ctx.Done():
 			return
 		default:
-			// Worker pool full, put job back
+
 			mq.client.LPush(ctx, queueName, result.Val()[1])
 		}
 	}
 }
 
-// processScheduledJobs moves ready scheduled jobs to active queues.
 func (wp *WorkerPool) processScheduledJobs(ctx context.Context, mq *MessageQueue) {
 	now := time.Now().Unix()
-	
-	// Get jobs ready for execution
+
 	result := mq.client.ZRangeByScore(ctx, QueueScheduled, &redis.ZRangeBy{
 		Min: "0",
 		Max: strconv.FormatInt(now, 10),
@@ -431,32 +382,29 @@ func (wp *WorkerPool) processScheduledJobs(ctx context.Context, mq *MessageQueue
 			continue
 		}
 
-		// Move to appropriate queue
 		queueName := mq.selectQueue(&job)
 		mq.client.LPush(ctx, queueName, jobData)
 		mq.client.ZRem(ctx, QueueScheduled, jobData)
 	}
 }
 
-// processResults handles job results and retry logic.
 func (wp *WorkerPool) processResults() {
 	for {
 		select {
 		case <-wp.ctx.Done():
 			return
 		case result := <-wp.resultChan:
-			// Log result (could be sent to monitoring system)
+
 			if result.Success {
 				log.Printf("[queue] Job %s completed successfully", result.JobID)
 			} else {
 				log.Printf("[queue] Job %s failed: %s", result.JobID, result.Error)
-				// TODO: Implement retry logic here
+
 			}
 		}
 	}
 }
 
-// Stop gracefully stops the worker pool.
 func (wp *WorkerPool) Stop() {
 	wp.cancel()
 	wp.wg.Wait()
@@ -464,12 +412,10 @@ func (wp *WorkerPool) Stop() {
 	close(wp.resultChan)
 }
 
-// generateJobID generates a unique job ID.
 func generateJobID() string {
 	return "job_" + strconv.FormatInt(time.Now().UnixNano(), 36)
 }
 
-// registerDefaultHandlers registers built-in job handlers.
 func (mq *MessageQueue) registerDefaultHandlers() {
 	mq.RegisterHandler(JobTypeEmail, mq.handleEmailJob)
 	mq.RegisterHandler(JobTypeDataSync, mq.handleDataSyncJob)
@@ -478,61 +424,51 @@ func (mq *MessageQueue) registerDefaultHandlers() {
 	mq.RegisterHandler(JobTypeCacheWarm, mq.handleCacheWarmJob)
 }
 
-// Built-in job handlers
 func (mq *MessageQueue) handleEmailJob(ctx context.Context, job *Job) error {
-	// Extract email parameters from job payload
+
 	to, _ := job.Payload["to"].(string)
 	subject, _ := job.Payload["subject"].(string)
 	body, _ := job.Payload["body"].(string)
-	
+
 	log.Printf("[queue] Processing email job: to=%s, subject=%s", to, subject)
-	
-	// Use existing email functionality
+
 	if to != "" && subject != "" && body != "" {
 		return sendVerificationEmail(to, body)
 	}
-	
+
 	return nil
 }
 
 func (mq *MessageQueue) handleDataSyncJob(ctx context.Context, job *Job) error {
 	syncType, _ := job.Payload["type"].(string)
 	log.Printf("[queue] Processing data sync job: type=%s", syncType)
-	
-	// Implement data synchronization logic here
-	// This could sync user data, cache invalidation, etc.
+
 	return nil
 }
 
 func (mq *MessageQueue) handleImageProcessJob(ctx context.Context, job *Job) error {
 	imageURL, _ := job.Payload["url"].(string)
 	operation, _ := job.Payload["operation"].(string)
-	
+
 	log.Printf("[queue] Processing image job: url=%s, operation=%s", imageURL, operation)
-	
-	// Implement image processing logic here
-	// This could resize, compress, or optimize images
+
 	return nil
 }
 
 func (mq *MessageQueue) handleAnalyticsJob(ctx context.Context, job *Job) error {
 	eventType, _ := job.Payload["event_type"].(string)
 	log.Printf("[queue] Processing analytics job: event_type=%s", eventType)
-	
-	// Implement analytics batch processing here
+
 	return nil
 }
 
 func (mq *MessageQueue) handleCacheWarmJob(ctx context.Context, job *Job) error {
 	cacheKey, _ := job.Payload["cache_key"].(string)
 	log.Printf("[queue] Processing cache warm job: key=%s", cacheKey)
-	
-	// Implement cache warming logic here
-	// Pre-populate frequently accessed data
+
 	return nil
 }
 
-// Shutdown menghentikan message queue dan worker pool secara graceful.
 func (mq *MessageQueue) Shutdown(ctx context.Context) error {
 	if mq == nil || !mq.enabled {
 		return nil
@@ -549,7 +485,6 @@ func (mq *MessageQueue) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// Shutdown menghentikan worker pool dan menunggu semua job selesai.
 func (wp *WorkerPool) Shutdown(ctx context.Context) error {
 	if wp == nil {
 		return nil
@@ -557,7 +492,7 @@ func (wp *WorkerPool) Shutdown(ctx context.Context) error {
 	if wp.cancel != nil {
 		wp.cancel()
 	}
-	// Tunggu goroutine selesai dengan timeout dari context
+
 	done := make(chan struct{})
 	go func() {
 		wp.wg.Wait()
@@ -571,11 +506,10 @@ func (wp *WorkerPool) Shutdown(ctx context.Context) error {
 	}
 }
 
-// GetActiveJobCount mengembalikan jumlah job yang sedang aktif diproses.
 func (wp *WorkerPool) GetActiveJobCount() int {
 	if wp == nil {
 		return 0
 	}
-	// Estimasi berdasarkan jumlah pekerjaan dalam channel
+
 	return len(wp.jobChan)
 }

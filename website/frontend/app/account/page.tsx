@@ -65,10 +65,10 @@ export default function AccountPage() {
 
   return (
     <main className={`min-h-screen pb-16 ${profileFontVars}`}>
-      {/* HERO */}
+      {}
       <div className="relative flex h-[86vh] min-h-[560px] items-end overflow-hidden">
         {(activeProfile as any)?.banner || user.banner ? (
-          // eslint-disable-next-line @next/next/no-img-element
+
           <img src={(activeProfile as any)?.banner || user.banner} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-accent/25 via-bg to-bg" />
@@ -80,7 +80,7 @@ export default function AccountPage() {
           <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4">
             <div className="flex items-end gap-5">
               {(activeProfile as any)?.avatar || user.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img src={(activeProfile as any)?.avatar || user.avatar} alt="Avatar" className="h-32 w-32 shrink-0 rounded-full border-4 border-bg object-cover md:h-36 md:w-36" />
               ) : (
                 <span className="grid h-32 w-32 shrink-0 place-items-center rounded-full border-4 border-bg bg-accent text-4xl font-bold text-black md:h-36 md:w-36">
@@ -105,7 +105,7 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* BELOW: bio + tabs + list */}
+      {}
       <div className="mx-auto max-w-5xl px-[4%] py-10">
         {(activeProfile as any)?.bio || user.bio ? (
           <p className="max-w-2xl text-base italic leading-7 text-white/70">{(activeProfile as any)?.bio || user.bio}</p>

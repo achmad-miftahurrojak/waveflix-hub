@@ -1,7 +1,5 @@
-// Package monitoring provides real-time performance monitoring capabilities.
-//
-// This package collects metrics from all scalability components and provides
-// alerting capabilities for performance threshold violations.
+
+
 package monitoring
 
 import (
@@ -12,7 +10,6 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/interfaces"
 )
 
-// PerformanceMonitor implements the PerformanceMonitor interface.
 type PerformanceMonitor struct {
 	config   *config.Manager
 	alerts   map[string]*interfaces.AlertDefinition
@@ -20,7 +17,6 @@ type PerformanceMonitor struct {
 	stopCh   chan struct{}
 }
 
-// NewPerformanceMonitor creates a new performance monitor.
 func NewPerformanceMonitor(configManager *config.Manager) (*PerformanceMonitor, error) {
 	return &PerformanceMonitor{
 		config: configManager,
@@ -29,19 +25,17 @@ func NewPerformanceMonitor(configManager *config.Manager) (*PerformanceMonitor, 
 	}, nil
 }
 
-// Start begins continuous monitoring.
 func (pm *PerformanceMonitor) Start(ctx context.Context) error {
 	pm.running = true
-	
-	// Get monitoring configuration
+
 	monitoringConfig := pm.config.GetCurrentConfig().Monitoring
 	if monitoringConfig == nil {
-		return nil // Monitoring disabled
+		return nil 
 	}
-	
+
 	ticker := time.NewTicker(monitoringConfig.MetricsInterval)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -49,40 +43,32 @@ func (pm *PerformanceMonitor) Start(ctx context.Context) error {
 		case <-pm.stopCh:
 			return nil
 		case <-ticker.C:
-			// Collect metrics periodically
+
 			if _, err := pm.CollectMetrics(ctx); err != nil {
-				// Log error but continue monitoring
+
 				continue
 			}
 		}
 	}
 }
 
-// CollectMetrics gathers current performance metrics from all components.
 func (pm *PerformanceMonitor) CollectMetrics(ctx context.Context) (*interfaces.SystemMetrics, error) {
 	metrics := &interfaces.SystemMetrics{
 		Timestamp:     time.Now(),
 		CustomMetrics: make(map[string]interface{}),
 	}
 
-	// TODO: Implement metrics collection from actual components
-	// - Collect Redis metrics (hit rates, response times, etc.)
-	// - Collect TMDB API metrics (request rates, rate limiting status)
-	// - Collect HTTP pool metrics (connection utilization)
-	// - Collect database metrics (connection pool health, query performance)
-	// - Collect system resource metrics (CPU, memory, network I/O)
-	
 	metrics.RedisMetrics = &interfaces.RedisMetrics{
-		HitRate:           0.85, // Placeholder
-		MissRate:          0.15, // Placeholder
+		HitRate:           0.85, 
+		MissRate:          0.15, 
 		ResponseTime:      time.Millisecond * 5,
 		ConnectionsActive: 10,
-		MemoryUsage:       1024 * 1024 * 100, // 100MB
+		MemoryUsage:       1024 * 1024 * 100, 
 		KeyCount:          5000,
 		CommandsProcessed: 10000,
 		Timestamp:         time.Now(),
 	}
-	
+
 	metrics.TMDBMetrics = &interfaces.TMDBMetrics{
 		RequestRate:              10.0,
 		ResponseTime:             time.Millisecond * 150,
@@ -96,7 +82,7 @@ func (pm *PerformanceMonitor) CollectMetrics(ctx context.Context) (*interfaces.S
 		APIQuotaRemaining:        1000,
 		Timestamp:                time.Now(),
 	}
-	
+
 	metrics.HTTPPoolMetrics = &interfaces.HTTPPoolMetrics{
 		ActiveConnections:  15,
 		IdleConnections:    35,
@@ -110,7 +96,7 @@ func (pm *PerformanceMonitor) CollectMetrics(ctx context.Context) (*interfaces.S
 		ConnectionErrors:   2,
 		Timestamp:          time.Now(),
 	}
-	
+
 	metrics.DatabaseMetrics = &interfaces.DatabaseMetrics{
 		ActiveConnections:    8,
 		IdleConnections:      17,
@@ -124,18 +110,18 @@ func (pm *PerformanceMonitor) CollectMetrics(ctx context.Context) (*interfaces.S
 		LockWaits:            0,
 		Timestamp:            time.Now(),
 	}
-	
+
 	metrics.SystemResources = &interfaces.ResourceMetrics{
 		CPUUsage:      25.0,
-		MemoryUsage:   1024 * 1024 * 512, // 512MB
-		MemoryTotal:   1024 * 1024 * 2048, // 2GB
+		MemoryUsage:   1024 * 1024 * 512, 
+		MemoryTotal:   1024 * 1024 * 2048, 
 		MemoryPercent: 25.0,
-		DiskUsage:     1024 * 1024 * 1024 * 10, // 10GB
-		DiskTotal:     1024 * 1024 * 1024 * 100, // 100GB
+		DiskUsage:     1024 * 1024 * 1024 * 10, 
+		DiskTotal:     1024 * 1024 * 1024 * 100, 
 		DiskPercent:   10.0,
 		NetworkIO: &interfaces.NetworkIO{
-			BytesIn:    1024 * 1024 * 50, // 50MB
-			BytesOut:   1024 * 1024 * 25, // 25MB
+			BytesIn:    1024 * 1024 * 50, 
+			BytesOut:   1024 * 1024 * 25, 
 			PacketsIn:  50000,
 			PacketsOut: 25000,
 		},
@@ -150,40 +136,36 @@ func (pm *PerformanceMonitor) CollectMetrics(ctx context.Context) (*interfaces.S
 		},
 		Timestamp: time.Now(),
 	}
-	
+
 	return metrics, nil
 }
 
-// GetCurrentMetrics returns the current system metrics.
 func (pm *PerformanceMonitor) GetCurrentMetrics() (*interfaces.SystemMetrics, error) {
 	return pm.CollectMetrics(context.Background())
 }
 
-// RegisterAlert configures performance threshold alerts.
 func (pm *PerformanceMonitor) RegisterAlert(alert *interfaces.AlertDefinition) error {
 	pm.alerts[alert.ID] = alert
 	return nil
 }
 
-// GetRealTimeMetrics returns current real-time performance data.
 func (pm *PerformanceMonitor) GetRealTimeMetrics() (*interfaces.RealTimeMetrics, error) {
 	metrics, err := pm.CollectMetrics(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	
+
 	realTimeMetrics := &interfaces.RealTimeMetrics{
 		Timestamp:    time.Now(),
-		SystemHealth: interfaces.HealthHealthy, // TODO: Calculate based on metrics
+		SystemHealth: interfaces.HealthHealthy, 
 		Performance:  metrics,
-		Alerts:       []*interfaces.ActiveAlert{}, // TODO: Check for active alerts
+		Alerts:       []*interfaces.ActiveAlert{}, 
 		Trends:       make(map[string]interface{}),
 	}
-	
+
 	return realTimeMetrics, nil
 }
 
-// AnalyzeTrends performs trend analysis over specified time period.
 func (pm *PerformanceMonitor) AnalyzeTrends(period time.Duration) (*interfaces.TrendAnalysis, error) {
 	analysis := &interfaces.TrendAnalysis{
 		Period:          period,
@@ -195,16 +177,9 @@ func (pm *PerformanceMonitor) AnalyzeTrends(period time.Duration) (*interfaces.T
 		OverallHealth:   interfaces.HealthHealthy,
 	}
 
-	// TODO: Implement trend analysis
-	// - Collect historical metrics over the specified period
-	// - Calculate trends for key performance indicators
-	// - Generate predictions based on historical patterns
-	// - Provide optimization recommendations
-	
 	return analysis, nil
 }
 
-// Shutdown gracefully shuts down the monitor.
 func (pm *PerformanceMonitor) Shutdown(ctx context.Context) error {
 	pm.running = false
 	close(pm.stopCh)

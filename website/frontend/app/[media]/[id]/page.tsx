@@ -36,7 +36,6 @@ export default async function DetailPage({
   const genres = genreNames(detail);
   const cast = detail.credits?.cast ?? [];
 
-  // Meta ala IDLIX
   const country = detail.production_countries?.[0]?.name ?? "";
   const lang = detail.original_language
     ? detail.original_language.toUpperCase()
@@ -52,13 +51,10 @@ export default async function DetailPage({
     (s) => s.logo_path
   );
 
-  // "More Like This": tipe sama (rekomendasi TMDB memang setipe) + negara sama
-  // (didekati lewat bahasa asli) supaya nonton Korea tidak dikasih film barat.
-  // Animasi/anime dikecualikan dari batasan negara.
   const isAnimation = (detail.genres ?? []).some((g) => g.id === 16);
   const originCountry = detail.production_countries?.[0]?.iso_3166_1;
   const similarSeen = new Set<number>([detail.id]);
-  
+
   let similar: TmdbItem[] = [];
 
   if (!isAnimation && originCountry) {
@@ -73,7 +69,6 @@ export default async function DetailPage({
       .slice(0, 14);
   }
 
-  // Fallback if not enough similar items or it's animation
   if (similar.length < 14) {
     const detailLang = detail.original_language;
     const fallbackList = [
@@ -93,7 +88,7 @@ export default async function DetailPage({
         return true;
       })
       .map((m) => ({ ...m, media_type: media }));
-    
+
     similar = [...similar, ...fallbackList].slice(0, 14);
   }
 
@@ -108,7 +103,7 @@ export default async function DetailPage({
 
   return (
     <main className="min-h-screen">
-      {/* ===== BAGIAN 1: HERO (judul · genre · tombol · meta) ala IDLIX ===== */}
+      {}
       <InlineHeroVideo
         id={detail.id}
         backdrop={backdropUrl(detail)}
@@ -117,7 +112,7 @@ export default async function DetailPage({
       >
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24">
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
+
             <img
               src={logo}
               alt={itemTitle(detail)}
@@ -129,17 +124,17 @@ export default async function DetailPage({
             </h1>
           )}
 
-          {/* Genre inline (dot-separated) */}
+          {}
           {genres.length > 0 && (
             <p className="mb-5 text-base font-semibold text-white/85 drop-shadow md:text-lg">
               {genres.join("  ·  ")}
             </p>
           )}
 
-          {/* Tombol aksi */}
+          {}
           <DetailActions item={detail} />
 
-          {/* Meta: rating · tahun · durasi/musim · negara · bahasa · status */}
+          {}
           <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/85 drop-shadow-meta">
             <span className="flex items-center gap-1 font-semibold text-[#f5c518]">
               <StarIcon /> {ratingText(detail)}
@@ -173,7 +168,7 @@ export default async function DetailPage({
         </div>
       </InlineHeroVideo>
 
-      {/* ===== BAGIAN 2: DESKRIPSI (creator · tagline · overview · studio) ===== */}
+      {}
       <div className="px-[4%] py-10">
         <section className="max-w-3xl">
           {creators.length > 0 && (
@@ -198,7 +193,7 @@ export default async function DetailPage({
           {studios.length > 0 && (
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               {studios.map((s) => (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img
                   key={s.id}
                   src={`https://image.tmdb.org/t/p/w200${s.logo_path}`}

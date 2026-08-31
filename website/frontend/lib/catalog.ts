@@ -1,4 +1,4 @@
-// Data statis untuk filter /browse (dipakai client). Genre ID standar TMDB.
+
 import type { MediaType } from "./types";
 
 export const MOVIE_GENRES: { id: number; name: string }[] = [

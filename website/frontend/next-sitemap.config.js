@@ -1,10 +1,9 @@
-/** @type {import('next-sitemap').IConfig} */
+
 module.exports = {
   siteUrl: process.env.SITE_URL || 'https://localhost:3000',
   generateRobotsTxt: true,
   generateIndexSitemap: false,
-  
-  // Exclude paths that shouldn't be indexed
+
   exclude: [
     '/api/*',
     '/admin/*',
@@ -12,19 +11,17 @@ module.exports = {
     '/profile/*',
     '/settings/*',
   ],
-  
-  // Additional paths to include
+
   additionalPaths: async (config) => {
     const result = []
-    
-    // Add popular movie/TV routes (you can fetch these from your API)
+
     const popularRoutes = [
       '/movie/popular',
       '/tv/popular', 
       '/trending',
       '/browse',
     ]
-    
+
     popularRoutes.forEach((route) => {
       result.push({
         loc: route,
@@ -33,10 +30,10 @@ module.exports = {
         lastmod: new Date().toISOString(),
       })
     })
-    
+
     return result
   },
-  
+
   robotsTxtOptions: {
     policies: [
       {

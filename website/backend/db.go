@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
+	_ "github.com/jackc/pgx/v5/stdlib" 
 )
 
 var db DatabaseAdapter
@@ -41,7 +41,6 @@ func initDB() {
 
 	db = newPostgresAdapter(sqlDB)
 
-	// Create schema using PostgreSQL schema builder
 	schemaBuilder := NewPostgreSQLSchemaBuilder(db)
 	if err := schemaBuilder.CreateSchema(); err != nil {
 		log.Fatalf("[db] Failed to create schema: %v", err)

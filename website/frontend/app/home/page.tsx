@@ -15,7 +15,6 @@ import LatestEpisodesRow from "@/components/LatestEpisodesRow";
 
 import ContinueWatchingRow from "@/components/ContinueWatchingRow";
 
-// Section "Originals" — switch antar platform besar.
 const ORIGINALS: SwitchGroup[] = [
   { label: "category.netflix", id: 8 },
   { label: "category.disney", id: 122 },
@@ -52,7 +51,6 @@ export default async function Home() {
       getLatestEpisodes(14),
     ]);
 
-  // Hero: Top 10 trending Indonesia.
   const heroSlides = await getHeroSlides(trendingIndonesia, 10);
 
   return (

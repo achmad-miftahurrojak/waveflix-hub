@@ -1,7 +1,5 @@
-// Package main provides async handlers for WaveFlix Hub background processing.
-//
-// These handlers wrap existing synchronous operations to use the message queue
-// system for better performance and scalability.
+
+
 package main
 
 import (
@@ -12,7 +10,6 @@ import (
 	"time"
 )
 
-// handleSendCodeAsync sends email verification code using async processing.
 func handleSendCodeAsync(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		httpError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -33,24 +30,21 @@ func handleSendCodeAsync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if message queue is available
 	if messageQueue == nil || !messageQueue.enabled {
-		// Fallback to synchronous processing
+
 		handleSendCode(w, r)
 		return
 	}
 
-	// Generate verification code and store in database (sync)
 	code, err := generateAndStoreVerificationCode(req.Email)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "failed to generate code")
 		return
 	}
 
-	// Queue email sending job for async processing
 	job := &Job{
 		Type:     JobTypeEmail,
-		Priority: 7, // High priority for user-facing emails
+		Priority: 7, 
 		Payload: map[string]interface{}{
 			"to":      req.Email,
 			"subject": "Kode Verifikasi WaveFlix",
@@ -64,37 +58,32 @@ func handleSendCodeAsync(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := messageQueue.EnqueueJob(ctx, job); err != nil {
-		// Log error but don't fail the request - code is already stored
+
 		log.Printf("[async] Failed to queue email job: %v", err)
-		
-		// Fallback to synchronous email sending
+
 		if err := sendVerificationEmail(req.Email, job.Payload["code"].(string)); err != nil {
 			log.Printf("[async] Fallback email also failed: %v", err)
 		}
 	}
 
-	// Respond immediately without waiting for email delivery
 	writeJSON(w, `{"success": true, "message": "Kode verifikasi telah dikirim"}`)
 }
 
-// generateAndStoreVerificationCode generates and stores verification code synchronously.
 func generateAndStoreVerificationCode(email string) (string, error) {
-	// Use existing generateCode function from emailverify.go
+
 	code, err := generateCode()
 	if err != nil {
 		return "", err
 	}
-	
-	// Store in database with expiration (PostgreSQL)
+
 	_, err = db.Exec(
 		`INSERT INTO email_verifications(user_id, token, expires_at) VALUES(0, $1, $2)`,
 		code+"|||"+email, time.Now().Add(10*time.Minute),
 	)
-	
+
 	return code, err
 }
 
-// Enhanced cache warming job
 func enqueueCacheWarmJob(cacheKey string, priority int) {
 	if messageQueue == nil || !messageQueue.enabled {
 		return
@@ -106,7 +95,7 @@ func enqueueCacheWarmJob(cacheKey string, priority int) {
 		Payload: map[string]interface{}{
 			"cache_key": cacheKey,
 		},
-		MaxRetries: 1, // Don't retry cache warming aggressively
+		MaxRetries: 1, 
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -115,7 +104,6 @@ func enqueueCacheWarmJob(cacheKey string, priority int) {
 	messageQueue.EnqueueJob(ctx, job)
 }
 
-// Async analytics data collection
 func enqueueAnalyticsJob(eventType string, data map[string]interface{}) {
 	if messageQueue == nil || !messageQueue.enabled {
 		return
@@ -123,7 +111,7 @@ func enqueueAnalyticsJob(eventType string, data map[string]interface{}) {
 
 	job := &Job{
 		Type:     JobTypeAnalytics,
-		Priority: 2, // Low priority for analytics
+		Priority: 2, 
 		Payload: map[string]interface{}{
 			"event_type": eventType,
 			"data":       data,
@@ -138,7 +126,6 @@ func enqueueAnalyticsJob(eventType string, data map[string]interface{}) {
 	messageQueue.EnqueueJob(ctx, job)
 }
 
-// Async data synchronization (e.g., user watchlist sync)
 func enqueueDataSyncJob(syncType string, userID int, data interface{}) {
 	if messageQueue == nil || !messageQueue.enabled {
 		return
@@ -146,7 +133,7 @@ func enqueueDataSyncJob(syncType string, userID int, data interface{}) {
 
 	job := &Job{
 		Type:     JobTypeDataSync,
-		Priority: 5, // Medium priority
+		Priority: 5, 
 		Payload: map[string]interface{}{
 			"type":    syncType,
 			"user_id": userID,
@@ -161,15 +148,13 @@ func enqueueDataSyncJob(syncType string, userID int, data interface{}) {
 	messageQueue.EnqueueJob(ctx, job)
 }
 
-// Schedule cache warming for popular content
 func schedulePopularContentCacheWarm() {
 	if messageQueue == nil || !messageQueue.enabled {
 		return
 	}
 
-	// Schedule cache warming for trending content every hour
 	scheduledTime := time.Now().Add(1 * time.Hour)
-	
+
 	job := &Job{
 		Type:        JobTypeCacheWarm,
 		Priority:    3,
@@ -187,7 +172,6 @@ func schedulePopularContentCacheWarm() {
 	messageQueue.EnqueueJob(ctx, job)
 }
 
-// Add queue status to health check
 func getQueueHealthStatus() map[string]interface{} {
 	if messageQueue == nil {
 		return map[string]interface{}{

@@ -23,7 +23,6 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Daftar 2 langkah: data akun → kode verifikasi email.
   const [step, setStep] = useState<"form" | "code">("form");
   const [code, setCode] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
@@ -78,7 +77,6 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const inputCls =
     "w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none transition focus:border-accent focus:bg-white/[0.07]";
 
-  // Bar atas ala Netflix: logo kiri, tombol pindah mode kanan.
   const topBar = (
     <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-5 md:px-12">
       <Link
@@ -97,7 +95,6 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     </header>
   );
 
-  // Login: form terpusat satu kolom ala Netflix.
   if (!isRegister) {
     return (
       <div className="relative min-h-screen bg-bg">
@@ -159,7 +156,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2">
       {topBar}
-      {/* Branding */}
+      {}
       <div className="relative hidden flex-col justify-center overflow-hidden px-[10%] lg:flex">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/15 via-bg to-bg" />
         <div className="absolute -left-24 top-1/3 h-96 w-96 rounded-full bg-accent/20 blur-[120px]" />
@@ -184,7 +181,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
       </div>
 
-      {/* Form */}
+      {}
       <div className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-sm">
           <h1 className="mb-1 text-3xl font-bold">

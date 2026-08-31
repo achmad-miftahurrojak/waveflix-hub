@@ -37,14 +37,13 @@ export default async function AsianPage() {
     }),
   ]);
 
-  // Mix some popular ones for hero
   const mix = [
     ...kr.results.slice(0, 3),
     ...jp.results.slice(0, 2),
     ...cn.results.slice(0, 2),
     ...th.results.slice(0, 1),
   ];
-  // Sort them randomly or just take top 6
+
   const heroSlides = await getHeroSlides(mix.slice(0, 6), 6);
 
   return (

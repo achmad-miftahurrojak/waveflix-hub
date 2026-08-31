@@ -43,20 +43,17 @@ export default function SettingsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("profile");
 
-  // ---- Per-Profile fields (nama, pfp, banner) ----
   const [profName, setProfName] = useState("");
   const [profBio, setProfBio] = useState("");
   const [profFont, setProfFont] = useState("");
   const [profMsg, setProfMsg] = useState<Msg>(null);
   const [savingProf, setSavingProf] = useState(false);
 
-  // ---- Per-Profile image upload state ----
   const [imgMsg, setImgMsg] = useState<Msg>(null);
   const [uploading, setUploading] = useState<"avatar" | "banner" | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
 
-  // ---- Per-Account security ----
   const [cur, setCur] = useState("");
   const [nw, setNw] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -66,11 +63,9 @@ export default function SettingsPage() {
   const [savingPw, setSavingPw] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
 
-  // ---- Per-Account data management ----
   const [histMsg, setHistMsg] = useState<Msg>(null);
   const [clearingHistory, setClearingHistory] = useState(false);
-  
-  // ---- Language Setting ----
+
   const [langCode, setLangCode] = useState("id");
   const [langMsg, setLangMsg] = useState<Msg>(null);
   const [savingLang, setSavingLang] = useState(false);
@@ -81,7 +76,6 @@ export default function SettingsPage() {
     if (ready && !user) router.replace("/masuk");
   }, [ready, user, router]);
 
-  // Load profile-level fields (nama, bio, font) from activeProfile
   useEffect(() => {
     if (!activeProfile) return;
     const p = activeProfile as any;
@@ -102,7 +96,6 @@ export default function SettingsPage() {
   const currentBanner = activeProfile ? (activeProfile as any).banner : user.banner || "";
   const displayName = (activeProfile ? (activeProfile as any).name : user.username) || "?";
 
-  // ---- Upload image FOR the active profile ----
   const onPick = (field: "avatar" | "banner", file?: File | null) => {
     if (!file || !profileId) return;
     setImgMsg(null);
@@ -155,7 +148,6 @@ export default function SettingsPage() {
     }
   };
 
-  // ---- Save profile-level name/bio (updates profile, not account) ----
   const saveProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!profileId) return;
@@ -179,7 +171,6 @@ export default function SettingsPage() {
     }
   };
 
-  // ---- Security (per-account) ----
   const savePw = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPwMsg(null);
@@ -247,11 +238,11 @@ export default function SettingsPage() {
       <input ref={avatarInput} type="file" accept="image/png,image/jpeg,image/gif" className="hidden" onChange={(e) => onPick("avatar", e.target.files?.[0])} />
       <input ref={bannerInput} type="file" accept="image/png,image/jpeg,image/gif" className="hidden" onChange={(e) => onPick("banner", e.target.files?.[0])} />
 
-      {/* Top card: avatar + banner (per-profil) */}
+      {}
       <section className="overflow-hidden rounded-2xl bg-black/50 backdrop-blur-[35px] ring-1 ring-white/10 shadow-xl">
         <div className="relative h-40 w-full">
           {currentBanner ? (
-            // eslint-disable-next-line @next/next/no-img-element
+
             <img src={currentBanner} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-accent/25 via-bg to-bg" />
@@ -268,7 +259,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-4">
             <div className="relative -mt-16 shrink-0">
               {currentAvatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img src={currentAvatar} alt="" className="h-24 w-24 rounded-full border-4 border-bg object-cover" />
               ) : (
                 <span className="grid h-24 w-24 place-items-center rounded-full border-4 border-bg bg-accent text-3xl font-bold text-black">
@@ -302,7 +293,7 @@ export default function SettingsPage() {
         <div className="px-5 pb-4"><Note msg={imgMsg} /></div>
       </section>
 
-      {/* Tabs */}
+      {}
       <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-black/50 backdrop-blur-[35px] p-2 ring-1 ring-white/10 shadow-lg">
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`relative rounded-xl py-3 text-sm font-semibold transition ${tab === t.key ? "text-accent" : "text-white/60 hover:text-white"}`}>
@@ -312,7 +303,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* Tab Profil — per-profil: nama, bio, font */}
+      {}
       {tab === "profile" && (
         <form onSubmit={saveProfile} className={`${card} mt-5`}>
           <h2 className="text-lg font-semibold">{t("settings.profile.info")}</h2>
@@ -345,7 +336,7 @@ export default function SettingsPage() {
             <div className="mt-1 text-right text-xs text-white/40">{profBio.length}/250</div>
           </div>
 
-          {/* Email (read-only — per-akun, bukan per-profil) */}
+          {}
           <div className="mb-4">
             <label className={label}>{t("settings.profile.accountEmail")}</label>
             <input className={`${inputCls} cursor-not-allowed opacity-60`} value={user.email} disabled />
@@ -359,7 +350,7 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* Tab Keamanan — per-akun */}
+      {}
       {tab === "security" && (
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <form onSubmit={savePw} className={card}>
@@ -402,7 +393,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Tab Akun — manajemen data */}
+      {}
       {tab === "account" && (
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <form onSubmit={saveLanguage} className={card}>

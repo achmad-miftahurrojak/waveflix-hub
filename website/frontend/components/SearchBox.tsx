@@ -17,7 +17,6 @@ export default function SearchBox() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Debounced search — 300ms delay setelah user berhenti mengetik
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {
       setResults([]);
@@ -34,7 +33,7 @@ export default function SearchBox() {
           (m: TmdbItem) =>
             (m.media_type === "movie" || m.media_type === "tv") && m.poster_path
         )
-        .slice(0, 8); // Max 8 suggestions
+        .slice(0, 8); 
       setResults(items);
     } catch {
       setResults([]);
@@ -51,7 +50,6 @@ export default function SearchBox() {
     };
   }, [value, search]);
 
-  // Close dropdown saat klik di luar
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -99,7 +97,7 @@ export default function SearchBox() {
         />
       </form>
 
-      {/* Instant results dropdown */}
+      {}
       {open && value.trim() && (
         <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-surface-overlay p-2 shadow-xl ring-1 ring-white/10 z-50">
           {loading ? (
@@ -114,7 +112,7 @@ export default function SearchBox() {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-4 rounded-lg px-4 py-2 transition hover:bg-white/10"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {}
                 <img
                   src={posterUrl(item)}
                   alt=""

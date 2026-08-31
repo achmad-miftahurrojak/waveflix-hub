@@ -1,10 +1,10 @@
 export default function Loading() {
   return (
     <div className="min-h-screen animate-pulse pb-16">
-      {/* Hero skeleton */}
+      {}
       <div className="h-[75vh] min-h-[500px] w-full bg-white/5" />
-      
-      {/* Grid skeleton */}
+
+      {}
       <div className="px-[4%] pt-8">
         <div className="mb-6 h-8 w-64 rounded bg-white/10" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

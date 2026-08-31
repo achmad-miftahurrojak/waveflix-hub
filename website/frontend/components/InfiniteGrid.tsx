@@ -6,13 +6,12 @@ import PosterGrid from "./PosterGrid";
 import { BACKEND } from "@/lib/helpers";
 
 interface Props {
-  params: Record<string, string>; // query discover tanpa `page`
+  params: Record<string, string>; 
   media: MediaType;
   initial: TmdbItem[];
   totalPages: number;
 }
 
-/** Grid dengan auto load-more saat di-scroll ke bawah (tanpa tombol). */
 export default function InfiniteGrid({
   params,
   media,
@@ -22,8 +21,7 @@ export default function InfiniteGrid({
   const [items, setItems] = useState<TmdbItem[]>(initial);
   const [loading, setLoading] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
-  
-  // Gunakan ref agar IntersectionObserver tidak ter-reset setiap kali page bertambah
+
   const pageRef = useRef(1);
   const loadingRef = useRef(false);
 
@@ -31,11 +29,11 @@ export default function InfiniteGrid({
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || pageRef.current >= totalPages) return;
-    
+
     loadingRef.current = true;
     setLoading(true);
     const next = pageRef.current + 1;
-    
+
     try {
       const qs = new URLSearchParams({ ...params, page: String(next) });
       const r = await fetch(`${BACKEND}/api/discover?${qs}`);
@@ -49,7 +47,7 @@ export default function InfiniteGrid({
       });
       pageRef.current = next;
     } catch {
-      /* abaikan; coba lagi saat scroll berikutnya */
+
     } finally {
       loadingRef.current = false;
       setLoading(false);
@@ -63,7 +61,7 @@ export default function InfiniteGrid({
       (entries) => {
         if (entries[0].isIntersecting) loadMore();
       },
-      { rootMargin: "400px" } // Lebih stabil, memuat sebelum ujung
+      { rootMargin: "400px" } 
     );
     io.observe(el);
     return () => io.disconnect();

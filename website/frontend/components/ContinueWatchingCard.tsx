@@ -28,7 +28,7 @@ export default function ContinueWatchingCard({ item, onRemove }: Props) {
       aria-label={itemTitle(item)}
     >
       <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-surface shadow-lg transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-card">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {}
         <img
           src={item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : posterUrl(item)}
           alt={itemTitle(item)}
@@ -36,7 +36,7 @@ export default function ContinueWatchingCard({ item, onRemove }: Props) {
           className="h-full w-full object-cover"
         />
 
-        {/* Progress Bar Container (liquid glass effect per user req #5) */}
+        {}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 backdrop-blur-sm">
           <div 
             className="h-full bg-accent transition-all duration-300"
@@ -44,10 +44,10 @@ export default function ContinueWatchingCard({ item, onRemove }: Props) {
           />
         </div>
 
-        {/* Hover Overlay */}
+        {}
         <div className="pointer-events-none absolute inset-0 bg-black/0 transition duration-300 group-hover:bg-black/20" />
 
-        {/* Remove Button (visible on hover) */}
+        {}
         <button
           onClick={handleRemove}
           className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-sm transition duration-300 hover:bg-red-500 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"

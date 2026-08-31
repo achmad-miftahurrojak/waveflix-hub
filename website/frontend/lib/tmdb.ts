@@ -27,7 +27,7 @@ async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promi
     const cookieStore = await cookies();
     lang = cookieStore.get("waveflix_lang")?.value || "id";
   } catch (e) {
-    // cookies() might throw if called outside of request context (e.g. static generation)
+
   }
   const sep = path.includes("?") ? "&" : "?";
   const p = `${path}${sep}lang=${lang}`;
@@ -35,7 +35,7 @@ async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promi
   try {
     const res = await fetch(`${BACKEND}${p}`, { next: { revalidate } });
     if (!res.ok) {
-      // 403 = konten sengaja diblokir (blacklist/adult), 404 = tidak ditemukan — tidak perlu dilog
+
       if (res.status !== 403 && res.status !== 404) {
         console.error(`[tmdb] gagal (${res.status}):`, path);
       }
@@ -52,11 +52,6 @@ const withPoster = (items: TmdbItem[] = []) => (items || []).filter((m) => m.pos
 const tag = (items: TmdbItem[], media: MediaType) =>
   (items || []).map((m) => ({ ...m, media_type: media }));
 
-/**
- * Trending di Indonesia: yang banyak ditonton penonton Indonesia. Menganyam
- * (interleave) konten Korea (K-drama/K-movie — sangat digemari di Indonesia)
- * dengan judul populer global, jadi berbeda dari "Trending Now" yang murni global.
- */
 export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const [movies, tv, krTv, krMovie] = await Promise.all([
@@ -92,7 +87,6 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
     ...tag(withPoster(krMovie.results), "movie"),
   ].sort((a, b) => parseDate(b) - parseDate(a));
 
-  // Anyam: 1 Korea, 1 global, dst. supaya K-drama tampil menonjol + tetap ada hit global.
   const out: TmdbItem[] = [];
   const seen = new Set<string>();
   const key = (m: TmdbItem) => `${m.media_type ?? "?"}-${m.id}`;
@@ -111,7 +105,6 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
   return out.slice(0, 20);
 }
 
-/** Trending global (worldwide) diganti dengan discover popularity yang memiliki stream legal */
 export async function getTrendingGlobal(): Promise<TmdbItem[]> {
   const [p1, p2] = await Promise.all([
     api<TmdbListResponse>(`/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`, { page: 1, results: [] }),
@@ -133,11 +126,8 @@ export async function discoverByProvider(
   return tag(withPoster(data.results), media);
 }
 
-// Platform legal besar: Netflix (8), Disney+ (337), Prime (119), Apple TV+ (350), HBO/Max (384/190).
-// + Asian/Global Drama platforms: Viu(158), Vidio(489), WeTV(623), Rakuten Viki(344), wavve(356), iQIYI(198, 199)
 export const MAJOR_PROVIDERS = "8|119|337|350|384|190|158|489|623|344|356|198|199";
 
-/** Rilisan terbaru (film/series) di platform besar — untuk "Latest Movies/Series". */
 export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const data = await api<TmdbListResponse>(
@@ -158,7 +148,6 @@ export interface LatestEpisode {
   air_date: string;
 }
 
-/** Episode terbaru dari serial ongoing (pakai last_episode_to_air TMDB). */
 export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
   const today = new Date().toISOString().slice(0, 10);
   const list = await api<TmdbListResponse>(
@@ -202,7 +191,6 @@ export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   return tag(withPoster(data.results), media);
 }
 
-/** Discover generik untuk halaman /browse. */
 export async function discover(params: {
   media: MediaType;
   genre?: string;
@@ -237,7 +225,6 @@ export async function discover(params: {
   return data;
 }
 
-/** Discover banyak halaman sekaligus → grid "tampilkan semua" di /browse. */
 export async function discoverMany(
   params: Parameters<typeof discover>[0],
   pages = 5
@@ -264,7 +251,6 @@ export async function discoverMany(
   return first;
 }
 
-/** Data satu slide hero (logo + meta), disiapkan di server. */
 export interface HeroSlide {
   item: TmdbItem;
   logo: string | null;
@@ -273,10 +259,9 @@ export interface HeroSlide {
   genres: string[];
   duration: string;
   status: string;
-  trailer: string | null; // YouTube key
+  trailer: string | null; 
 }
 
-/** Siapkan beberapa slide hero (untuk carousel ala IDLIX). */
 export async function getHeroSlides(
   items: TmdbItem[],
   count = 5

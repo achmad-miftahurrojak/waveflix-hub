@@ -62,7 +62,7 @@ export default function ProfileSettingsPage() {
       if (res.ok) {
         const updated = await res.json();
         setProfile(updated);
-        // Update active profile in context so navbar reflects changes immediately
+
         setActiveProfile({ ...(activeProfile as any), ...updated });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
@@ -88,7 +88,7 @@ export default function ProfileSettingsPage() {
   return (
     <main className="min-h-screen bg-bg text-white pt-24 pb-16 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
+        {}
         <div className="flex items-center gap-4 mb-10">
           <button
             onClick={() => router.back()}
@@ -101,20 +101,20 @@ export default function ProfileSettingsPage() {
           <h1 className="text-2xl font-bold">Pengaturan Profil</h1>
         </div>
 
-        {/* Banner Preview */}
+        {}
         <div className="relative w-full h-40 rounded-xl overflow-hidden mb-6 bg-surface-overlay">
           {banner ? (
-            // eslint-disable-next-line @next/next/no-img-element
+
             <img src={banner} alt="Banner" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-accent/30 via-surface-overlay to-surface-raised" />
           )}
 
-          {/* Avatar overlay */}
+          {}
           <div className="absolute bottom-0 left-6 translate-y-1/2">
             <div className="w-20 h-20 rounded-full border-4 border-bg bg-surface overflow-hidden">
               {avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <span className="w-full h-full flex items-center justify-center text-2xl font-bold text-white/60">
@@ -125,9 +125,9 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
 
-        {/* Form */}
+        {}
         <div className="mt-12 space-y-5">
-          {/* Nama Profil */}
+          {}
           <div>
             <label className="block text-sm font-semibold text-white/60 mb-1">Nama Profil</label>
             <input
@@ -139,7 +139,7 @@ export default function ProfileSettingsPage() {
             />
           </div>
 
-          {/* Avatar URL */}
+          {}
           <div>
             <label className="block text-sm font-semibold text-white/60 mb-1">
               URL Foto Profil
@@ -154,7 +154,7 @@ export default function ProfileSettingsPage() {
             <p className="mt-1 text-xs text-white/40">Masukkan URL gambar untuk foto profil</p>
           </div>
 
-          {/* Banner URL */}
+          {}
           <div>
             <label className="block text-sm font-semibold text-white/60 mb-1">
               URL Banner
@@ -169,7 +169,7 @@ export default function ProfileSettingsPage() {
             <p className="mt-1 text-xs text-white/40">Gambar lebar untuk banner profil (16:9 atau lebih lebar)</p>
           </div>
 
-          {/* Bio */}
+          {}
           <div>
             <label className="block text-sm font-semibold text-white/60 mb-1">Bio</label>
             <textarea
@@ -183,7 +183,7 @@ export default function ProfileSettingsPage() {
             <p className="text-right text-xs text-white/50">{bio.length}/200</p>
           </div>
 
-          {/* Error / Success */}
+          {}
           {error && (
             <p className="text-red-400 text-sm">{error}</p>
           )}
@@ -191,7 +191,7 @@ export default function ProfileSettingsPage() {
             <p className="text-green-400 text-sm">✓ Perubahan berhasil disimpan</p>
           )}
 
-          {/* Actions */}
+          {}
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={() => router.back()}

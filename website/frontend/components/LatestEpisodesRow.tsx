@@ -26,7 +26,7 @@ export default function LatestEpisodesRow({
           >
             <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface shadow-lg">
               {e.still ? (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img
                   src={stillUrl(e.still)}
                   alt={e.name}

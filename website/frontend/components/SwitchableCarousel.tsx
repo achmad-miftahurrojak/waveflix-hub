@@ -9,18 +9,13 @@ import { BACKEND } from "@/lib/helpers";
 
 interface Source {
   media: MediaType;
-  params: string; // querystring discover tanpa `media=`
+  params: string; 
 }
 export interface SwitchGroup {
   label: string;
   sources: Source[];
 }
 
-/**
- * Satu section carousel dengan dropdown untuk berganti kategori
- * (mis. Netflix/Disney Originals, atau Korean/Japanese Drama).
- * Data tiap tab diambil saat dipilih lalu di-cache.
- */
 export default function SwitchableCarousel({
   groups,
 }: {
@@ -59,7 +54,7 @@ export default function SwitchableCarousel({
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [active]);
 
   const items = cache[active] ?? [];

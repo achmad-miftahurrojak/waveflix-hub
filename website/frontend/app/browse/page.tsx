@@ -18,7 +18,6 @@ export default async function BrowsePage({
   const media: MediaType = sp.media === "tv" ? "tv" : "movie";
   const label = media === "tv" ? "Series" : "Movies";
 
-  // Kategori = filter yang tidak terikat tipe media → tampilkan Film + Series bareng.
   const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider);
 
   const today = new Date().toISOString().slice(0, 10);

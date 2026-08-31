@@ -21,8 +21,6 @@ const (
 	maxCodeAttempts = 5
 )
 
-// handleSendCode — POST {email}: buat kode 6 digit, kirim via SMTP.
-// Kode disimpan sebagai bcrypt hash, sekali pakai, kedaluwarsa 10 menit.
 func handleSendCode(w http.ResponseWriter, r *http.Request) {
 	if !smtpConfigured() && os.Getenv("E2E_TEST_MODE") != "1" {
 		httpError(w, http.StatusServiceUnavailable, "layanan email belum dikonfigurasi")
@@ -63,12 +61,10 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PostgreSQL: email_verifications pakai id SERIAL bukan email sebagai PRIMARY KEY
-	// Gunakan ON CONFLICT (email) untuk upsert
 	if _, err := db.Exec(
 		`INSERT INTO email_verifications(user_id, token, expires_at)
 		 VALUES(0, $1, $2)`,
-		// Kita simpan email+hash dalam token field, expires_at pakai timestamp
+
 		string(hash)+"|||"+email,
 		time.Now().Add(codeTTL),
 	); err != nil {
@@ -82,7 +78,7 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// Fallback dev tanpa SMTP: kode hanya muncul di log server.
+
 		log.Printf("[auth] SMTP belum dikonfigurasi — kode verifikasi %s untuk %s", code, email)
 	}
 	if os.Getenv("E2E_TEST_MODE") == "1" {
@@ -92,7 +88,6 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, `{"ok":true}`)
 }
 
-// verifyEmailCode — cek kode untuk email. Sekali valid, baris dihapus (sekali pakai).
 func verifyEmailCode(email, code string) bool {
 	tx, err := db.Begin()
 	if err != nil {
@@ -100,7 +95,6 @@ func verifyEmailCode(email, code string) bool {
 	}
 	defer tx.Rollback()
 
-	// Cari token yang cocok untuk email ini
 	var id int
 	var tokenField string
 	var expiresAt time.Time
@@ -115,7 +109,6 @@ func verifyEmailCode(email, code string) bool {
 		return false
 	}
 
-	// Pisahkan hash dan email dari token field
 	parts := strings.SplitN(tokenField, "|||", 2)
 	if len(parts) != 2 || parts[1] != email {
 		return false
@@ -126,7 +119,6 @@ func verifyEmailCode(email, code string) bool {
 		return false
 	}
 
-	// Hapus token setelah berhasil diverifikasi (sekali pakai)
 	if _, err := tx.Exec("DELETE FROM email_verifications WHERE id = $1", id); err != nil {
 		return false
 	}
@@ -145,8 +137,6 @@ func smtpConfigured() bool {
 	return os.Getenv("SMTP_HOST") != "" && os.Getenv("SMTP_FROM") != ""
 }
 
-// sendVerificationEmail — kirim via SMTP. Port 465 = implicit TLS, lainnya
-// lewat smtp.SendMail (STARTTLS otomatis kalau server mendukung).
 func sendVerificationEmail(to, code string) error {
 	host := os.Getenv("SMTP_HOST")
 	port := getenv("SMTP_PORT", "587")

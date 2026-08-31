@@ -21,7 +21,7 @@ export default function FilterBar() {
     const params = new URLSearchParams(sp.toString());
     if (value) params.set(key, value);
     else params.delete(key);
-    if (key === "media") params.delete("genre"); // genre beda antar media
+    if (key === "media") params.delete("genre"); 
     params.delete("page");
     router.push(`/browse?${params.toString()}`);
   };
@@ -73,12 +73,12 @@ export default function FilterBar() {
 
       <select value={sort} onChange={(e) => update("sort_by", e.target.value)} className={selectCls}>
         {SORTS.map((s) => {
-          // Kita map label sort dengan fungsi t() jika keys tersedia.
+
           const sortKey = 
             s.value === "popularity.desc" ? "sort.popularity" :
             s.value === "vote_average.desc" ? "sort.vote" :
             "sort.newest";
-          
+
           return (
             <option key={s.value} value={s.value}>
               {t(sortKey)}

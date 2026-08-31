@@ -1,4 +1,4 @@
-// Ikon inline (SVG stroke). Ganti FontAwesome CDN — tidak ada request eksternal.
+
 type P = { className?: string };
 const base = "currentColor";
 

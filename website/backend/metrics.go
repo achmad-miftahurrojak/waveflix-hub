@@ -1,8 +1,5 @@
-// Package main provides Prometheus metrics for WaveFlix Hub backend.
-//
-// This module exposes application metrics for monitoring and auto-scaling
-// decisions. Metrics include HTTP requests, response times, cache hit rates,
-// database connections, and custom business metrics.
+
+
 package main
 
 import (
@@ -17,9 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Prometheus metrics collectors
 var (
-	// HTTP metrics
+
 	httpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_total",
@@ -37,7 +33,6 @@ var (
 		[]string{"method", "endpoint"},
 	)
 
-	// Cache metrics
 	cacheOperationsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "cache_operations_total",
@@ -54,7 +49,6 @@ var (
 		[]string{"cache_type"},
 	)
 
-	// Database metrics
 	dbConnectionsActive = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "db_connections_active",
@@ -78,7 +72,6 @@ var (
 		[]string{"query_type"},
 	)
 
-	// Queue metrics
 	queueJobsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "queue_jobs_total",
@@ -103,7 +96,6 @@ var (
 		},
 	)
 
-	// Business metrics
 	apiCallsExternal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "external_api_calls_total",
@@ -128,9 +120,8 @@ var (
 	)
 )
 
-// initMetrics initializes Prometheus metrics
 func initMetrics() {
-	// Register metrics with Prometheus
+
 	prometheus.MustRegister(
 		httpRequestsTotal,
 		httpRequestDuration,
@@ -146,37 +137,31 @@ func initMetrics() {
 		userRegistrations,
 		contentViews,
 	)
-	
+
 	log.Println("[metrics] Prometheus metrics initialized")
 }
 
-// metricsHandler returns the Prometheus metrics handler
 func metricsHandler() http.Handler {
 	return promhttp.Handler()
 }
 
-// Middleware for HTTP request metrics
 func metricsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
-		// Wrap ResponseWriter to capture status code
+
 		ww := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-		
-		// Process request
+
 		next(ww, r)
-		
-		// Record metrics
+
 		duration := time.Since(start).Seconds()
 		endpoint := sanitizeEndpoint(r.URL.Path)
 		status := strconv.Itoa(ww.statusCode)
-		
+
 		httpRequestsTotal.WithLabelValues(r.Method, endpoint, status).Inc()
 		httpRequestDuration.WithLabelValues(r.Method, endpoint).Observe(duration)
 	}
 }
 
-// responseWriter wraps http.ResponseWriter to capture status code
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -187,12 +172,8 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-// sanitizeEndpoint converts specific endpoints to generic patterns for metrics
 func sanitizeEndpoint(path string) string {
-	// Convert specific IDs to generic patterns
-	// /api/detail?id=123 -> /api/detail
-	// /api/person?id=456 -> /api/person
-	
+
 	if strings.Contains(path, "/api/detail") {
 		return "/api/detail"
 	}
@@ -205,11 +186,10 @@ func sanitizeEndpoint(path string) string {
 	if strings.Contains(path, "/api/images") {
 		return "/api/images"
 	}
-	
+
 	return path
 }
 
-// Helper functions for recording metrics
 func recordCacheHit(cacheType string) {
 	cacheOperationsTotal.WithLabelValues("get", "hit").Inc()
 }
@@ -258,7 +238,6 @@ func recordContentView(contentType string) {
 	contentViews.WithLabelValues(contentType).Inc()
 }
 
-// collectSystemMetrics periodically collects system-level metrics
 func collectSystemMetrics() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -266,28 +245,26 @@ func collectSystemMetrics() {
 	for {
 		select {
 		case <-ticker.C:
-			// Update database connection metrics
+
 			if db != nil {
 				if stats := db.Stats(); stats != nil {
 					updateDBConnections(stats.OpenConnections, stats.IdleConnections)
 				}
 			}
 
-			// Update cache metrics
 			if cache != nil {
 				stats := cache.GetStats()
 				if stats.Enabled {
-					// Calculate hit rate (simplified)
-					updateCacheHitRate("redis", 85.0) // Placeholder
+
+					updateCacheHitRate("redis", 85.0) 
 				}
 			}
 
-			// Update queue metrics
 			if messageQueue != nil {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				metrics, err := messageQueue.GetMetrics(ctx)
 				cancel()
-				
+
 				if err == nil {
 					updateQueueWorkers(metrics.WorkersActive)
 				}

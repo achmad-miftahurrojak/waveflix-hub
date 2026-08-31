@@ -73,7 +73,6 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// limit check (max 4 per account)
 		var count int
 		db.QueryRow("SELECT COUNT(*) FROM profiles WHERE user_id = $1", userID).Scan(&count)
 		if count >= 4 {
@@ -82,7 +81,6 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// PostgreSQL: RETURNING id
 		var newID int
 		err := db.QueryRow(
 			"INSERT INTO profiles (user_id, name, avatar_url, banner, bio) VALUES ($1, $2, $3, $4, $5) RETURNING id",
@@ -113,7 +111,6 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := int(uid)
 
-	// /api/profiles/123
 	path := r.URL.Path
 	parts := strings.Split(path, "/")
 	if len(parts) < 4 {
@@ -126,7 +123,6 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify ownership
 	var ownerID int
 	err = db.QueryRow("SELECT user_id FROM profiles WHERE id = $1", profileID).Scan(&ownerID)
 	if err != nil || ownerID != userID {
@@ -169,7 +165,6 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 			p.Banner = processProfileImage(p.Banner, "banner", profileID)
 		}
 
-		// Build dynamic update query
 		sets := []string{}
 		args := []interface{}{}
 		argIdx := 1
@@ -198,7 +193,6 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 			db.Exec(fmt.Sprintf("UPDATE profiles SET %s WHERE id = $%d", strings.Join(sets, ", "), argIdx), args...)
 		}
 
-		// Return updated profile
 		var updated Profile
 		db.QueryRow(
 			"SELECT id, user_id, name, COALESCE(avatar_url,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE id = $1",
@@ -209,7 +203,7 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(updated)
 
 	case "DELETE":
-		// CASCADE constraints handle related records automatically
+
 		db.Exec("DELETE FROM profiles WHERE id = $1", profileID)
 		writeJSON(w, `{"status":"ok"}`)
 

@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// PostgresConfig holds PostgreSQL connection parameters.
 type PostgresConfig struct {
 	URL      string
 	Host     string
@@ -19,18 +18,15 @@ type PostgresConfig struct {
 	SSLMode  string
 }
 
-// LoadPostgresConfig loads PostgreSQL configuration from environment variables.
 func LoadPostgresConfig() *PostgresConfig {
 	config := &PostgresConfig{}
 
-	// Check for DATABASE_URL first (takes precedence)
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		config.URL = databaseURL
 		parsePostgresURL(databaseURL, config)
 		return config
 	}
 
-	// Load individual parameters
 	config.Host = getEnvOrDefault("PG_HOST", "localhost")
 	config.Port = getEnvOrDefault("PG_PORT", "5432")
 	config.User = os.Getenv("PG_USER")
@@ -38,7 +34,6 @@ func LoadPostgresConfig() *PostgresConfig {
 	config.Database = os.Getenv("PG_DATABASE")
 	config.SSLMode = getEnvOrDefault("PG_SSLMODE", "require")
 
-	// Build connection URL from individual parameters
 	config.URL = buildPostgresURL(config)
 
 	return config

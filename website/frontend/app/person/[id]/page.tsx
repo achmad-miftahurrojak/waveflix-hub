@@ -28,16 +28,14 @@ export default async function PersonPage({
 
   if (!person) notFound();
 
-  // Combine cast credits and filter duplicates
   const castCredits = person.combined_credits?.cast ?? [];
-  
-  // Sort by popularity, ensure they have posters, and remove duplicates
+
   const seen = new Set<string>();
   const knownFor = castCredits
     .filter((c) => {
       const uniqueId = `${c.media_type}-${c.id}`;
       if (!c.poster_path || seen.has(uniqueId)) return false;
-      
+
       const char = (c.character || "").toLowerCase();
       if (!char || char.includes("self") || char.includes("uncredited") || char.includes("archive")) {
         return false;
@@ -52,12 +50,12 @@ export default async function PersonPage({
   return (
     <main className="min-h-screen bg-bg">
       <Navbar />
-      
+
       <div className="pt-24 px-[4%] max-w-7xl mx-auto pb-20">
         <div className="flex flex-col md:flex-row gap-6 md:gap-12 mb-12">
-          {/* Left Column: Image */}
+          {}
           <div className="shrink-0 w-full md:w-[280px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {}
             <img
               src={profileUrl(person.profile_path, "h632")}
               alt={person.original_name || person.name}
@@ -65,7 +63,7 @@ export default async function PersonPage({
             />
           </div>
 
-          {/* Right Column: Name & Tabs */}
+          {}
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">
               {person.original_name || person.name}
@@ -80,7 +78,7 @@ export default async function PersonPage({
           </div>
         </div>
 
-        {/* Bottom Section: Carousel */}
+        {}
         {knownFor.length > 0 && (
           <div className="mt-12">
             <MovieRow title="Known For Movies & Series" items={knownFor} noPadding={true} />

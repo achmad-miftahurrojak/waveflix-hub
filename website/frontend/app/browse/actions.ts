@@ -28,11 +28,11 @@ export async function fetchBrowsePage(
       without_genres,
       page,
     };
-    
+
     const sortUi = sp.sort_by ?? "";
     let sortMovie = isNetwork ? "popularity.desc" : "primary_release_date.desc";
     let sortTv = isNetwork ? "popularity.desc" : "first_air_date.desc";
-    
+
     if (sortUi === "terpopuler") {
       sortMovie = "popularity.desc"; sortTv = "popularity.desc";
     } else if (sortUi === "terlama") {
@@ -47,7 +47,7 @@ export async function fetchBrowsePage(
     ]);
 
     const merged = [...(mv.results || []), ...(tvr.results || [])];
-    
+
     if (sortMovie.startsWith("popularity")) {
       merged.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
     } else if (sortMovie.endsWith("asc")) {
@@ -58,8 +58,6 @@ export async function fetchBrowsePage(
       merged.sort((a, b) => dateVal(b) - dateVal(a));
     }
 
-    // Since we fetch 1 page of TV and 1 page of Movie (40 total max), we just return it.
-    // hasMore is true if either had more pages.
     const hasMore = (mv.total_pages || 0) > page || (tvr.total_pages || 0) > page;
     return { results: merged, hasMore };
   } else {

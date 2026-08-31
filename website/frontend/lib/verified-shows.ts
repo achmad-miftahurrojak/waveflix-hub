@@ -1,9 +1,8 @@
-// Daftar Variety Show yang akan menggunakan scraper khusus (Dramacool)
-// Key adalah TMDB ID, Value adalah nama slug yang dipakai di Dramacool.
+
 
 export const VERIFIED_ASIAN_SHOWS: Record<number, string> = {
   33238: "running-man",
-  43222: "running-man", // Kadang ada 2 ID TMDB
+  43222: "running-man", 
   70672: "knowing-bros",
   30801: "2-days-1-night",
   64356: "the-return-of-superman",
@@ -50,21 +49,16 @@ export const VERIFIED_ASIAN_SHOWS: Record<number, string> = {
   90755: "i-land",
 };
 
-/**
- * Cek apakah sebuah acara adalah variety show terverifikasi
- */
 export function getAsianShowSlug(item: any): string | null {
-  // 1. Prioritaskan dari whitelist manual (jika ada)
+
   if (VERIFIED_ASIAN_SHOWS[item.id]) {
     return VERIFIED_ASIAN_SHOWS[item.id];
   }
 
-  // 2. Deteksi dinamis: Apakah ini Variety Show / Reality Show Korea?
   const isKorean =
     item.original_language === "ko" ||
     (item.origin_country && item.origin_country.includes("KR"));
 
-  // 10764 = Reality, 10767 = Talk
   const hasVarietyGenre =
     item.genre_ids?.includes(10764) ||
     item.genre_ids?.includes(10767) ||
@@ -73,11 +67,11 @@ export function getAsianShowSlug(item: any): string | null {
   if (isKorean && hasVarietyGenre) {
     const title = item.name || item.original_name || item.title;
     if (title) {
-      // Ubah judul menjadi slug (contoh: "Jinny's Kitchen" -> "jinnys-kitchen")
+
       return title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-") // ubah spasi & karakter aneh jadi strip
-        .replace(/(^-|-$)/g, "");    // hapus strip di awal/akhir
+        .replace(/[^a-z0-9]+/g, "-") 
+        .replace(/(^-|-$)/g, "");    
     }
   }
 

@@ -70,7 +70,6 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
     };
   }, [user, item.id, authFetch]);
 
-  // Sinkron ke backend saat login: POST untuk tambah, DELETE untuk hapus.
   const remoteToggle = async (endpoint: string, active: boolean) => {
     if (active) {
       await authFetch(
@@ -123,7 +122,7 @@ export default function DetailActions({ item }: { item: TmdbItem }) {
 
   return (
     <div className="flex flex-wrap gap-3">
-      {/* Movie diputar langsung; series diputar dari halaman episode. */}
+      {}
       {!tv && (
         <motion.button
           whileHover={{ scale: 1.05 }}

@@ -1,7 +1,5 @@
-// Package config provides configuration management for the scalability testing system.
-//
-// This package handles loading, validating, and managing configuration across
-// different deployment environments with secure credential management.
+
+
 package config
 
 import (
@@ -20,7 +18,6 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/interfaces"
 )
 
-// Manager implements the EnvironmentManager interface for configuration management.
 type Manager struct {
 	currentEnv   interfaces.Environment
 	config       *interfaces.EnvironmentConfig
@@ -28,20 +25,17 @@ type Manager struct {
 	validator    *Validator
 }
 
-// NewManager creates a new configuration manager.
 func NewManager() (*Manager, error) {
 	manager := &Manager{
 		validator: NewValidator(),
 	}
 
-	// Detect current environment
 	env, err := manager.DetectEnvironment()
 	if err != nil {
 		return nil, errors.NewConfigurationError("config_manager", "detect_environment", "failed to detect environment", err)
 	}
 	manager.currentEnv = env
 
-	// Load environment configuration
 	config, err := manager.LoadEnvironmentConfig(env)
 	if err != nil {
 		return nil, errors.NewConfigurationError("config_manager", "load_config", "failed to load configuration", err)
@@ -51,9 +45,8 @@ func NewManager() (*Manager, error) {
 	return manager, nil
 }
 
-// DetectEnvironment automatically detects the current deployment environment.
 func (m *Manager) DetectEnvironment() (interfaces.Environment, error) {
-	// Check explicit environment variable
+
 	if env := os.Getenv("ENVIRONMENT"); env != "" {
 		switch strings.ToLower(env) {
 		case "development", "dev":
@@ -69,24 +62,21 @@ func (m *Manager) DetectEnvironment() (interfaces.Environment, error) {
 		}
 	}
 
-	// Auto-detect based on other indicators
 	if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" {
 		return interfaces.EnvTesting, nil
 	}
 
 	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
-		// In Kubernetes, check for production indicators
+
 		if os.Getenv("PROD") == "true" || strings.Contains(os.Getenv("NAMESPACE"), "prod") {
 			return interfaces.EnvProduction, nil
 		}
 		return interfaces.EnvStaging, nil
 	}
 
-	// Default to development
 	return interfaces.EnvDevelopment, nil
 }
 
-// LoadEnvironmentConfig loads configuration for the specified environment.
 func (m *Manager) LoadEnvironmentConfig(env interfaces.Environment) (*interfaces.EnvironmentConfig, error) {
 	config := &interfaces.EnvironmentConfig{
 		Environment: env,
@@ -98,7 +88,6 @@ func (m *Manager) LoadEnvironmentConfig(env interfaces.Environment) (*interfaces
 		LoadTesting: m.loadLoadTestingConfig(),
 	}
 
-	// Try to load from multiple config file sources in order of preference
 	configSources := []string{
 		fmt.Sprintf("config/%s.yaml", string(env)),
 		fmt.Sprintf("config/%s.yml", string(env)),
@@ -110,7 +99,7 @@ func (m *Manager) LoadEnvironmentConfig(env interfaces.Environment) (*interfaces
 
 	var fileConfig *interfaces.EnvironmentConfig
 	var configFile string
-	
+
 	for _, source := range configSources {
 		if _, err := os.Stat(source); err == nil {
 			var err error
@@ -131,7 +120,6 @@ func (m *Manager) LoadEnvironmentConfig(env interfaces.Environment) (*interfaces
 	return config, nil
 }
 
-// ValidateConfiguration validates environment-specific configuration.
 func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces.ConfigValidation, error) {
 	validation := &interfaces.ConfigValidation{
 		Environment: env,
@@ -148,7 +136,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 		return validation, nil
 	}
 
-	// Validate Redis configuration
 	if config.Redis != nil {
 		if errs := m.validator.ValidateRedis(config.Redis); len(errs) > 0 {
 			validation.Errors = append(validation.Errors, errs...)
@@ -156,7 +143,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 		}
 	}
 
-	// Validate PostgreSQL configuration
 	if config.PostgreSQL != nil {
 		if errs := m.validator.ValidatePostgreSQL(config.PostgreSQL); len(errs) > 0 {
 			validation.Errors = append(validation.Errors, errs...)
@@ -164,7 +150,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 		}
 	}
 
-	// Validate TMDB configuration
 	if config.TMDB != nil {
 		if errs := m.validator.ValidateTMDB(config.TMDB); len(errs) > 0 {
 			validation.Errors = append(validation.Errors, errs...)
@@ -172,7 +157,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 		}
 	}
 
-	// Validate HTTP configuration
 	if config.HTTP != nil {
 		if errs := m.validator.ValidateHTTP(config.HTTP); len(errs) > 0 {
 			validation.Errors = append(validation.Errors, errs...)
@@ -180,7 +164,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 		}
 	}
 
-	// Environment-specific validations
 	switch env {
 	case interfaces.EnvProduction:
 		m.validateProductionRequirements(config, validation)
@@ -193,7 +176,6 @@ func (m *Manager) ValidateConfiguration(env interfaces.Environment) (*interfaces
 	return validation, nil
 }
 
-// ValidateConnectivity verifies connectivity to external services.
 func (m *Manager) ValidateConnectivity(ctx context.Context) (*interfaces.ConnectivityCheck, error) {
 	check := &interfaces.ConnectivityCheck{
 		CheckedAt:     time.Now(),
@@ -201,19 +183,16 @@ func (m *Manager) ValidateConnectivity(ctx context.Context) (*interfaces.Connect
 		External:      make(map[string]interfaces.ConnectivityResult),
 	}
 
-	// Test Redis connectivity
 	check.Redis = m.testRedisConnectivity(ctx)
 	if check.Redis.Status != interfaces.HealthHealthy {
 		check.OverallStatus = interfaces.HealthDegraded
 	}
 
-	// Test PostgreSQL connectivity
 	check.PostgreSQL = m.testPostgreSQLConnectivity(ctx)
 	if check.PostgreSQL.Status != interfaces.HealthHealthy {
 		check.OverallStatus = interfaces.HealthDegraded
 	}
 
-	// Test TMDB connectivity
 	check.TMDB = m.testTMDBConnectivity(ctx)
 	if check.TMDB.Status != interfaces.HealthHealthy {
 		if check.OverallStatus == interfaces.HealthHealthy {
@@ -226,12 +205,10 @@ func (m *Manager) ValidateConnectivity(ctx context.Context) (*interfaces.Connect
 	return check, nil
 }
 
-// GetCurrentConfigPath returns the path of the currently loaded configuration file.
 func (m *Manager) GetCurrentConfigPath() string {
 	return m.configPath
 }
 
-// SaveConfigToFile saves the current configuration to a file.
 func (m *Manager) SaveConfigToFile(filename string) error {
 	if m.config == nil {
 		return fmt.Errorf("no configuration loaded")
@@ -248,7 +225,7 @@ func (m *Manager) SaveConfigToFile(filename string) error {
 			return fmt.Errorf("JSON marshal error: %w", err)
 		}
 	case ".yaml", ".yml", "":
-		// Default to YAML
+
 		data, err = yaml.Marshal(m.config)
 		if err != nil {
 			return fmt.Errorf("YAML marshal error: %w", err)
@@ -257,7 +234,6 @@ func (m *Manager) SaveConfigToFile(filename string) error {
 		return fmt.Errorf("unsupported file format: %s (supported: .yaml, .yml, .json)", ext)
 	}
 
-	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -270,10 +246,9 @@ func (m *Manager) SaveConfigToFile(filename string) error {
 	return nil
 }
 
-// GenerateConfigTemplate generates a template configuration file for the specified environment.
 func (m *Manager) GenerateConfigTemplate(env interfaces.Environment, filename string) error {
 	template := m.getConfigTemplate(env)
-	
+
 	ext := strings.ToLower(filepath.Ext(filename))
 	var data []byte
 	var err error
@@ -285,7 +260,7 @@ func (m *Manager) GenerateConfigTemplate(env interfaces.Environment, filename st
 			return fmt.Errorf("JSON marshal error: %w", err)
 		}
 	case ".yaml", ".yml", "":
-		// Default to YAML
+
 		data, err = yaml.Marshal(template)
 		if err != nil {
 			return fmt.Errorf("YAML marshal error: %w", err)
@@ -294,7 +269,6 @@ func (m *Manager) GenerateConfigTemplate(env interfaces.Environment, filename st
 		return fmt.Errorf("unsupported file format: %s (supported: .yaml, .yml, .json)", ext)
 	}
 
-	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -307,7 +281,6 @@ func (m *Manager) GenerateConfigTemplate(env interfaces.Environment, filename st
 	return nil
 }
 
-// getConfigTemplate returns a template configuration for the specified environment.
 func (m *Manager) getConfigTemplate(env interfaces.Environment) *interfaces.EnvironmentConfig {
 	switch env {
 	case interfaces.EnvProduction:
@@ -366,7 +339,7 @@ func (m *Manager) getConfigTemplate(env interfaces.Environment) *interfaces.Envi
 				ResultsRetention:   720 * time.Hour,
 			},
 		}
-	
+
 	case interfaces.EnvStaging:
 		return &interfaces.EnvironmentConfig{
 			Environment: env,
@@ -481,7 +454,7 @@ func (m *Manager) getConfigTemplate(env interfaces.Environment) *interfaces.Envi
 			},
 		}
 
-	default: // Development
+	default: 
 		return &interfaces.EnvironmentConfig{
 			Environment: env,
 			Redis: &interfaces.RedisConfig{
@@ -540,17 +513,14 @@ func (m *Manager) getConfigTemplate(env interfaces.Environment) *interfaces.Envi
 	}
 }
 
-// GetCurrentConfig returns the current configuration.
 func (m *Manager) GetCurrentConfig() *interfaces.EnvironmentConfig {
 	return m.config
 }
 
-// GetCurrentEnvironment returns the current environment.
 func (m *Manager) GetCurrentEnvironment() interfaces.Environment {
 	return m.currentEnv
 }
 
-// ReloadConfiguration reloads the configuration from sources.
 func (m *Manager) ReloadConfiguration() error {
 	config, err := m.LoadEnvironmentConfig(m.currentEnv)
 	if err != nil {
@@ -560,7 +530,6 @@ func (m *Manager) ReloadConfiguration() error {
 	return nil
 }
 
-// ValidateAllEnvironments validates configuration for all supported environments.
 func (m *Manager) ValidateAllEnvironments() (map[interfaces.Environment]*interfaces.ConfigValidation, error) {
 	environments := []interfaces.Environment{
 		interfaces.EnvDevelopment,
@@ -570,7 +539,7 @@ func (m *Manager) ValidateAllEnvironments() (map[interfaces.Environment]*interfa
 	}
 
 	results := make(map[interfaces.Environment]*interfaces.ConfigValidation)
-	
+
 	for _, env := range environments {
 		validation, err := m.ValidateConfiguration(env)
 		if err != nil {
@@ -582,7 +551,6 @@ func (m *Manager) ValidateAllEnvironments() (map[interfaces.Environment]*interfa
 	return results, nil
 }
 
-// GetBackwardCompatibleConfig creates a configuration structure compatible with existing WaveFlix Hub components.
 func (m *Manager) GetBackwardCompatibleConfig() *LegacyConfig {
 	if m.config == nil {
 		return &LegacyConfig{}
@@ -633,7 +601,6 @@ func (m *Manager) GetBackwardCompatibleConfig() *LegacyConfig {
 	return legacy
 }
 
-// LegacyConfig provides backward compatibility with existing WaveFlix Hub components.
 type LegacyConfig struct {
 	Environment string            `json:"environment"`
 	Redis       LegacyRedisConfig `json:"redis"`
@@ -641,7 +608,6 @@ type LegacyConfig struct {
 	HTTP        LegacyHTTPConfig  `json:"http"`
 }
 
-// LegacyRedisConfig provides backward compatibility for Redis cache configuration.
 type LegacyRedisConfig struct {
 	URL         string        `json:"url"`
 	Password    string        `json:"password"`
@@ -654,7 +620,6 @@ type LegacyRedisConfig struct {
 	Enabled     bool          `json:"enabled"`
 }
 
-// LegacyTMDBConfig provides backward compatibility for TMDB client configuration.
 type LegacyTMDBConfig struct {
 	APIKey      string        `json:"api_key"`
 	BaseURL     string        `json:"base_url"`
@@ -665,7 +630,6 @@ type LegacyTMDBConfig struct {
 	BackoffBase time.Duration `json:"backoff_base"`
 }
 
-// LegacyHTTPConfig provides backward compatibility for HTTP client configuration.
 type LegacyHTTPConfig struct {
 	MaxIdleConns          int           `json:"max_idle_conns"`
 	MaxIdleConnsPerHost   int           `json:"max_idle_conns_per_host"`
@@ -676,7 +640,6 @@ type LegacyHTTPConfig struct {
 	RequestTimeout        time.Duration `json:"request_timeout"`
 }
 
-// loadRedisConfig loads Redis configuration from environment variables.
 func (m *Manager) loadRedisConfig() *interfaces.RedisConfig {
 	return &interfaces.RedisConfig{
 		URL:         getEnvDefault("REDIS_URL", "localhost:6379"),
@@ -686,29 +649,27 @@ func (m *Manager) loadRedisConfig() *interfaces.RedisConfig {
 		PoolSize:    getEnvInt("REDIS_POOL_SIZE", 20),
 		PoolTimeout: time.Duration(getEnvInt("REDIS_POOL_TIMEOUT", 30)) * time.Second,
 		IdleTimeout: time.Duration(getEnvInt("REDIS_IDLE_TIMEOUT", 300)) * time.Second,
-		DefaultTTL:  time.Duration(getEnvInt("REDIS_DEFAULT_TTL", 900)) * time.Second, // 15 minutes
+		DefaultTTL:  time.Duration(getEnvInt("REDIS_DEFAULT_TTL", 900)) * time.Second, 
 		Enabled:     getEnvBool("REDIS_ENABLED", true),
 	}
 }
 
-// loadPostgreSQLConfig loads PostgreSQL configuration from environment variables.
 func (m *Manager) loadPostgreSQLConfig() *interfaces.PostgreSQLConfig {
 	return &interfaces.PostgreSQLConfig{
 		URL:             getEnvDefault("DATABASE_URL", "postgres://localhost:5432/waveflix"),
 		MaxConnections:  getEnvInt("DB_MAX_CONNECTIONS", 25),
 		MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 5),
-		ConnMaxLifetime: time.Duration(getEnvInt("DB_CONN_MAX_LIFETIME", 3600)) * time.Second, // 1 hour
-		ConnMaxIdleTime: time.Duration(getEnvInt("DB_CONN_MAX_IDLE_TIME", 300)) * time.Second,  // 5 minutes
+		ConnMaxLifetime: time.Duration(getEnvInt("DB_CONN_MAX_LIFETIME", 3600)) * time.Second, 
+		ConnMaxIdleTime: time.Duration(getEnvInt("DB_CONN_MAX_IDLE_TIME", 300)) * time.Second,  
 		SSLMode:         getEnvDefault("DB_SSL_MODE", "prefer"),
 	}
 }
 
-// loadTMDBConfig loads TMDB configuration from environment variables.
 func (m *Manager) loadTMDBConfig() *interfaces.TMDBConfig {
 	return &interfaces.TMDBConfig{
 		APIKey:      os.Getenv("TMDB_API_KEY"),
 		BaseURL:     getEnvDefault("TMDB_BASE_URL", "https://api.themoviedb.org/3"),
-		RateLimit:   getEnvInt("TMDB_RATE_LIMIT", 35), // Conservative limit
+		RateLimit:   getEnvInt("TMDB_RATE_LIMIT", 35), 
 		RatePeriod:  time.Duration(getEnvInt("TMDB_RATE_PERIOD", 10)) * time.Second,
 		Timeout:     time.Duration(getEnvInt("TMDB_TIMEOUT", 10)) * time.Second,
 		MaxRetries:  getEnvInt("TMDB_MAX_RETRIES", 3),
@@ -716,7 +677,6 @@ func (m *Manager) loadTMDBConfig() *interfaces.TMDBConfig {
 	}
 }
 
-// loadHTTPConfig loads HTTP client configuration from environment variables.
 func (m *Manager) loadHTTPConfig() *interfaces.HTTPConfig {
 	return &interfaces.HTTPConfig{
 		MaxIdleConns:          getEnvInt("HTTP_MAX_IDLE_CONNS", 200),
@@ -729,11 +689,10 @@ func (m *Manager) loadHTTPConfig() *interfaces.HTTPConfig {
 	}
 }
 
-// loadMonitoringConfig loads monitoring configuration from environment variables.
 func (m *Manager) loadMonitoringConfig() *interfaces.MonitoringConfig {
 	return &interfaces.MonitoringConfig{
 		MetricsInterval:   time.Duration(getEnvInt("MONITORING_METRICS_INTERVAL", 30)) * time.Second,
-		HistoryRetention:  time.Duration(getEnvInt("MONITORING_HISTORY_RETENTION", 168)) * time.Hour, // 7 days
+		HistoryRetention:  time.Duration(getEnvInt("MONITORING_HISTORY_RETENTION", 168)) * time.Hour, 
 		AlertingEnabled:   getEnvBool("MONITORING_ALERTING_ENABLED", true),
 		DashboardEnabled:  getEnvBool("MONITORING_DASHBOARD_ENABLED", true),
 		DashboardPort:     getEnvInt("MONITORING_DASHBOARD_PORT", 8080),
@@ -741,18 +700,16 @@ func (m *Manager) loadMonitoringConfig() *interfaces.MonitoringConfig {
 	}
 }
 
-// loadLoadTestingConfig loads load testing configuration from environment variables.
 func (m *Manager) loadLoadTestingConfig() *interfaces.LoadTestingConfig {
 	return &interfaces.LoadTestingConfig{
 		MaxConcurrentUsers: getEnvInt("LOADTEST_MAX_CONCURRENT_USERS", 1000),
-		DefaultDuration:    time.Duration(getEnvInt("LOADTEST_DEFAULT_DURATION", 300)) * time.Second, // 5 minutes
-		RampUpDuration:     time.Duration(getEnvInt("LOADTEST_RAMP_UP_DURATION", 60)) * time.Second,  // 1 minute
+		DefaultDuration:    time.Duration(getEnvInt("LOADTEST_DEFAULT_DURATION", 300)) * time.Second, 
+		RampUpDuration:     time.Duration(getEnvInt("LOADTEST_RAMP_UP_DURATION", 60)) * time.Second,  
 		MetricsInterval:    time.Duration(getEnvInt("LOADTEST_METRICS_INTERVAL", 5)) * time.Second,
-		ResultsRetention:   time.Duration(getEnvInt("LOADTEST_RESULTS_RETENTION", 720)) * time.Hour, // 30 days
+		ResultsRetention:   time.Duration(getEnvInt("LOADTEST_RESULTS_RETENTION", 720)) * time.Hour, 
 	}
 }
 
-// loadConfigFile loads configuration from a YAML or JSON file.
 func (m *Manager) loadConfigFile(filename string) (*interfaces.EnvironmentConfig, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -760,8 +717,7 @@ func (m *Manager) loadConfigFile(filename string) (*interfaces.EnvironmentConfig
 	}
 
 	var config interfaces.EnvironmentConfig
-	
-	// Determine file format by extension
+
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext {
 	case ".yaml", ".yml":
@@ -773,7 +729,7 @@ func (m *Manager) loadConfigFile(filename string) (*interfaces.EnvironmentConfig
 			return nil, fmt.Errorf("JSON parse error in %s: %w", filename, err)
 		}
 	default:
-		// Default to YAML for backward compatibility
+
 		if err := yaml.Unmarshal(data, &config); err != nil {
 			return nil, fmt.Errorf("configuration parse error in %s (tried YAML): %w", filename, err)
 		}
@@ -782,9 +738,8 @@ func (m *Manager) loadConfigFile(filename string) (*interfaces.EnvironmentConfig
 	return &config, nil
 }
 
-// mergeConfigs merges file configuration with environment variable configuration.
 func (m *Manager) mergeConfigs(envConfig, fileConfig *interfaces.EnvironmentConfig) *interfaces.EnvironmentConfig {
-	// File config takes precedence over environment variables
+
 	if fileConfig.Redis != nil {
 		envConfig.Redis = fileConfig.Redis
 	}
@@ -807,119 +762,105 @@ func (m *Manager) mergeConfigs(envConfig, fileConfig *interfaces.EnvironmentConf
 	return envConfig
 }
 
-// Environment-specific validation functions
-
 func (m *Manager) validateProductionRequirements(config *interfaces.EnvironmentConfig, validation *interfaces.ConfigValidation) {
-	// Production must have Redis enabled
+
 	if config.Redis == nil || !config.Redis.Enabled {
 		validation.Errors = append(validation.Errors, "Redis must be enabled in production")
 		validation.Valid = false
 	}
 
-	// Production must have TMDB API key
 	if config.TMDB == nil || config.TMDB.APIKey == "" {
 		validation.Errors = append(validation.Errors, "TMDB API key is required in production")
 		validation.Valid = false
 	}
 
-	// Production should use SSL for PostgreSQL
 	if config.PostgreSQL != nil && config.PostgreSQL.SSLMode == "disable" {
 		validation.Warnings = append(validation.Warnings, "SSL is disabled for PostgreSQL in production")
 	}
 
-	// Production should have monitoring enabled
 	if config.Monitoring == nil || !config.Monitoring.AlertingEnabled {
 		validation.Warnings = append(validation.Warnings, "Alerting should be enabled in production")
 	}
 }
 
 func (m *Manager) validateStagingRequirements(config *interfaces.EnvironmentConfig, validation *interfaces.ConfigValidation) {
-	// Staging should have Redis for realistic testing
+
 	if config.Redis == nil || !config.Redis.Enabled {
 		validation.Warnings = append(validation.Warnings, "Redis should be enabled in staging for realistic testing")
 	}
 
-	// Staging should have TMDB API key
 	if config.TMDB == nil || config.TMDB.APIKey == "" {
 		validation.Warnings = append(validation.Warnings, "TMDB API key should be configured in staging")
 	}
 }
 
 func (m *Manager) validateDevelopmentRequirements(config *interfaces.EnvironmentConfig, validation *interfaces.ConfigValidation) {
-	// Development can work without Redis (fallback to memory)
+
 	if config.Redis == nil || !config.Redis.Enabled {
 		validation.Warnings = append(validation.Warnings, "Redis is disabled - using memory cache fallback")
 	}
 
-	// Development should have TMDB API key for full functionality
 	if config.TMDB == nil || config.TMDB.APIKey == "" {
 		validation.Warnings = append(validation.Warnings, "TMDB API key not configured - some features may be limited")
 	}
 }
 
-// Connectivity test functions
-
 func (m *Manager) testRedisConnectivity(ctx context.Context) interfaces.ConnectivityResult {
-	// This would implement actual Redis connectivity test
-	// For now, return a placeholder
+
 	result := interfaces.ConnectivityResult{
 		Service:      "redis",
 		Status:       interfaces.HealthHealthy,
 		ResponseTime: time.Millisecond * 5,
 		Details:      make(map[string]interface{}),
 	}
-	
+
 	if m.config != nil && m.config.Redis != nil {
 		result.Details["url"] = m.config.Redis.URL
 	} else {
 		result.Details["url"] = "not configured"
 		result.Status = interfaces.HealthUnknown
 	}
-	
+
 	return result
 }
 
 func (m *Manager) testPostgreSQLConnectivity(ctx context.Context) interfaces.ConnectivityResult {
-	// This would implement actual PostgreSQL connectivity test
-	// For now, return a placeholder
+
 	result := interfaces.ConnectivityResult{
 		Service:      "postgresql",
 		Status:       interfaces.HealthHealthy,
 		ResponseTime: time.Millisecond * 10,
 		Details:      make(map[string]interface{}),
 	}
-	
+
 	if m.config != nil && m.config.PostgreSQL != nil {
 		result.Details["url"] = m.config.PostgreSQL.URL
 	} else {
 		result.Details["url"] = "not configured"
 		result.Status = interfaces.HealthUnknown
 	}
-	
+
 	return result
 }
 
 func (m *Manager) testTMDBConnectivity(ctx context.Context) interfaces.ConnectivityResult {
-	// This would implement actual TMDB API connectivity test
-	// For now, return a placeholder
+
 	result := interfaces.ConnectivityResult{
 		Service:      "tmdb",
 		Status:       interfaces.HealthHealthy,
 		ResponseTime: time.Millisecond * 100,
 		Details:      make(map[string]interface{}),
 	}
-	
+
 	if m.config != nil && m.config.TMDB != nil {
 		result.Details["base_url"] = m.config.TMDB.BaseURL
 	} else {
 		result.Details["base_url"] = "not configured"
 		result.Status = interfaces.HealthUnknown
 	}
-	
+
 	return result
 }
-
-// Utility functions
 
 func getEnvDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {

@@ -1,8 +1,5 @@
-// Package main provides the entry point for WaveFlix Hub Scalability Testing & Monitoring system.
-//
-// This system validates and monitors the scalability improvements implemented through
-// PostgreSQL migration, Redis caching, TMDB API optimization, HTTP connection pooling,
-// and rate limiting components.
+
+
 package main
 
 import (
@@ -23,7 +20,6 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/monitoring"
 )
 
-// Application holds the main components of the scalability testing system.
 type Application struct {
 	config              *config.Manager
 	integrationValidator *integration.Validator
@@ -34,17 +30,14 @@ type Application struct {
 	wg                  sync.WaitGroup
 }
 
-// NewApplication creates a new scalability testing application instance.
 func NewApplication() (*Application, error) {
 	logger := NewLogger()
 
-	// Initialize configuration manager
 	configManager, err := config.NewManager()
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize components
 	integrationValidator, err := integration.NewValidator(configManager)
 	if err != nil {
 		return nil, err
@@ -69,17 +62,14 @@ func NewApplication() (*Application, error) {
 		shutdownCh:          make(chan os.Signal, 1),
 	}
 
-	// Setup signal handling
 	signal.Notify(app.shutdownCh, os.Interrupt, syscall.SIGTERM)
 
 	return app, nil
 }
 
-// Run starts the scalability testing and monitoring system.
 func (app *Application) Run(ctx context.Context) error {
 	app.logger.Info("Starting WaveFlix Hub Scalability Testing & Monitoring System")
 
-	// Start performance monitoring in background
 	app.wg.Add(1)
 	go func() {
 		defer app.wg.Done()
@@ -88,7 +78,6 @@ func (app *Application) Run(ctx context.Context) error {
 		}
 	}()
 
-	// Wait for shutdown signal or context cancellation
 	select {
 	case <-app.shutdownCh:
 		app.logger.Info("Received shutdown signal")
@@ -99,7 +88,6 @@ func (app *Application) Run(ctx context.Context) error {
 	return app.shutdown()
 }
 
-// RunIntegrationTests executes comprehensive integration validation.
 func (app *Application) RunIntegrationTests(ctx context.Context) error {
 	app.logger.Info("Starting integration tests")
 
@@ -123,7 +111,6 @@ func (app *Application) RunIntegrationTests(ctx context.Context) error {
 	return nil
 }
 
-// RunLoadTests executes load testing scenarios.
 func (app *Application) RunLoadTests(ctx context.Context, scenario *interfaces.LoadTestScenario) error {
 	app.logger.Info("Starting load test: %s", scenario.Name)
 
@@ -143,20 +130,16 @@ func (app *Application) RunLoadTests(ctx context.Context, scenario *interfaces.L
 	return nil
 }
 
-// GetSystemMetrics returns current system performance metrics.
 func (app *Application) GetSystemMetrics() (*interfaces.SystemMetrics, error) {
 	return app.performanceMonitor.GetCurrentMetrics()
 }
 
-// shutdown gracefully shuts down all components.
 func (app *Application) shutdown() error {
 	app.logger.Info("Shutting down scalability testing system")
 
-	// Create shutdown context with timeout
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Shutdown components
 	if err := app.performanceMonitor.Shutdown(shutdownCtx); err != nil {
 		app.logger.Error("Error shutting down performance monitor: %v", err)
 	}
@@ -169,7 +152,6 @@ func (app *Application) shutdown() error {
 		app.logger.Error("Error shutting down integration validator: %v", err)
 	}
 
-	// Wait for all goroutines to finish
 	done := make(chan struct{})
 	go func() {
 		app.wg.Wait()
@@ -187,24 +169,21 @@ func (app *Application) shutdown() error {
 }
 
 func main() {
-	// Create CLI
+
 	cli, err := NewCLI()
 	if err != nil {
 		log.Fatalf("Failed to create CLI: %v", err)
 	}
 
-	// Run CLI
 	if err := cli.Run(); err != nil {
 		log.Fatalf("CLI error: %v", err)
 	}
 }
 
-// CLI provides command-line interface for the scalability testing system.
 type CLI struct {
 	app *Application
 }
 
-// NewCLI creates a new CLI instance.
 func NewCLI() (*CLI, error) {
 	app, err := NewApplication()
 	if err != nil {
@@ -214,7 +193,6 @@ func NewCLI() (*CLI, error) {
 	return &CLI{app: app}, nil
 }
 
-// Run executes the CLI with command-line arguments.
 func (cli *CLI) Run() error {
 	var (
 		mode     = flag.String("mode", "help", "Operation mode: integration, loadtest, monitor, validate, help")
@@ -243,7 +221,6 @@ func (cli *CLI) Run() error {
 	}
 }
 
-// runIntegrationTests executes integration validation tests.
 func (cli *CLI) runIntegrationTests(ctx context.Context) error {
 	fmt.Println("Starting WaveFlix Hub Scalability Integration Tests...")
 	fmt.Println("==================================================")
@@ -257,7 +234,6 @@ func (cli *CLI) runIntegrationTests(ctx context.Context) error {
 	return nil
 }
 
-// runLoadTest executes load testing scenarios.
 func (cli *CLI) runLoadTest(ctx context.Context, scenarioName string, duration time.Duration, users int) error {
 	fmt.Printf("Starting Load Test: %s\n", scenarioName)
 	fmt.Printf("Duration: %v, Concurrent Users: %d\n", duration, users)
@@ -267,7 +243,7 @@ func (cli *CLI) runLoadTest(ctx context.Context, scenarioName string, duration t
 		Name:            scenarioName,
 		ConcurrentUsers: users,
 		Duration:        duration,
-		RampUpTime:      duration / 10, // 10% of test duration for ramp-up
+		RampUpTime:      duration / 10, 
 		RequestPatterns: cli.getDefaultRequestPatterns(),
 		Environment:     cli.app.config.GetCurrentEnvironment(),
 	}
@@ -281,13 +257,11 @@ func (cli *CLI) runLoadTest(ctx context.Context, scenarioName string, duration t
 	return nil
 }
 
-// runMonitoring starts continuous performance monitoring.
 func (cli *CLI) runMonitoring(ctx context.Context) error {
 	fmt.Println("Starting WaveFlix Hub Performance Monitoring...")
 	fmt.Printf("Environment: %s\n", cli.app.config.GetCurrentEnvironment())
 	fmt.Println("==================================================")
 
-	// Show initial metrics
 	metrics, err := cli.app.GetSystemMetrics()
 	if err != nil {
 		return fmt.Errorf("failed to get system metrics: %w", err)
@@ -299,7 +273,6 @@ func (cli *CLI) runMonitoring(ctx context.Context) error {
 	return cli.app.Run(ctx)
 }
 
-// runValidation validates system configuration.
 func (cli *CLI) runValidation(ctx context.Context) error {
 	fmt.Println("Validating WaveFlix Hub Scalability Configuration...")
 	fmt.Println("==================================================")
@@ -334,7 +307,6 @@ func (cli *CLI) runValidation(ctx context.Context) error {
 		return fmt.Errorf("configuration validation failed")
 	}
 
-	// Test connectivity
 	fmt.Println("\nTesting connectivity...")
 	connectivity, err := cli.app.config.ValidateConnectivity(ctx)
 	if err != nil {
@@ -349,7 +321,6 @@ func (cli *CLI) runValidation(ctx context.Context) error {
 	return nil
 }
 
-// showHelp displays usage information.
 func (cli *CLI) showHelp() error {
 	fmt.Println("WaveFlix Hub Scalability Testing & Monitoring System")
 	fmt.Println("==================================================")
@@ -383,7 +354,6 @@ func (cli *CLI) showHelp() error {
 	return nil
 }
 
-// displayMetrics shows current system metrics in a formatted way.
 func (cli *CLI) displayMetrics(metrics *interfaces.SystemMetrics) {
 	fmt.Printf("System Metrics (Updated: %s)\n", metrics.Timestamp.Format("2006-01-02 15:04:05"))
 	fmt.Println()
@@ -437,7 +407,6 @@ func (cli *CLI) displayMetrics(metrics *interfaces.SystemMetrics) {
 	}
 }
 
-// getDefaultRequestPatterns returns default request patterns for load testing.
 func (cli *CLI) getDefaultRequestPatterns() []*interfaces.RequestPattern {
 	return []*interfaces.RequestPattern{
 		{

@@ -48,7 +48,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [openMore, setOpenMore] = useState(false);
   const [openAccount, setOpenAccount] = useState(false);
-  // Cegah mismatch hydration: UI akun baru dirender setelah mount di client.
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -60,10 +60,8 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Pertahankan media yang sedang aktif (movie/tv) di dropdown filter.
   const activeMedia = searchParams.get("media") === "tv" ? "tv" : "movie";
 
-  // Halaman kategori (via "More") → dianggap konteks "More", bukan Movies/Series.
   const onCategory =
     pathname === "/genres" ||
     pathname === "/countries" ||
@@ -85,10 +83,10 @@ export default function Navbar() {
     const [path, query] = href.split("?");
     if (path === "/home") return pathname === "/home";
     if (!pathname.startsWith(path)) return false;
-    // Movies & Series berbagi path /browse — bedakan lewat query media.
+
     const hrefMedia = new URLSearchParams(query ?? "").get("media");
     if (hrefMedia) {
-      // Movies/Series aktif hanya di listing polos, bukan halaman kategori.
+
       if (onCategory) return false;
       return (searchParams.get("media") ?? "movie") === hrefMedia;
     }
@@ -97,7 +95,7 @@ export default function Navbar() {
 
   const isLandingPage = pathname === "/";
   if (pathname === "/profiles") return null;
-  // Halaman auth punya bar atas sendiri (logo + tombol pindah mode).
+
   if (pathname === "/masuk" || pathname === "/daftar") return null;
 
   return (
@@ -110,7 +108,7 @@ export default function Navbar() {
         }`}
       >
         <div className="relative">
-          {/* Glass Background isolated to prevent backdrop-filter CSS bug on dropdowns */}
+          {}
           <div 
             className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
               scrolled && !isLandingPage
@@ -131,7 +129,7 @@ export default function Navbar() {
             >
               Waveflix
             </Link>
-            {/* Nav tabs — selalu tampil, label disembunyikan di layar kecil */}
+            {}
             {user && (
               <ul className="flex items-center gap-0 md:gap-1">
                 {NAV.map(({ label, href, icon: Icon }) => (
@@ -155,7 +153,7 @@ export default function Navbar() {
                     </Link>
                   </li>
                 ))}
-                {/* Dropdown "More" — Genres / Country / Year jadi satu (ala IDLIX) */}
+                {}
                 <li
                   className="relative"
                   onMouseEnter={() => setOpenMore(true)}
@@ -217,7 +215,7 @@ export default function Navbar() {
                 >
                   {activeProfile ? (
                     (activeProfile as any).avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+
                       <img
                         src={(activeProfile as any).avatar}
                         alt=""
@@ -227,7 +225,7 @@ export default function Navbar() {
                       ((activeProfile as any).name || "?").charAt(0).toUpperCase()
                     )
                   ) : user.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+
                     <img src={user.avatar} alt="" className="h-full w-full object-cover" />
                   ) : (
                     (user.username || "?").charAt(0).toUpperCase()
@@ -243,7 +241,7 @@ export default function Navbar() {
                         <div className="truncate text-xs text-white/50">{user.email}</div>
                       </div>
                       <div className="my-1 h-px bg-white/10" />
-                      {/* Ganti Profil */}
+                      {}
                       <button
                         onClick={handleSwitchProfile}
                         className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white"
@@ -285,12 +283,10 @@ export default function Navbar() {
               </Link>
             )}
 
-
           </div>
           </nav>
         </div>
       </header>
-
 
     </>
   );

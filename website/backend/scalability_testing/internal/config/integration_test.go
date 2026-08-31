@@ -1,4 +1,4 @@
-// Package config provides integration tests showing backward compatibility with WaveFlix Hub components.
+
 package config
 
 import (
@@ -9,26 +9,21 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/interfaces"
 )
 
-// TestWaveFlixHubIntegration demonstrates how the enhanced configuration system
-// integrates with existing WaveFlix Hub components like redis_cache.go and tmdb_client.go
 func TestWaveFlixHubIntegration(t *testing.T) {
-	// Initialize configuration manager
+
 	manager, err := NewManager()
 	if err != nil {
 		t.Fatalf("Failed to create configuration manager: %v", err)
 	}
 
-	// Test Redis cache configuration compatibility
 	t.Run("Redis Cache Integration", func(t *testing.T) {
 		config := manager.GetCurrentConfig()
 		if config.Redis == nil {
 			t.Fatal("Redis configuration should not be nil")
 		}
 
-		// Verify Redis configuration has all fields needed by redis_cache.go
 		redisConfig := config.Redis
-		
-		// These fields are used by the existing redis_cache.go
+
 		if redisConfig.URL == "" {
 			t.Error("Redis URL should not be empty")
 		}
@@ -39,7 +34,6 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 			t.Error("Redis default TTL should be positive")
 		}
 
-		// Test backward compatibility mapping
 		legacy := manager.GetBackwardCompatibleConfig()
 		if legacy.Redis.URL != redisConfig.URL {
 			t.Error("Legacy Redis URL mapping failed")
@@ -55,16 +49,14 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 			redisConfig.URL, redisConfig.PoolSize, redisConfig.DefaultTTL)
 	})
 
-	// Test TMDB client configuration compatibility
 	t.Run("TMDB Client Integration", func(t *testing.T) {
 		config := manager.GetCurrentConfig()
 		if config.TMDB == nil {
 			t.Fatal("TMDB configuration should not be nil")
 		}
 
-		// Verify TMDB configuration has all fields needed by tmdb_client.go
 		tmdbConfig := config.TMDB
-		
+
 		if tmdbConfig.BaseURL == "" {
 			t.Error("TMDB base URL should not be empty")
 		}
@@ -75,7 +67,6 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 			t.Error("TMDB timeout should be positive")
 		}
 
-		// Test backward compatibility mapping
 		legacy := manager.GetBackwardCompatibleConfig()
 		if legacy.TMDB.BaseURL != tmdbConfig.BaseURL {
 			t.Error("Legacy TMDB base URL mapping failed")
@@ -88,16 +79,14 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 			tmdbConfig.BaseURL, tmdbConfig.RateLimit, tmdbConfig.Timeout)
 	})
 
-	// Test HTTP client configuration compatibility
 	t.Run("HTTP Client Integration", func(t *testing.T) {
 		config := manager.GetCurrentConfig()
 		if config.HTTP == nil {
 			t.Fatal("HTTP configuration should not be nil")
 		}
 
-		// Verify HTTP configuration has all fields needed for optimized HTTP clients
 		httpConfig := config.HTTP
-		
+
 		if httpConfig.MaxIdleConns <= 0 {
 			t.Error("HTTP max idle connections should be positive")
 		}
@@ -105,7 +94,6 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 			t.Error("HTTP request timeout should be positive")
 		}
 
-		// Test backward compatibility mapping
 		legacy := manager.GetBackwardCompatibleConfig()
 		if legacy.HTTP.MaxIdleConns != httpConfig.MaxIdleConns {
 			t.Error("Legacy HTTP max idle connections mapping failed")
@@ -119,7 +107,6 @@ func TestWaveFlixHubIntegration(t *testing.T) {
 	})
 }
 
-// TestEnvironmentSpecificIntegration tests environment-specific configuration behavior
 func TestEnvironmentSpecificIntegration(t *testing.T) {
 	environments := []interfaces.Environment{
 		interfaces.EnvDevelopment,
@@ -131,57 +118,54 @@ func TestEnvironmentSpecificIntegration(t *testing.T) {
 	for _, env := range environments {
 		t.Run(string(env), func(t *testing.T) {
 			manager := &Manager{validator: NewValidator()}
-			
+
 			config, err := manager.LoadEnvironmentConfig(env)
 			if err != nil {
 				t.Fatalf("Failed to load config for %s: %v", env, err)
 			}
 
-			// Test environment-specific Redis settings
 			redisConfig := config.Redis
 			switch env {
 			case interfaces.EnvProduction:
-				// Production should have higher pool sizes and stricter settings
+
 				if redisConfig.PoolSize < 20 {
 					t.Errorf("Production Redis pool size too small: %d", redisConfig.PoolSize)
 				}
 			case interfaces.EnvDevelopment:
-				// Development can have smaller pool sizes
+
 				if redisConfig.PoolSize > 25 {
 					t.Logf("Development Redis pool size: %d (reasonable)", redisConfig.PoolSize)
 				}
 			case interfaces.EnvTesting:
-				// Testing should have minimal resources
+
 				if redisConfig.PoolSize > 15 {
 					t.Logf("Testing Redis pool size: %d (could be smaller)", redisConfig.PoolSize)
 				}
 			}
 
-			// Test environment-specific TMDB rate limits
 			tmdbConfig := config.TMDB
 			switch env {
 			case interfaces.EnvProduction:
-				// Production should be conservative with rate limits
+
 				if tmdbConfig.RateLimit > 35 {
 					t.Errorf("Production TMDB rate limit too high: %d", tmdbConfig.RateLimit)
 				}
 			case interfaces.EnvTesting:
-				// Testing can have lower limits
+
 				if tmdbConfig.RateLimit > 25 {
 					t.Logf("Testing TMDB rate limit: %d (appropriate)", tmdbConfig.RateLimit)
 				}
 			}
 
-			// Test environment-specific monitoring settings
 			monitoringConfig := config.Monitoring
 			switch env {
 			case interfaces.EnvProduction:
-				// Production should have monitoring enabled
+
 				if !monitoringConfig.AlertingEnabled {
 					t.Error("Production should have alerting enabled")
 				}
 			case interfaces.EnvTesting:
-				// Testing might not need alerting
+
 				if monitoringConfig.AlertingEnabled {
 					t.Logf("Testing has alerting enabled (may not be necessary)")
 				}
@@ -192,9 +176,8 @@ func TestEnvironmentSpecificIntegration(t *testing.T) {
 	}
 }
 
-// TestConfigurationOverrides tests how environment variables override configuration files
 func TestConfigurationOverrides(t *testing.T) {
-	// Set environment variables that should override file configuration
+
 	os.Setenv("REDIS_URL", "override.redis.com:6379")
 	os.Setenv("TMDB_API_KEY", "override_api_key")
 	os.Setenv("DATABASE_URL", "postgres://override:5432/db")
@@ -210,7 +193,6 @@ func TestConfigurationOverrides(t *testing.T) {
 		t.Fatalf("Failed to load config with overrides: %v", err)
 	}
 
-	// Verify environment variables override file settings
 	if config.Redis.URL != "override.redis.com:6379" {
 		t.Errorf("Redis URL not overridden by env var: got %s", config.Redis.URL)
 	}
@@ -224,13 +206,11 @@ func TestConfigurationOverrides(t *testing.T) {
 	t.Log("Environment variable overrides working correctly")
 }
 
-// TestConfigurationValidationIntegration tests validation specific to WaveFlix Hub requirements
 func TestConfigurationValidationIntegration(t *testing.T) {
 	manager := &Manager{validator: NewValidator()}
 
-	// Test production-specific validation requirements
 	t.Run("Production Validation", func(t *testing.T) {
-		// Set minimal environment for production validation
+
 		os.Setenv("TMDB_API_KEY", "a1b2c3d4e5f6789012345678901234567890abcd")
 		os.Setenv("REDIS_ENABLED", "true")
 		defer func() {
@@ -243,7 +223,6 @@ func TestConfigurationValidationIntegration(t *testing.T) {
 			t.Fatalf("Production validation failed: %v", err)
 		}
 
-		// Production should have specific requirements
 		for _, errMsg := range validation.Errors {
 			t.Logf("Production validation error: %s", errMsg)
 		}
@@ -255,14 +234,12 @@ func TestConfigurationValidationIntegration(t *testing.T) {
 			len(validation.Errors), len(validation.Warnings))
 	})
 
-	// Test development flexibility
 	t.Run("Development Validation", func(t *testing.T) {
 		validation, err := manager.ValidateConfiguration(interfaces.EnvDevelopment) 
 		if err != nil {
 			t.Fatalf("Development validation failed: %v", err)
 		}
 
-		// Development should be more flexible (warnings instead of errors)
 		hasWarnings := len(validation.Warnings) > 0
 		if !hasWarnings {
 			t.Log("Development validation has no warnings (good configuration)")
@@ -272,7 +249,6 @@ func TestConfigurationValidationIntegration(t *testing.T) {
 	})
 }
 
-// TestPerformanceConfiguration tests performance-related configuration aspects
 func TestPerformanceConfiguration(t *testing.T) {
 	manager, err := NewManager()
 	if err != nil {
@@ -281,21 +257,17 @@ func TestPerformanceConfiguration(t *testing.T) {
 
 	config := manager.GetCurrentConfig()
 
-	// Test Redis performance settings
 	t.Run("Redis Performance", func(t *testing.T) {
 		redis := config.Redis
-		
-		// Pool timeout should be reasonable for performance
+
 		if redis.PoolTimeout > time.Minute {
 			t.Errorf("Redis pool timeout too high: %v", redis.PoolTimeout)
 		}
-		
-		// Idle timeout should prevent resource leaks
+
 		if redis.IdleTimeout < time.Minute {
 			t.Errorf("Redis idle timeout too low: %v", redis.IdleTimeout)  
 		}
 
-		// TTL should balance freshness with performance
 		if redis.DefaultTTL > time.Hour {
 			t.Errorf("Redis default TTL too high: %v", redis.DefaultTTL)
 		}
@@ -304,16 +276,13 @@ func TestPerformanceConfiguration(t *testing.T) {
 			redis.PoolTimeout, redis.IdleTimeout, redis.DefaultTTL)
 	})
 
-	// Test HTTP performance settings
 	t.Run("HTTP Performance", func(t *testing.T) {
 		http := config.HTTP
 
-		// Connection limits should enable concurrency
 		if http.MaxIdleConns < 10 {
 			t.Errorf("HTTP max idle connections too low: %d", http.MaxIdleConns)
 		}
 
-		// Timeouts should be reasonable for external APIs
 		if http.RequestTimeout > time.Minute {
 			t.Errorf("HTTP request timeout too high: %v", http.RequestTimeout)
 		}
@@ -322,11 +291,9 @@ func TestPerformanceConfiguration(t *testing.T) {
 			http.MaxIdleConns, http.RequestTimeout)
 	})
 
-	// Test monitoring performance impact
 	t.Run("Monitoring Performance", func(t *testing.T) {
 		monitoring := config.Monitoring
 
-		// Metrics interval should balance accuracy with overhead
 		if monitoring.MetricsInterval < time.Second*5 {
 			t.Errorf("Monitoring metrics interval too frequent: %v", monitoring.MetricsInterval)
 		}
@@ -338,7 +305,6 @@ func TestPerformanceConfiguration(t *testing.T) {
 	})
 }
 
-// BenchmarkConfigurationLoading benchmarks configuration loading performance
 func BenchmarkConfigurationLoading(b *testing.B) {
 	environments := []interfaces.Environment{
 		interfaces.EnvDevelopment,
@@ -351,7 +317,7 @@ func BenchmarkConfigurationLoading(b *testing.B) {
 		b.Run(string(env), func(b *testing.B) {
 			manager := &Manager{}
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				config, err := manager.LoadEnvironmentConfig(env)
 				if err != nil {

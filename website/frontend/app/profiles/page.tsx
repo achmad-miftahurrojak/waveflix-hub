@@ -14,14 +14,14 @@ interface Profile {
 export default function ProfilesPage() {
   const { user, authFetch, setActiveProfile, ready } = useAuth();
   const router = useRouter();
-  
+
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isManaging, setIsManaging] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [saveError, setSaveError] = useState("");
-  
+
   const [newProfileName, setNewProfileName] = useState("");
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
@@ -32,7 +32,7 @@ export default function ProfilesPage() {
       router.push("/masuk");
       return;
     }
-    
+
     fetchProfiles();
   }, [ready, user, router]);
 
@@ -73,7 +73,7 @@ export default function ProfilesPage() {
         method: "POST",
         body: JSON.stringify({ name: newProfileName, avatar: "" })
       });
-      
+
       if (res.ok) {
         setShowAddModal(false);
         setNewProfileName("");
@@ -99,7 +99,7 @@ export default function ProfilesPage() {
         method: "PUT",
         body: JSON.stringify({ name: newProfileName, avatar: editingProfile.avatar })
       });
-      
+
       if (res.ok) {
         setShowEditModal(false);
         setEditingProfile(null);
@@ -118,7 +118,7 @@ export default function ProfilesPage() {
 
   const handleDeleteProfile = async () => {
     if (!editingProfile || saving) return;
-    
+
     if (!confirm("Yakin ingin menghapus profil ini? Semua data profil akan ikut terhapus.")) return;
     setSaving(true);
 
@@ -126,7 +126,7 @@ export default function ProfilesPage() {
       const res = await authFetch(`/api/profiles/${editingProfile.id}`, {
         method: "DELETE"
       });
-      
+
       if (res.ok) {
         setShowEditModal(false);
         setEditingProfile(null);
@@ -155,7 +155,7 @@ export default function ProfilesPage() {
       <h1 className="text-4xl md:text-5xl font-semibold mb-12">
         {isManaging ? "Kelola Profil" : "Siapa yang menonton?"}
       </h1>
-      
+
       <div className="flex flex-wrap justify-center gap-6">
         {profiles.map((profile) => (
           <button 
@@ -165,7 +165,7 @@ export default function ProfilesPage() {
           >
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-md overflow-hidden border-2 border-transparent group-hover:border-white transition-colors duration-200 bg-surface-overlay flex items-center justify-center relative">
               {profile.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
+
                 <img
                   src={profile.avatar}
                   alt={profile.name}
@@ -176,7 +176,7 @@ export default function ProfilesPage() {
                   {profile.name.charAt(0).toUpperCase()}
                 </span>
               )}
-              
+
               {isManaging && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,7 +190,7 @@ export default function ProfilesPage() {
             </span>
           </button>
         ))}
-        
+
         {profiles.length < 4 && (
           <button 
             onClick={() => setShowAddModal(true)}
@@ -215,7 +215,7 @@ export default function ProfilesPage() {
         {isManaging ? "Selesai" : "Kelola Profil"}
       </button>
 
-      {/* Add Profile Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-surface-raised border border-white/10 rounded-lg p-6 w-full max-w-md">
@@ -257,7 +257,7 @@ export default function ProfilesPage() {
         </div>
       )}
 
-      {/* Edit Profile Modal */}
+      {}
       {showEditModal && editingProfile && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-surface-raised border border-white/10 rounded-lg p-6 w-full max-w-md">

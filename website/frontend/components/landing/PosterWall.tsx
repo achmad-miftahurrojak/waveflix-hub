@@ -4,7 +4,7 @@ import type { TmdbItem } from "@/lib/types";
 function Tile({ item }: { item: TmdbItem }) {
   return (
     <div className="relative h-20 w-[54px] shrink-0 overflow-hidden rounded bg-white/5 shadow-md shadow-black/50 md:h-24 md:w-16">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {}
       <img
         src={posterUrl(item)}
         alt=""
@@ -30,7 +30,7 @@ export default function PosterWall({ items }: { items: TmdbItem[] }) {
 
   return (
     <>
-      {/* Layer 1 — background 3D: transform dipaksa via inline style agar pasti ter-render */}
+      {}
       <div className="absolute inset-0 z-[1] overflow-hidden" aria-hidden>
         <div
           className="absolute -left-96 -right-24 -top-40 bottom-0"
@@ -53,7 +53,7 @@ export default function PosterWall({ items }: { items: TmdbItem[] }) {
         </div>
       </div>
 
-      {/* Layer 2 — dark overlay vignette */}
+      {}
       <div
         className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-b from-black/60 via-black/25 to-black"
         aria-hidden

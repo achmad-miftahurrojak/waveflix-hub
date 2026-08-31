@@ -61,16 +61,16 @@ const footerColumns: { label: string; href: string }[][] = [
 ];
 
 export default async function LandingPage() {
-  // Ambil data untuk "Sedang Tren Sekarang" (Trending Indonesia)
+
   const trending = await getTrendingIndonesia();
 
   return (
     <main className="min-h-screen bg-black">
-      {/* Hero Section */}
+      {}
       <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden">
         <PosterWall items={trending} />
 
-        {/* Layer 3 — konten utama */}
+        {}
         <div className="relative z-10 mx-auto w-full max-w-[800px] px-6 text-center">
           <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
             Film dan serial TV tanpa batas, dan lebih banyak lagi
@@ -85,9 +85,9 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Section: Sedang Tren Sekarang — lengkungan adalah tepi section itu sendiri */}
+      {}
       <section className="relative z-10 bg-black pt-24 pb-16">
-        {/* Curved top edge — same bg color, blends seamlessly with hero */}
+        {}
         <div
           className="absolute left-0 right-0 top-0 h-16 bg-black"
           style={{ borderRadius: "50% 50% 0 0 / 100% 100% 0 0" }}
@@ -97,7 +97,7 @@ export default async function LandingPage() {
         <Carousel items={trending} small quickView />
       </section>
 
-      {/* Section: More Reasons to Join */}
+      {}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">Alasan Lebih Banyak untuk Bergabung</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,10 +116,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Section: FAQ */}
+      {}
       <Faq />
 
-      {/* Footer links */}
+      {}
       <footer className="mx-auto max-w-6xl px-6 pb-14 pt-10">
         <p className="text-white/60">
           Ada pertanyaan? Lihat{" "}

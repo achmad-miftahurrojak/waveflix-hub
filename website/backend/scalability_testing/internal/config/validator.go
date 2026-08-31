@@ -1,4 +1,4 @@
-// Package config provides configuration validation for the scalability testing system.
+
 package config
 
 import (
@@ -10,42 +10,36 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/interfaces"
 )
 
-// Validator provides configuration validation logic.
 type Validator struct{}
 
-// NewValidator creates a new configuration validator.
 func NewValidator() *Validator {
 	return &Validator{}
 }
 
-// ValidateRedis validates Redis configuration parameters.
 func (v *Validator) ValidateRedis(config *interfaces.RedisConfig) []string {
 	var errors []string
 
-	// Validate URL format
 	if config.URL == "" {
 		errors = append(errors, "Redis URL cannot be empty")
 	} else {
-		// Check if URL is valid (can be host:port or redis://url)
+
 		if !strings.Contains(config.URL, "://") {
-			// Simple host:port format
+
 			if !strings.Contains(config.URL, ":") {
 				errors = append(errors, "Redis URL must include port (host:port)")
 			}
 		} else {
-			// Full URL format
+
 			if _, err := url.Parse(config.URL); err != nil {
 				errors = append(errors, fmt.Sprintf("Invalid Redis URL format: %v", err))
 			}
 		}
 	}
 
-	// Validate database number
 	if config.DB < 0 || config.DB > 15 {
 		errors = append(errors, "Redis database number must be between 0 and 15")
 	}
 
-	// Validate retry configuration
 	if config.MaxRetries < 0 {
 		errors = append(errors, "Redis max retries cannot be negative")
 	}
@@ -53,7 +47,6 @@ func (v *Validator) ValidateRedis(config *interfaces.RedisConfig) []string {
 		errors = append(errors, "Redis max retries should not exceed 10 (excessive retry attempts)")
 	}
 
-	// Validate pool configuration
 	if config.PoolSize <= 0 {
 		errors = append(errors, "Redis pool size must be positive")
 	}
@@ -61,7 +54,6 @@ func (v *Validator) ValidateRedis(config *interfaces.RedisConfig) []string {
 		errors = append(errors, "Redis pool size is too large (>1000 connections)")
 	}
 
-	// Validate timeout configuration
 	if config.PoolTimeout <= 0 {
 		errors = append(errors, "Redis pool timeout must be positive")
 	}
@@ -76,7 +68,6 @@ func (v *Validator) ValidateRedis(config *interfaces.RedisConfig) []string {
 		errors = append(errors, "Redis idle timeout is too short (<30 seconds)")
 	}
 
-	// Validate TTL configuration
 	if config.DefaultTTL <= 0 {
 		errors = append(errors, "Redis default TTL must be positive")
 	}
@@ -87,11 +78,9 @@ func (v *Validator) ValidateRedis(config *interfaces.RedisConfig) []string {
 	return errors
 }
 
-// ValidatePostgreSQL validates PostgreSQL configuration parameters.
 func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []string {
 	var errors []string
 
-	// Validate URL format
 	if config.URL == "" {
 		errors = append(errors, "PostgreSQL URL cannot be empty")
 	} else {
@@ -99,7 +88,7 @@ func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []st
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("Invalid PostgreSQL URL format: %v", err))
 		} else {
-			// Validate URL components
+
 			if parsedURL.Scheme != "postgres" && parsedURL.Scheme != "postgresql" {
 				errors = append(errors, "PostgreSQL URL must use postgres:// or postgresql:// scheme")
 			}
@@ -109,7 +98,6 @@ func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []st
 		}
 	}
 
-	// Validate connection pool configuration
 	if config.MaxConnections <= 0 {
 		errors = append(errors, "PostgreSQL max connections must be positive")
 	}
@@ -124,7 +112,6 @@ func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []st
 		errors = append(errors, "PostgreSQL max idle connections cannot exceed max connections")
 	}
 
-	// Validate connection lifetime configuration
 	if config.ConnMaxLifetime <= 0 {
 		errors = append(errors, "PostgreSQL connection max lifetime must be positive")
 	}
@@ -139,7 +126,6 @@ func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []st
 		errors = append(errors, "PostgreSQL connection max idle time should not exceed max lifetime")
 	}
 
-	// Validate SSL mode
 	validSSLModes := []string{"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
 	isValidSSLMode := false
 	for _, mode := range validSSLModes {
@@ -155,19 +141,17 @@ func (v *Validator) ValidatePostgreSQL(config *interfaces.PostgreSQLConfig) []st
 	return errors
 }
 
-// ValidateTMDB validates TMDB API configuration parameters.
 func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 	var errors []string
 
-	// Validate API key
 	if config.APIKey == "" {
 		errors = append(errors, "TMDB API key cannot be empty")
 	} else {
-		// TMDB API keys are typically 32 character hex strings
+
 		if len(config.APIKey) != 32 {
 			errors = append(errors, "TMDB API key should be 32 characters long")
 		}
-		// Check if it contains only valid hex characters
+
 		for _, char := range config.APIKey {
 			if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F')) {
 				errors = append(errors, "TMDB API key should contain only hexadecimal characters")
@@ -176,7 +160,6 @@ func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 		}
 	}
 
-	// Validate base URL
 	if config.BaseURL == "" {
 		errors = append(errors, "TMDB base URL cannot be empty")
 	} else {
@@ -187,7 +170,6 @@ func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 		}
 	}
 
-	// Validate rate limiting configuration
 	if config.RateLimit <= 0 {
 		errors = append(errors, "TMDB rate limit must be positive")
 	}
@@ -202,7 +184,6 @@ func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 		errors = append(errors, "TMDB rate period is too short (<1 second)")
 	}
 
-	// Validate timeout configuration
 	if config.Timeout <= 0 {
 		errors = append(errors, "TMDB timeout must be positive")
 	}
@@ -210,7 +191,6 @@ func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 		errors = append(errors, "TMDB timeout is too long (>1 minute)")
 	}
 
-	// Validate retry configuration
 	if config.MaxRetries < 0 {
 		errors = append(errors, "TMDB max retries cannot be negative")
 	}
@@ -228,11 +208,9 @@ func (v *Validator) ValidateTMDB(config *interfaces.TMDBConfig) []string {
 	return errors
 }
 
-// ValidateHTTP validates HTTP client configuration parameters.
 func (v *Validator) ValidateHTTP(config *interfaces.HTTPConfig) []string {
 	var errors []string
 
-	// Validate connection pool configuration
 	if config.MaxIdleConns <= 0 {
 		errors = append(errors, "HTTP max idle connections must be positive")
 	}
@@ -254,7 +232,6 @@ func (v *Validator) ValidateHTTP(config *interfaces.HTTPConfig) []string {
 		errors = append(errors, "HTTP max connections per host is very high (>500)")
 	}
 
-	// Validate timeout configuration
 	if config.IdleConnTimeout <= 0 {
 		errors = append(errors, "HTTP idle connection timeout must be positive")
 	}
@@ -283,7 +260,6 @@ func (v *Validator) ValidateHTTP(config *interfaces.HTTPConfig) []string {
 		errors = append(errors, "HTTP request timeout is too long (>5 minutes)")
 	}
 
-	// Logical validations
 	if config.TLSHandshakeTimeout > config.RequestTimeout {
 		errors = append(errors, "HTTP TLS handshake timeout should not exceed request timeout")
 	}
@@ -295,11 +271,9 @@ func (v *Validator) ValidateHTTP(config *interfaces.HTTPConfig) []string {
 	return errors
 }
 
-// ValidateMonitoring validates monitoring configuration parameters.
 func (v *Validator) ValidateMonitoring(config *interfaces.MonitoringConfig) []string {
 	var errors []string
 
-	// Validate metrics interval
 	if config.MetricsInterval <= 0 {
 		errors = append(errors, "Monitoring metrics interval must be positive")
 	}
@@ -310,7 +284,6 @@ func (v *Validator) ValidateMonitoring(config *interfaces.MonitoringConfig) []st
 		errors = append(errors, "Monitoring metrics interval is too long (>10 minutes)")
 	}
 
-	// Validate history retention
 	if config.HistoryRetention <= 0 {
 		errors = append(errors, "Monitoring history retention must be positive")
 	}
@@ -318,7 +291,6 @@ func (v *Validator) ValidateMonitoring(config *interfaces.MonitoringConfig) []st
 		errors = append(errors, "Monitoring history retention is too short (<1 hour)")
 	}
 
-	// Validate port numbers
 	if config.DashboardPort <= 0 || config.DashboardPort > 65535 {
 		errors = append(errors, "Monitoring dashboard port must be between 1 and 65535")
 	}
@@ -329,7 +301,6 @@ func (v *Validator) ValidateMonitoring(config *interfaces.MonitoringConfig) []st
 		errors = append(errors, "Monitoring dashboard and metrics ports must be different")
 	}
 
-	// Check for common reserved ports
 	reservedPorts := []int{22, 25, 53, 80, 110, 143, 443, 993, 995}
 	for _, port := range reservedPorts {
 		if config.DashboardPort == port {
@@ -343,11 +314,9 @@ func (v *Validator) ValidateMonitoring(config *interfaces.MonitoringConfig) []st
 	return errors
 }
 
-// ValidateLoadTesting validates load testing configuration parameters.
 func (v *Validator) ValidateLoadTesting(config *interfaces.LoadTestingConfig) []string {
 	var errors []string
 
-	// Validate concurrent users
 	if config.MaxConcurrentUsers <= 0 {
 		errors = append(errors, "Load testing max concurrent users must be positive")
 	}
@@ -355,7 +324,6 @@ func (v *Validator) ValidateLoadTesting(config *interfaces.LoadTestingConfig) []
 		errors = append(errors, "Load testing max concurrent users is very high (>10,000)")
 	}
 
-	// Validate duration configuration
 	if config.DefaultDuration <= 0 {
 		errors = append(errors, "Load testing default duration must be positive")
 	}
@@ -373,7 +341,6 @@ func (v *Validator) ValidateLoadTesting(config *interfaces.LoadTestingConfig) []
 		errors = append(errors, "Load testing ramp up duration should not exceed test duration")
 	}
 
-	// Validate metrics interval
 	if config.MetricsInterval <= 0 {
 		errors = append(errors, "Load testing metrics interval must be positive")
 	}
@@ -384,7 +351,6 @@ func (v *Validator) ValidateLoadTesting(config *interfaces.LoadTestingConfig) []
 		errors = append(errors, "Load testing metrics interval is too long (>1 minute)")
 	}
 
-	// Validate results retention
 	if config.ResultsRetention <= 0 {
 		errors = append(errors, "Load testing results retention must be positive")
 	}

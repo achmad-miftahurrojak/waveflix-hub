@@ -21,7 +21,7 @@ export default function ContinueWatchingRow() {
     }
 
     setLoading(true);
-    setItems([]); // reset saat ganti profil
+    setItems([]); 
 
     authFetch("/api/history")
       .then((r) => r.json())
@@ -32,7 +32,7 @@ export default function ContinueWatchingRow() {
           name: r.title,
           media_type: r.media_type,
           poster_path: r.poster_path,
-          backdrop_path: r.poster_path, // fallback if needed, API could be updated
+          backdrop_path: r.poster_path, 
           vote_average: r.vote_average,
           first_air_date: r.media_type === "tv" ? " " : undefined,
           season: r.season,
@@ -40,11 +40,9 @@ export default function ContinueWatchingRow() {
           runtime: r.runtime || 120,
           progress: r.progress || 0,
         }));
-        
-        // Filter out completed items (progress >= runtime * 0.95 or similar). 
-        // We simulate unfinished as progress < runtime. 
+
         const unfinished = list.filter((m: any) => {
-          if (m.progress === 0) return true; // Just started
+          if (m.progress === 0) return true; 
           return m.progress > 0 && m.progress < (m.runtime * 0.95);
         });
 
@@ -55,10 +53,9 @@ export default function ContinueWatchingRow() {
   }, [user, ready, authFetch, activeProfile]);
 
   const handleRemove = (id: number) => {
-    // Optimistic UI update
+
     setItems((prev) => prev.filter((item) => item.id !== id));
-    
-    // Delete from backend
+
     authFetch(`/api/history?tmdb_id=${id}`, { method: "DELETE" })
       .catch((err) => console.error("Failed to delete history item", err));
   };

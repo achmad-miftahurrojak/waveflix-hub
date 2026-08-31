@@ -1,7 +1,5 @@
-// Package errors provides standardized error handling for the scalability testing system.
-//
-// This package defines error types, error handling strategies, and recovery mechanisms
-// for different categories of failures in the testing and monitoring system.
+
+
 package errors
 
 import (
@@ -10,53 +8,41 @@ import (
 	"time"
 )
 
-// ErrorType represents the category of error for appropriate handling strategy.
 type ErrorType string
 
 const (
-	// Configuration errors - startup validation and settings issues
+
 	ErrorTypeConfiguration ErrorType = "configuration"
-	
-	// Integration errors - component integration failures
+
 	ErrorTypeIntegration ErrorType = "integration"
-	
-	// LoadTest errors - load testing execution failures  
+
 	ErrorTypeLoadTest ErrorType = "loadtest"
-	
-	// Monitoring errors - metrics collection and alerting failures
+
 	ErrorTypeMonitoring ErrorType = "monitoring"
-	
-	// Network errors - connectivity and external service issues
+
 	ErrorTypeNetwork ErrorType = "network"
-	
-	// Database errors - PostgreSQL connection and query issues
+
 	ErrorTypeDatabase ErrorType = "database"
-	
-	// Cache errors - Redis and memory cache issues
+
 	ErrorTypeCache ErrorType = "cache"
-	
-	// API errors - TMDB and external API failures
+
 	ErrorTypeAPI ErrorType = "api"
-	
-	// Validation errors - test validation and assertion failures
+
 	ErrorTypeValidation ErrorType = "validation"
-	
-	// System errors - resource exhaustion and system-level issues
+
 	ErrorTypeSystem ErrorType = "system"
 )
 
-// Severity indicates the impact level of an error.
 type Severity string
 
 const (
-	SeverityCritical Severity = "critical" // System cannot function
-	SeverityHigh     Severity = "high"     // Major functionality impacted
-	SeverityMedium   Severity = "medium"   // Minor functionality impacted
-	SeverityLow      Severity = "low"      // Minimal impact
-	SeverityInfo     Severity = "info"     // Informational only
+	SeverityCritical Severity = "critical" 
+	SeverityHigh     Severity = "high"     
+	SeverityMedium   Severity = "medium"   
+	SeverityLow      Severity = "low"      
+	SeverityInfo     Severity = "info"     
 )
 
-// ScalabilityError represents a structured error with context and recovery information.
 type ScalabilityError struct {
 	Type        ErrorType              `json:"type"`
 	Severity    Severity               `json:"severity"`
@@ -72,7 +58,6 @@ type ScalabilityError struct {
 	Retryable   bool                   `json:"retryable"`
 }
 
-// Error implements the error interface.
 func (e *ScalabilityError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("[%s:%s] %s: %s (caused by: %v)", e.Type, e.Severity, e.Component, e.Message, e.Cause)
@@ -80,12 +65,10 @@ func (e *ScalabilityError) Error() string {
 	return fmt.Sprintf("[%s:%s] %s: %s", e.Type, e.Severity, e.Component, e.Message)
 }
 
-// Unwrap returns the underlying cause error for error unwrapping.
 func (e *ScalabilityError) Unwrap() error {
 	return e.Cause
 }
 
-// RecoveryStrategy defines how to handle and recover from specific errors.
 type RecoveryStrategy struct {
 	Action      RecoveryAction `json:"action"`
 	RetryCount  int           `json:"retry_count"`
@@ -95,7 +78,6 @@ type RecoveryStrategy struct {
 	Timeout     time.Duration `json:"timeout,omitempty"`
 }
 
-// RecoveryAction defines the type of recovery action to take.
 type RecoveryAction string
 
 const (
@@ -106,7 +88,6 @@ const (
 	RecoveryDegrade  RecoveryAction = "degrade"
 )
 
-// BackoffType defines the backoff strategy for retries.
 type BackoffType string
 
 const (
@@ -116,22 +97,18 @@ const (
 	BackoffJittered    BackoffType = "jittered"
 )
 
-// ErrorHandler defines the interface for handling different error types.
 type ErrorHandler interface {
 	HandleError(err *ScalabilityError) error
 	ShouldRetry(err *ScalabilityError) bool
 	GetRecoveryStrategy(err *ScalabilityError) *RecoveryStrategy
 }
 
-// DefaultErrorHandler provides standard error handling strategies.
 type DefaultErrorHandler struct{}
 
-// NewDefaultErrorHandler creates a new default error handler.
 func NewDefaultErrorHandler() *DefaultErrorHandler {
 	return &DefaultErrorHandler{}
 }
 
-// HandleError processes errors according to their type and severity.
 func (h *DefaultErrorHandler) HandleError(err *ScalabilityError) error {
 	strategy := h.GetRecoveryStrategy(err)
 	if strategy == nil {
@@ -144,7 +121,7 @@ func (h *DefaultErrorHandler) HandleError(err *ScalabilityError) error {
 	case RecoveryFallback:
 		return h.handleFallback(err, strategy)
 	case RecoveryIgnore:
-		return nil // Ignore the error
+		return nil 
 	case RecoveryDegrade:
 		return h.handleDegrade(err, strategy)
 	case RecoveryFail:
@@ -154,7 +131,6 @@ func (h *DefaultErrorHandler) HandleError(err *ScalabilityError) error {
 	}
 }
 
-// ShouldRetry determines if an error should be retried.
 func (h *DefaultErrorHandler) ShouldRetry(err *ScalabilityError) bool {
 	if !err.Retryable {
 		return false
@@ -168,12 +144,11 @@ func (h *DefaultErrorHandler) ShouldRetry(err *ScalabilityError) bool {
 	return strategy.Action == RecoveryRetry && strategy.RetryCount > 0
 }
 
-// GetRecoveryStrategy returns the appropriate recovery strategy for an error.
 func (h *DefaultErrorHandler) GetRecoveryStrategy(err *ScalabilityError) *RecoveryStrategy {
 	switch err.Type {
 	case ErrorTypeConfiguration:
 		return &RecoveryStrategy{
-			Action:     RecoveryFail, // Configuration errors are not recoverable
+			Action:     RecoveryFail, 
 			RetryCount: 0,
 		}
 
@@ -214,7 +189,7 @@ func (h *DefaultErrorHandler) GetRecoveryStrategy(err *ScalabilityError) *Recove
 
 	case ErrorTypeValidation:
 		return &RecoveryStrategy{
-			Action:     RecoveryFail, // Validation errors indicate test issues
+			Action:     RecoveryFail, 
 			RetryCount: 0,
 		}
 
@@ -228,28 +203,21 @@ func (h *DefaultErrorHandler) GetRecoveryStrategy(err *ScalabilityError) *Recove
 	}
 }
 
-// handleRetry implements retry logic with backoff.
 func (h *DefaultErrorHandler) handleRetry(err *ScalabilityError, strategy *RecoveryStrategy) error {
-	// This would be implemented by the calling code using the strategy
-	// Return the error to indicate retry should be handled upstream
+
 	return err
 }
 
-// handleFallback implements fallback logic.
 func (h *DefaultErrorHandler) handleFallback(err *ScalabilityError, strategy *RecoveryStrategy) error {
-	// Log the fallback action
+
 	return fmt.Errorf("falling back to %s due to: %w", strategy.Fallback, err)
 }
 
-// handleDegrade implements service degradation.
 func (h *DefaultErrorHandler) handleDegrade(err *ScalabilityError, strategy *RecoveryStrategy) error {
-	// Log the degradation and continue with reduced functionality
+
 	return nil
 }
 
-// Error constructors for different error types
-
-// NewConfigurationError creates a configuration-related error.
 func NewConfigurationError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeConfiguration,
@@ -265,7 +233,6 @@ func NewConfigurationError(component, operation, message string, cause error) *S
 	}
 }
 
-// NewIntegrationError creates an integration test failure error.
 func NewIntegrationError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeIntegration,
@@ -281,7 +248,6 @@ func NewIntegrationError(component, operation, message string, cause error) *Sca
 	}
 }
 
-// NewLoadTestError creates a load test execution error.
 func NewLoadTestError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeLoadTest,
@@ -297,7 +263,6 @@ func NewLoadTestError(component, operation, message string, cause error) *Scalab
 	}
 }
 
-// NewMonitoringError creates a monitoring system error.
 func NewMonitoringError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeMonitoring,
@@ -313,7 +278,6 @@ func NewMonitoringError(component, operation, message string, cause error) *Scal
 	}
 }
 
-// NewNetworkError creates a network connectivity error.
 func NewNetworkError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeNetwork,
@@ -329,7 +293,6 @@ func NewNetworkError(component, operation, message string, cause error) *Scalabi
 	}
 }
 
-// NewDatabaseError creates a database-related error.
 func NewDatabaseError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeDatabase,
@@ -345,7 +308,6 @@ func NewDatabaseError(component, operation, message string, cause error) *Scalab
 	}
 }
 
-// NewCacheError creates a cache-related error.
 func NewCacheError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeCache,
@@ -361,7 +323,6 @@ func NewCacheError(component, operation, message string, cause error) *Scalabili
 	}
 }
 
-// NewAPIError creates an external API error.
 func NewAPIError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeAPI,
@@ -377,7 +338,6 @@ func NewAPIError(component, operation, message string, cause error) *Scalability
 	}
 }
 
-// NewValidationError creates a validation failure error.
 func NewValidationError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeValidation,
@@ -393,7 +353,6 @@ func NewValidationError(component, operation, message string, cause error) *Scal
 	}
 }
 
-// NewSystemError creates a system-level error.
 func NewSystemError(component, operation, message string, cause error) *ScalabilityError {
 	return &ScalabilityError{
 		Type:      ErrorTypeSystem,
@@ -409,7 +368,6 @@ func NewSystemError(component, operation, message string, cause error) *Scalabil
 	}
 }
 
-// getStack returns the current stack trace for error context.
 func getStack() string {
 	buf := make([]byte, 1024)
 	for {
@@ -421,7 +379,6 @@ func getStack() string {
 	}
 }
 
-// WithDetails adds additional context details to an error.
 func (e *ScalabilityError) WithDetails(details map[string]interface{}) *ScalabilityError {
 	if e.Details == nil {
 		e.Details = make(map[string]interface{})
@@ -432,18 +389,15 @@ func (e *ScalabilityError) WithDetails(details map[string]interface{}) *Scalabil
 	return e
 }
 
-// WithRecovery sets a custom recovery strategy for an error.
 func (e *ScalabilityError) WithRecovery(strategy *RecoveryStrategy) *ScalabilityError {
 	e.Recovery = strategy
 	return e
 }
 
-// IsRetryable returns whether the error can be retried.
 func (e *ScalabilityError) IsRetryable() bool {
 	return e.Retryable
 }
 
-// IsCritical returns whether the error is critical severity.
 func (e *ScalabilityError) IsCritical() bool {
 	return e.Severity == SeverityCritical
 }

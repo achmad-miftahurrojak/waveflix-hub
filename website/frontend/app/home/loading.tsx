@@ -1,10 +1,10 @@
 export default function Loading() {
   return (
     <div className="min-h-screen animate-pulse">
-      {/* Hero skeleton */}
+      {}
       <div className="h-[75vh] min-h-[500px] w-full bg-white/5" />
-      
-      {/* Content skeleton */}
+
+      {}
       <div className="px-[4%] py-8 space-y-12">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i}>

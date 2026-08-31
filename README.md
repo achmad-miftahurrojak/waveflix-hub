@@ -21,7 +21,7 @@ Platform streaming katalog film & serial berbasis web — jelajah katalog TMDB, 
 | Bagian | Teknologi |
 |---|---|
 | Frontend | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3 |
-| Backend | Go 1.25, chi/net-http, SQLite (`modernc.org/sqlite`), JWT |
+| Backend | Go 1.25, chi/net-http, PostgreSQL (`pgx`), JWT |
 | Testing | Playwright (E2E), `go test` |
 | CI | GitHub Actions |
 
@@ -52,6 +52,7 @@ Konfigurasi `website/backend/.env`:
 
 | Var | Wajib? | Keterangan |
 |---|---|---|
+| `DATABASE_URL` | Ya | URL koneksi ke PostgreSQL |
 | `TMDB_API_KEY` | Ya | Dari [TMDB](https://www.themoviedb.org/settings/api) |
 | `JWT_SECRET` | Ya | String acak minimal 32 karakter |
 | `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Opsional | Integrasi Trakt.tv |

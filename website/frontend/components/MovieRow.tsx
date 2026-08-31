@@ -13,7 +13,6 @@ interface Props {
   noPadding?: boolean;
 }
 
-/** Baris standar: judul (+ "Lihat semua") lalu carousel. Dipakai untuk provider & recently added. */
 export default function MovieRow({ title, items, viewAll, href, noPadding }: Props) {
   const { t } = useTranslation();
   if (items.length === 0) return null;

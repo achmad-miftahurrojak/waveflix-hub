@@ -4,7 +4,7 @@ import { itemTitle, itemYear, posterUrl, detailHref } from "@/lib/helpers";
 
 interface Props {
   item: TmdbItem;
-  rank?: number; // kalau diisi → tampilkan angka ranking di dalam card ala IDLIX
+  rank?: number; 
 }
 
 export default function MovieCard({ item, rank }: Props) {
@@ -15,7 +15,7 @@ export default function MovieCard({ item, rank }: Props) {
       aria-label={itemTitle(item)}
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-surface transition-transform duration-200 ease-out group-hover:scale-[1.05] group-hover:shadow-card">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {}
         <img
           src={posterUrl(item)}
           alt={itemTitle(item)}
@@ -31,7 +31,6 @@ export default function MovieCard({ item, rank }: Props) {
             {rank}
           </span>
         )}
-
 
         <span className="pointer-events-none absolute inset-0 ring-0 ring-accent/0 transition group-hover:ring-2 group-hover:ring-accent/60" />
       </div>

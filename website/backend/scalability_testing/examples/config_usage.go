@@ -1,4 +1,4 @@
-// Package main demonstrates how to use the enhanced configuration system with WaveFlix Hub components.
+
 package main
 
 import (
@@ -10,7 +10,6 @@ import (
 	"github.com/hamin-baek/waveflix-hub/scalability-testing/internal/config"
 )
 
-// MockRedisCache represents the existing redis_cache.go component
 type MockRedisCache struct {
 	URL         string
 	Password    string
@@ -19,7 +18,6 @@ type MockRedisCache struct {
 	Enabled     bool
 }
 
-// MockTMDBClient represents the existing tmdb_client.go component
 type MockTMDBClient struct {
 	APIKey      string
 	BaseURL     string
@@ -27,7 +25,6 @@ type MockTMDBClient struct {
 	Timeout     time.Duration
 }
 
-// MockHTTPClient represents HTTP connection pool configuration
 type MockHTTPClient struct {
 	MaxIdleConns    int
 	RequestTimeout  time.Duration
@@ -37,18 +34,15 @@ func main() {
 	fmt.Println("WaveFlix Hub Configuration Integration Example")
 	fmt.Println("===========================================")
 
-	// Initialize configuration manager
 	fmt.Println("\n1. Initializing configuration manager...")
 	manager, err := config.NewManager()
 	if err != nil {
 		log.Fatalf("Failed to initialize configuration manager: %v", err)
 	}
 
-	// Display detected environment
 	env := manager.GetCurrentEnvironment()
 	fmt.Printf("✓ Detected environment: %s\n", env)
 
-	// Validate configuration
 	fmt.Println("\n2. Validating configuration...")
 	validation, err := manager.ValidateConfiguration(env)
 	if err != nil {
@@ -69,11 +63,9 @@ func main() {
 		}
 	}
 
-	// Get configuration
 	fmt.Println("\n3. Loading component configurations...")
 	cfg := manager.GetCurrentConfig()
 
-	// Initialize Redis cache (existing component integration)
 	if cfg.Redis != nil {
 		redisCache := &MockRedisCache{
 			URL:         cfg.Redis.URL,
@@ -86,7 +78,6 @@ func main() {
 			redisCache.URL, redisCache.PoolSize, redisCache.DefaultTTL)
 	}
 
-	// Initialize TMDB client (existing component integration)
 	if cfg.TMDB != nil {
 		tmdbClient := &MockTMDBClient{
 			APIKey:    cfg.TMDB.APIKey,
@@ -102,7 +93,6 @@ func main() {
 			tmdbClient.BaseURL, tmdbClient.RateLimit, apiKeyDisplay)
 	}
 
-	// Initialize HTTP client (connection pooling)
 	if cfg.HTTP != nil {
 		httpClient := &MockHTTPClient{
 			MaxIdleConns:   cfg.HTTP.MaxIdleConns,
@@ -112,7 +102,6 @@ func main() {
 			httpClient.MaxIdleConns, httpClient.RequestTimeout)
 	}
 
-	// Test connectivity
 	fmt.Println("\n4. Testing connectivity...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -130,18 +119,15 @@ func main() {
 			connectivityCheck.TMDB.Status, connectivityCheck.TMDB.ResponseTime)
 	}
 
-	// Demonstrate backward compatibility
 	fmt.Println("\n5. Backward compatibility example...")
 	legacyConfig := manager.GetBackwardCompatibleConfig()
 	fmt.Printf("✓ Legacy Redis URL: %s\n", legacyConfig.Redis.URL)
 	fmt.Printf("✓ Legacy TMDB BaseURL: %s\n", legacyConfig.TMDB.BaseURL)
 	fmt.Printf("✓ Legacy HTTP MaxIdleConns: %d\n", legacyConfig.HTTP.MaxIdleConns)
 
-	// Demonstrate configuration for different environments
 	fmt.Println("\n6. Environment-specific configuration examples...")
 	demonstrateEnvironmentConfigs(manager)
 
-	// Show monitoring configuration
 	fmt.Println("\n7. Monitoring and load testing configuration...")
 	if cfg.Monitoring != nil {
 		fmt.Printf("✓ Monitoring: MetricsInterval=%v, DashboardPort=%d\n", 
@@ -155,7 +141,6 @@ func main() {
 	fmt.Println("\n✓ Configuration integration demonstration complete!")
 }
 
-// demonstrateEnvironmentConfigs shows configuration for different environments
 func demonstrateEnvironmentConfigs(manager *config.Manager) {
 	environments := []struct{
 		name string
@@ -169,27 +154,26 @@ func demonstrateEnvironmentConfigs(manager *config.Manager) {
 
 	for _, envInfo := range environments {
 		fmt.Printf("\n  %s Environment:\n", envInfo.name)
-		
-		// For demonstration, we'll show some key differences
+
 		switch envInfo.name {
 		case "Development":
 			fmt.Println("    - Redis: Optional (fallback to memory)")
 			fmt.Println("    - Pool sizes: Small (development workload)")
 			fmt.Println("    - Monitoring: Enabled for testing")
 			fmt.Println("    - SSL: Optional")
-			
+
 		case "Staging":
 			fmt.Println("    - Redis: Recommended (realistic testing)")
 			fmt.Println("    - Pool sizes: Medium (staging workload)")
 			fmt.Println("    - Monitoring: Enabled")
 			fmt.Println("    - SSL: Preferred")
-			
+
 		case "Production":
 			fmt.Println("    - Redis: Required (performance)")
 			fmt.Println("    - Pool sizes: Large (production workload)")
 			fmt.Println("    - Monitoring: Required with alerting")
 			fmt.Println("    - SSL: Required")
-			
+
 		case "Testing":
 			fmt.Println("    - Redis: Enabled (fast timeouts)")
 			fmt.Println("    - Pool sizes: Minimal (test efficiency)")
@@ -199,33 +183,20 @@ func demonstrateEnvironmentConfigs(manager *config.Manager) {
 	}
 }
 
-// Example of how existing WaveFlix Hub components would be initialized
 func initializeWaveFlixComponents() {
-	// This demonstrates how the existing components would use the configuration
-	
+
 	fmt.Println("\nInitializing WaveFlix Hub components:")
-	
-	// Redis Cache Manager (from redis_cache.go)
+
 	fmt.Println("✓ Initializing RedisCacheManager with enhanced config...")
-	// In real code: cache := NewRedisCacheManager(cfg.Redis)
-	
-	// TMDB Client (from tmdb_client.go)  
+
 	fmt.Println("✓ Initializing TMDBClient with rate limiting config...")
-	// In real code: client := NewTMDBClient(cfg.TMDB)
-	
-	// HTTP Connection Pool
+
 	fmt.Println("✓ Configuring HTTP connection pooling...")
-	// In real code: httpClient := NewOptimizedHTTPClient(cfg.HTTP)
-	
-	// PostgreSQL Database
+
 	fmt.Println("✓ Setting up PostgreSQL connection pool...")
-	// In real code: db := NewDatabasePool(cfg.PostgreSQL)
-	
-	// Performance Monitor
+
 	fmt.Println("✓ Starting performance monitoring...")
-	// In real code: monitor := NewPerformanceMonitor(cfg.Monitoring)
-	
-	// Load Testing Engine  
+
 	fmt.Println("✓ Configuring load testing engine...")
-	// In real code: loadTester := NewLoadTester(cfg.LoadTesting)
+
 }

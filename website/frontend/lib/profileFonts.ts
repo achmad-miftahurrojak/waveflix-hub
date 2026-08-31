@@ -13,14 +13,12 @@ const pacifico = Pacifico({ subsets: ["latin"], weight: "400", variable: "--pf-p
 const caveat = Caveat({ subsets: ["latin"], weight: ["600", "700"], variable: "--pf-caveat", display: "swap" });
 const lobster = Lobster({ subsets: ["latin"], weight: "400", variable: "--pf-lobster", display: "swap" });
 
-// Font custom lokal (.ttf) untuk nama profil.
 const birds = localFont({ src: "../assets/fonts/birds.ttf", variable: "--pf-birds", display: "swap" });
 const poti = localFont({ src: "../assets/fonts/poti.ttf", variable: "--pf-poti", display: "swap" });
 const somelist = localFont({ src: "../assets/fonts/somelist.ttf", variable: "--pf-somelist", display: "swap" });
 const porkys = localFont({ src: "../assets/fonts/porkys.ttf", variable: "--pf-porkys", display: "swap" });
 const floozy = localFont({ src: "../assets/fonts/floozy.ttf", variable: "--pf-floozy", display: "swap" });
 
-/** Pilihan font untuk nama profil (formal → cute → custom). key disimpan di DB. */
 export const NAME_FONTS: { key: string; label: string; css: string }[] = [
   { key: "", label: "Default", css: "inherit" },
   { key: "serif", label: "Elegant", css: "var(--pf-serif)" },

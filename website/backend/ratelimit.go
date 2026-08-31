@@ -47,7 +47,6 @@ var (
 	mu       sync.Mutex
 )
 
-// cleanupVisitors — goroutine untuk bersihkan visitor lama
 func init() {
 	go func() {
 		for {
@@ -63,9 +62,6 @@ func init() {
 	}()
 }
 
-// clientIP — ambil IP klien. Header X-Forwarded-For/X-Real-IP hanya dipercaya
-// jika env TRUST_PROXY diset (backend berada di belakang reverse proxy).
-// Tanpa itu, header tersebut bisa di-spoof client untuk bypass rate limit.
 func clientIP(r *http.Request) string {
 	if trustedProxy(r.RemoteAddr) {
 		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
@@ -83,9 +79,6 @@ func clientIP(r *http.Request) string {
 	return host
 }
 
-// rateLimit — max `limit` requests per `window` per IP, dengan `scope`
-// sebagai pemisah bucket (login punya bucket sendiri, public API punya
-// bucket sendiri — aktivitas browsing tidak menghabiskan kuota login).
 func rateLimit(scope string, limit int, window time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ip := scope + "|" + clientIP(r)

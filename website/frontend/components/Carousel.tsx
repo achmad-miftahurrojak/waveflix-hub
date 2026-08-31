@@ -11,8 +11,8 @@ interface Props {
   items: TmdbItem[];
   ranked?: boolean;
   noPadding?: boolean;
-  small?: boolean; // ukuran card kecil (untuk landing page)
-  quickView?: boolean; // klik buka modal, bukan navigasi ke detail
+  small?: boolean; 
+  quickView?: boolean; 
 }
 
 export default function Carousel({ items, ranked, noPadding, small, quickView }: Props) {
@@ -22,8 +22,8 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
   const scroll = (dir: number) => {
     const el = ref.current;
     if (!el || el.children.length === 0) return;
-    // Snap point = offsetLeft tiap card, jadi mendarat selalu rata
-    const perPage = small ? 6 : Math.max(1, Math.floor(el.clientWidth / 197)); // 185px card + 12px gap
+
+    const perPage = small ? 6 : Math.max(1, Math.floor(el.clientWidth / 197)); 
     const positions = Array.from(el.children).map((c) => (c as HTMLElement).offsetLeft - (el.firstElementChild as HTMLElement).offsetLeft);
     const currentIdx = positions.reduce(
       (best, pos, i) => (Math.abs(pos - el.scrollLeft) < Math.abs(positions[best] - el.scrollLeft) ? i : best),
@@ -50,7 +50,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
   );
 
   if (small) {
-    // Landing: viewport persis 6 card (6×170px + 5×12px gap), sisanya tersembunyi
+
     return (
       <div className="group/car relative mx-auto w-full max-w-[1080px]">
         {quickView && selectedItem && (
@@ -87,7 +87,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
                   className="group block w-full cursor-pointer rounded-lg"
                 >
                   <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-surface shadow-lg transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-card">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {}
                     <img
                       src={posterUrl(m)}
                       alt={itemTitle(m)}

@@ -10,7 +10,6 @@ interface TmdbLogo {
   iso_639_1: string | null;
 }
 
-/** Premis = 1–2 kalimat pembuka overview. Bukan rekap plot (anti-spoiler). */
 function premiseOf(overview: string): string {
   const sentences = overview.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) ?? [];
   let premise = sentences.slice(0, 2).join(" ").trim();

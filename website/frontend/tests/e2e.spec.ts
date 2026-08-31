@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Waveflix-Web E2E Tests", () => {
   test("should load home page", async ({ page }) => {
-    // Jalankan tes dengan asumsi server menyala
+
     await page.goto("/");
     await expect(page).toHaveTitle(/Waveflix/i);
   });

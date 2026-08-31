@@ -7,7 +7,6 @@ import { stillUrl, runtimeText, BACKEND } from "@/lib/helpers";
 import { PlayIcon } from "./Icons";
 import { useTranslation } from "@/lib/i18n";
 
-/** "2026-08-07" -> "7 Aug 26" (ala IDLIX). */
 function formatAirDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -19,7 +18,7 @@ interface Props {
   show: TmdbItem;
   seasons: SeasonSummary[];
   initialSeason?: number;
-  currentEpisode?: number; // sorot episode yang sedang dibuka
+  currentEpisode?: number; 
 }
 
 export default function EpisodesSection({
@@ -55,7 +54,6 @@ export default function EpisodesSection({
 
   if (valid.length === 0) return null;
 
-  // Series ongoing: hanya tampilkan episode yang sudah rilis (tidak yang kosong/abu).
   const now = Date.now();
   const aired = episodes.filter(
     (ep) => !ep.air_date || new Date(ep.air_date).getTime() <= now
@@ -98,7 +96,7 @@ export default function EpisodesSection({
                 }`}
               >
                 {ep.still_path ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+
                   <img
                     src={stillUrl(ep.still_path)}
                     alt={ep.name}

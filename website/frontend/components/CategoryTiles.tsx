@@ -6,7 +6,6 @@ interface Tile {
   href: string;
 }
 
-/** Grid kotak kategori ala IDLIX (halaman Genres / Countries / Years). */
 export default function CategoryTiles({
   title,
   tiles,

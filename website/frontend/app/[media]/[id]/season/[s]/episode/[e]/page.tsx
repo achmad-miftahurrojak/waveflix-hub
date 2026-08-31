@@ -30,7 +30,6 @@ export default async function EpisodePage({
   const ep = episodes.find((x) => x.episode_number === episode);
   if (!ep) notFound();
 
-  // Navigasi antar-episode (hanya yang sudah rilis).
   const aired = episodes.filter(
     (x) => !x.air_date || new Date(x.air_date).getTime() <= Date.now()
   );
@@ -65,7 +64,7 @@ export default async function EpisodePage({
           </Link>
 
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
+
             <img
               src={logo}
               alt={itemTitle(detail)}
@@ -109,7 +108,7 @@ export default async function EpisodePage({
       </InlineHeroVideo>
 
       <div className="px-[4%] py-10">
-        {/* Navigasi Sebelumnya / Berikutnya */}
+        {}
         {(prev || next) && (
           <div className="mb-8 grid grid-cols-2 gap-3">
             {prev ? (

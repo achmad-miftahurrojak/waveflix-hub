@@ -21,7 +21,7 @@ async function backtestMirrors() {
         signal: AbortSignal.timeout(5000),
       });
       const duration = Date.now() - start;
-      
+
       results.push({
         mirror,
         status: res.status,

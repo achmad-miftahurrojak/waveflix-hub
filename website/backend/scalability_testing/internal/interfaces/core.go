@@ -1,7 +1,5 @@
-// Package interfaces defines the core interfaces for the scalability testing and monitoring system.
-//
-// These interfaces provide the contract for integration validation, load testing,
-// performance monitoring, and environment management components.
+
+
 package interfaces
 
 import (
@@ -9,94 +7,60 @@ import (
 	"time"
 )
 
-// IntegrationValidator defines the interface for validating scalability component integration.
-//
-// The validator ensures all scalability components (Redis, PostgreSQL, TMDB, HTTP pooling)
-// work together seamlessly and deliver expected performance improvements.
 type IntegrationValidator interface {
-	// ValidateRedisIntegration tests Redis cache integration with database operations
+
 	ValidateRedisIntegration(ctx context.Context) (*ValidationResult, error)
 
-	// ValidateTMDBIntegration tests TMDB client integration with rate limiting
 	ValidateTMDBIntegration(ctx context.Context) (*ValidationResult, error)
 
-	// ValidateHTTPPooling tests HTTP connection pool integration with external APIs
 	ValidateHTTPPooling(ctx context.Context) (*ValidationResult, error)
 
-	// ValidateEndToEndPerformance measures end-to-end performance improvements
 	ValidateEndToEndPerformance(ctx context.Context) (*ValidationResult, error)
 
-	// RunAllTests executes all validation tests and returns comprehensive results
 	RunAllTests(ctx context.Context) (map[string]*ValidationResult, error)
 
-	// Shutdown gracefully shuts down the validator
 	Shutdown(ctx context.Context) error
 }
 
-// LoadTester defines the interface for executing load testing scenarios.
-//
-// The load tester generates realistic user scenarios and validates performance
-// under various load conditions to ensure scalability improvements are effective.
 type LoadTester interface {
-	// ExecuteLoadTest runs a load test scenario and returns performance results
+
 	ExecuteLoadTest(ctx context.Context, scenario *LoadTestScenario) (*LoadTestResults, error)
 
-	// GenerateUserScenarios creates realistic user behavior patterns
 	GenerateUserScenarios(userCount int, duration time.Duration) ([]*UserScenario, error)
 
-	// MeasureBaseline establishes performance baselines for comparison
 	MeasureBaseline(ctx context.Context) (*BaselineMetrics, error)
 
-	// ValidateCacheEfficiency tests cache performance against thresholds
 	ValidateCacheEfficiency(ctx context.Context, threshold float64) (*CacheValidationResult, error)
 
-	// Shutdown gracefully shuts down the load tester
 	Shutdown(ctx context.Context) error
 }
 
-// PerformanceMonitor defines the interface for real-time performance monitoring.
-//
-// The monitor collects metrics from all scalability components and provides
-// alerting capabilities for performance threshold violations.
 type PerformanceMonitor interface {
-	// CollectMetrics gathers current performance metrics from all components
+
 	CollectMetrics(ctx context.Context) (*SystemMetrics, error)
 
-	// RegisterAlert configures performance threshold alerts
 	RegisterAlert(alert *AlertDefinition) error
 
-	// GetRealTimeMetrics returns current real-time performance data
 	GetRealTimeMetrics() (*RealTimeMetrics, error)
 
-	// AnalyzeTrends performs trend analysis over specified time period
 	AnalyzeTrends(period time.Duration) (*TrendAnalysis, error)
 
-	// Start begins continuous monitoring
 	Start(ctx context.Context) error
 
-	// Shutdown gracefully shuts down the monitor
 	Shutdown(ctx context.Context) error
 }
 
-// EnvironmentManager defines the interface for managing deployment environments.
-//
-// The manager handles configuration validation, environment detection, and
-// connectivity verification across different deployment environments.
 type EnvironmentManager interface {
-	// ValidateConfiguration validates environment-specific configuration
+
 	ValidateConfiguration(env Environment) (*ConfigValidation, error)
 
-	// LoadEnvironmentConfig loads configuration for specified environment
 	LoadEnvironmentConfig(env Environment) (*EnvironmentConfig, error)
 
-	// DetectEnvironment automatically detects current deployment environment
 	DetectEnvironment() (Environment, error)
 
-	// ValidateConnectivity verifies connectivity to external services
 	ValidateConnectivity(ctx context.Context) (*ConnectivityCheck, error)
 }
 
-// ValidationResult represents the result of an integration validation test.
 type ValidationResult struct {
 	Component   string                 `json:"component"`
 	Success     bool                   `json:"success"`
@@ -107,7 +71,6 @@ type ValidationResult struct {
 	Details     map[string]interface{} `json:"details"`
 }
 
-// LoadTestScenario defines a load testing scenario configuration.
 type LoadTestScenario struct {
 	Name            string                 `json:"name"`
 	ConcurrentUsers int                    `json:"concurrent_users"`
@@ -119,17 +82,15 @@ type LoadTestScenario struct {
 	Configuration   map[string]interface{} `json:"configuration"`
 }
 
-// RequestPattern defines a pattern of requests for load testing.
 type RequestPattern struct {
 	Name        string        `json:"name"`
 	Method      string        `json:"method"`
 	Path        string        `json:"path"`
-	Weight      float64       `json:"weight"`      // Probability weight (0.0-1.0)
-	ThinkTime   time.Duration `json:"think_time"`  // Time between requests
+	Weight      float64       `json:"weight"`      
+	ThinkTime   time.Duration `json:"think_time"`  
 	Parameters  map[string]interface{} `json:"parameters"`
 }
 
-// UserScenario defines a realistic user behavior pattern.
 type UserScenario struct {
 	ID          string                 `json:"id"`
 	Name        string                 `json:"name"`
@@ -138,7 +99,6 @@ type UserScenario struct {
 	Metadata    map[string]interface{} `json:"metadata"`
 }
 
-// UserAction represents a single user action in a scenario.
 type UserAction struct {
 	Type        string                 `json:"type"`
 	Target      string                 `json:"target"`
@@ -147,7 +107,6 @@ type UserAction struct {
 	Timeout     time.Duration          `json:"timeout"`
 }
 
-// LoadTestResults contains comprehensive load test results.
 type LoadTestResults struct {
 	TestID             string                 `json:"test_id"`
 	Scenario           *LoadTestScenario      `json:"scenario"`
@@ -168,7 +127,6 @@ type LoadTestResults struct {
 	ResourceUtilization *ResourceMetrics      `json:"resource_utilization"`
 }
 
-// BaselineMetrics establishes performance baselines for comparison.
 type BaselineMetrics struct {
 	Version            string                 `json:"version"`
 	Environment        Environment            `json:"environment"`
@@ -182,7 +140,6 @@ type BaselineMetrics struct {
 	Configuration      map[string]interface{} `json:"configuration"`
 }
 
-// CacheValidationResult contains cache performance validation results.
 type CacheValidationResult struct {
 	Threshold       float64   `json:"threshold"`
 	ActualHitRate   float64   `json:"actual_hit_rate"`
@@ -195,7 +152,6 @@ type CacheValidationResult struct {
 	Timestamp       time.Time `json:"timestamp"`
 }
 
-// SystemMetrics contains comprehensive system performance metrics.
 type SystemMetrics struct {
 	Timestamp       time.Time              `json:"timestamp"`
 	RedisMetrics    *RedisMetrics          `json:"redis_metrics"`
@@ -206,7 +162,6 @@ type SystemMetrics struct {
 	CustomMetrics   map[string]interface{} `json:"custom_metrics"`
 }
 
-// RedisMetrics captures Redis cache performance data.
 type RedisMetrics struct {
 	HitRate           float64       `json:"hit_rate"`
 	MissRate          float64       `json:"miss_rate"`
@@ -219,7 +174,6 @@ type RedisMetrics struct {
 	Timestamp         time.Time     `json:"timestamp"`
 }
 
-// TMDBMetrics captures TMDB API client performance data.
 type TMDBMetrics struct {
 	RequestRate              float64       `json:"requests_per_second"`
 	ResponseTime             time.Duration `json:"response_time"`
@@ -234,7 +188,6 @@ type TMDBMetrics struct {
 	Timestamp                time.Time     `json:"timestamp"`
 }
 
-// HTTPPoolMetrics captures HTTP connection pool performance.
 type HTTPPoolMetrics struct {
 	ActiveConnections   int           `json:"active_connections"`
 	IdleConnections     int           `json:"idle_connections"`
@@ -249,7 +202,6 @@ type HTTPPoolMetrics struct {
 	Timestamp           time.Time     `json:"timestamp"`
 }
 
-// DatabaseMetrics captures PostgreSQL database performance.
 type DatabaseMetrics struct {
 	ActiveConnections    int           `json:"active_connections"`
 	IdleConnections      int           `json:"idle_connections"`
@@ -264,7 +216,6 @@ type DatabaseMetrics struct {
 	Timestamp            time.Time     `json:"timestamp"`
 }
 
-// ResourceMetrics captures system resource utilization.
 type ResourceMetrics struct {
 	CPUUsage       float64     `json:"cpu_usage_percent"`
 	MemoryUsage    int64       `json:"memory_usage_bytes"`
@@ -281,7 +232,6 @@ type ResourceMetrics struct {
 	Timestamp      time.Time   `json:"timestamp"`
 }
 
-// NetworkIO captures network I/O statistics.
 type NetworkIO struct {
 	BytesIn   int64 `json:"bytes_in"`
 	BytesOut  int64 `json:"bytes_out"`
@@ -289,7 +239,6 @@ type NetworkIO struct {
 	PacketsOut int64 `json:"packets_out"`
 }
 
-// GCStats captures garbage collection statistics.
 type GCStats struct {
 	NumGC        uint32        `json:"num_gc"`
 	PauseTotal   time.Duration `json:"pause_total_ns"`
@@ -297,7 +246,6 @@ type GCStats struct {
 	LastGC       time.Time     `json:"last_gc"`
 }
 
-// RealTimeMetrics contains current real-time performance data.
 type RealTimeMetrics struct {
 	Timestamp     time.Time              `json:"timestamp"`
 	SystemHealth  HealthStatus           `json:"system_health"`
@@ -306,14 +254,13 @@ type RealTimeMetrics struct {
 	Trends        map[string]interface{} `json:"trends"`
 }
 
-// AlertDefinition defines performance threshold alerts.
 type AlertDefinition struct {
 	ID          string                 `json:"id"`
 	Name        string                 `json:"name"`
-	MetricPath  string                 `json:"metric_path"`  // e.g., "redis.hit_rate"
-	Condition   AlertCondition         `json:"condition"`    // >, <, ==, etc.
+	MetricPath  string                 `json:"metric_path"`  
+	Condition   AlertCondition         `json:"condition"`    
 	Threshold   float64                `json:"threshold"`
-	Duration    time.Duration          `json:"duration"`     // How long threshold must be exceeded
+	Duration    time.Duration          `json:"duration"`     
 	Severity    AlertSeverity          `json:"severity"`
 	Description string                 `json:"description"`
 	Actions     []AlertAction          `json:"actions"`
@@ -321,7 +268,6 @@ type AlertDefinition struct {
 	Tags        map[string]string      `json:"tags"`
 }
 
-// ActiveAlert represents an currently active alert.
 type ActiveAlert struct {
 	Definition   *AlertDefinition `json:"definition"`
 	StartTime    time.Time        `json:"start_time"`
@@ -331,7 +277,6 @@ type ActiveAlert struct {
 	Status       AlertStatus      `json:"status"`
 }
 
-// TrendAnalysis contains performance trend analysis results.
 type TrendAnalysis struct {
 	Period         time.Duration          `json:"period"`
 	StartTime      time.Time              `json:"start_time"`
@@ -342,12 +287,11 @@ type TrendAnalysis struct {
 	OverallHealth  HealthStatus           `json:"overall_health"`
 }
 
-// MetricTrend represents a trend for a specific metric.
 type MetricTrend struct {
 	MetricName    string    `json:"metric_name"`
-	Direction     TrendDirection `json:"direction"`  // Increasing, Decreasing, Stable
+	Direction     TrendDirection `json:"direction"`  
 	Slope         float64   `json:"slope"`
-	Confidence    float64   `json:"confidence"`    // 0.0-1.0
+	Confidence    float64   `json:"confidence"`    
 	StartValue    float64   `json:"start_value"`
 	EndValue      float64   `json:"end_value"`
 	MinValue      float64   `json:"min_value"`
@@ -355,7 +299,6 @@ type MetricTrend struct {
 	Volatility    float64   `json:"volatility"`
 }
 
-// Prediction contains performance predictions.
 type Prediction struct {
 	MetricName     string        `json:"metric_name"`
 	PredictedValue float64       `json:"predicted_value"`
@@ -364,7 +307,6 @@ type Prediction struct {
 	Methodology    string        `json:"methodology"`
 }
 
-// Environment represents deployment environments.
 type Environment string
 
 const (
@@ -374,7 +316,6 @@ const (
 	EnvTesting     Environment = "testing"
 )
 
-// HealthStatus represents the health status of a component or system.
 type HealthStatus string
 
 const (
@@ -384,7 +325,6 @@ const (
 	HealthUnknown   HealthStatus = "unknown"
 )
 
-// AlertCondition defines alert threshold conditions.
 type AlertCondition string
 
 const (
@@ -396,7 +336,6 @@ const (
 	AlertLessEquals     AlertCondition = "<="
 )
 
-// AlertSeverity defines alert severity levels.
 type AlertSeverity string
 
 const (
@@ -407,7 +346,6 @@ const (
 	AlertInfo     AlertSeverity = "info"
 )
 
-// AlertStatus represents the current status of an alert.
 type AlertStatus string
 
 const (
@@ -417,15 +355,13 @@ const (
 	AlertSilenced  AlertStatus = "silenced"
 )
 
-// AlertAction defines actions to take when an alert fires.
 type AlertAction struct {
-	Type       string                 `json:"type"`        // email, webhook, slack, etc.
-	Target     string                 `json:"target"`      // email address, URL, etc.
+	Type       string                 `json:"type"`        
+	Target     string                 `json:"target"`      
 	Parameters map[string]interface{} `json:"parameters"`
 	Enabled    bool                   `json:"enabled"`
 }
 
-// TrendDirection indicates the direction of a metric trend.
 type TrendDirection string
 
 const (
@@ -435,7 +371,6 @@ const (
 	TrendVolatile   TrendDirection = "volatile"
 )
 
-// EnvironmentConfig holds environment-specific configuration.
 type EnvironmentConfig struct {
 	Environment   Environment   `json:"environment"`
 	Redis         *RedisConfig  `json:"redis"`
@@ -446,7 +381,6 @@ type EnvironmentConfig struct {
 	LoadTesting   *LoadTestingConfig `json:"load_testing"`
 }
 
-// RedisConfig contains Redis-specific configuration.
 type RedisConfig struct {
 	URL         string        `json:"url"`
 	Password    string        `json:"password"`
@@ -459,7 +393,6 @@ type RedisConfig struct {
 	Enabled     bool          `json:"enabled"`
 }
 
-// PostgreSQLConfig contains PostgreSQL-specific configuration.
 type PostgreSQLConfig struct {
 	URL             string        `json:"url"`
 	MaxConnections  int           `json:"max_connections"`
@@ -469,18 +402,16 @@ type PostgreSQLConfig struct {
 	SSLMode         string        `json:"ssl_mode"`
 }
 
-// TMDBConfig contains TMDB API configuration.
 type TMDBConfig struct {
 	APIKey      string        `json:"api_key"`
 	BaseURL     string        `json:"base_url"`
-	RateLimit   int           `json:"rate_limit"`      // requests per period
+	RateLimit   int           `json:"rate_limit"`      
 	RatePeriod  time.Duration `json:"rate_period"`
 	Timeout     time.Duration `json:"timeout"`
 	MaxRetries  int           `json:"max_retries"`
 	BackoffBase time.Duration `json:"backoff_base"`
 }
 
-// HTTPConfig contains HTTP client configuration.
 type HTTPConfig struct {
 	MaxIdleConns        int           `json:"max_idle_conns"`
 	MaxIdleConnsPerHost int           `json:"max_idle_conns_per_host"`
@@ -491,7 +422,6 @@ type HTTPConfig struct {
 	RequestTimeout      time.Duration `json:"request_timeout"`
 }
 
-// MonitoringConfig contains monitoring configuration.
 type MonitoringConfig struct {
 	MetricsInterval   time.Duration `json:"metrics_interval"`
 	HistoryRetention  time.Duration `json:"history_retention"`
@@ -501,7 +431,6 @@ type MonitoringConfig struct {
 	MetricsPort       int           `json:"metrics_port"`
 }
 
-// LoadTestingConfig contains load testing configuration.
 type LoadTestingConfig struct {
 	MaxConcurrentUsers int           `json:"max_concurrent_users"`
 	DefaultDuration    time.Duration `json:"default_duration"`
@@ -510,7 +439,6 @@ type LoadTestingConfig struct {
 	ResultsRetention   time.Duration `json:"results_retention"`
 }
 
-// ConfigValidation contains configuration validation results.
 type ConfigValidation struct {
 	Environment Environment `json:"environment"`
 	Valid       bool        `json:"valid"`
@@ -519,7 +447,6 @@ type ConfigValidation struct {
 	CheckedAt   time.Time   `json:"checked_at"`
 }
 
-// ConnectivityCheck contains connectivity verification results.
 type ConnectivityCheck struct {
 	Redis       ConnectivityResult `json:"redis"`
 	PostgreSQL  ConnectivityResult `json:"postgresql"`
@@ -529,7 +456,6 @@ type ConnectivityCheck struct {
 	CheckedAt   time.Time          `json:"checked_at"`
 }
 
-// ConnectivityResult contains the result of a single connectivity check.
 type ConnectivityResult struct {
 	Service     string        `json:"service"`
 	Status      HealthStatus  `json:"status"`
