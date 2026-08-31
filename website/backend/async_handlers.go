@@ -85,11 +85,11 @@ func generateAndStoreVerificationCode(email string) (string, error) {
 		return "", err
 	}
 	
-	// Store in database with expiration
-	_, err = db.Exec(`
-		INSERT OR REPLACE INTO email_verifications (email, code, expires_at, created_at)
-		VALUES (?, ?, ?, ?)
-	`, email, code, time.Now().Add(10*time.Minute), time.Now())
+	// Store in database with expiration (PostgreSQL)
+	_, err = db.Exec(
+		`INSERT INTO email_verifications(user_id, token, expires_at) VALUES(0, $1, $2)`,
+		code+"|||"+email, time.Now().Add(10*time.Minute),
+	)
 	
 	return code, err
 }

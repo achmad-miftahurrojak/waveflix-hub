@@ -53,7 +53,7 @@ func TestWriteAuthSetsHttpOnlyCookie(t *testing.T) {
 	t.Setenv("AUTH_COOKIE_SECURE", "1")
 	initJWTSecret()
 	recorder := httptest.NewRecorder()
-	writeAuth(recorder, 7, "user@example.com", "user", "", "", "id")
+	writeAuth(recorder, 7, "user@example.com", "user", "", "", "id", "user")
 	cookies := recorder.Result().Cookies()
 	if len(cookies) != 1 || cookies[0].Name != authCookieName || !cookies[0].HttpOnly || !cookies[0].Secure {
 		t.Fatalf("auth cookie missing secure attributes: %#v", cookies)

@@ -6,8 +6,11 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -266,7 +269,7 @@ func collectSystemMetrics() {
 			// Update database connection metrics
 			if db != nil {
 				if stats := db.Stats(); stats != nil {
-					updateDBConnections(stats.OpenConnections, stats.Idle)
+					updateDBConnections(stats.OpenConnections, stats.IdleConnections)
 				}
 			}
 

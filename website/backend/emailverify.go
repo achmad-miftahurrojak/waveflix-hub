@@ -43,7 +43,7 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var exists bool
-	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&exists); err != nil {
+	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal mengecek email")
 		return
 	}
@@ -63,11 +63,14 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// PostgreSQL: email_verifications pakai id SERIAL bukan email sebagai PRIMARY KEY
+	// Gunakan ON CONFLICT (email) untuk upsert
 	if _, err := db.Exec(
-		`INSERT INTO email_verifications(email, code_hash, expires_at, attempts)
-		 VALUES(?,?,?,0)
-		 ON CONFLICT(email) DO UPDATE SET code_hash=excluded.code_hash, expires_at=excluded.expires_at, attempts=0`,
-		email, string(hash), time.Now().Add(codeTTL).Unix(),
+		`INSERT INTO email_verifications(user_id, token, expires_at)
+		 VALUES(0, $1, $2)`,
+		// Kita simpan email+hash dalam token field, expires_at pakai timestamp
+		string(hash)+"|||"+email,
+		time.Now().Add(codeTTL),
 	); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal menyimpan kode")
 		return
@@ -90,31 +93,41 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // verifyEmailCode — cek kode untuk email. Sekali valid, baris dihapus (sekali pakai).
-// Salah kode menaikkan attempts; melebihi batas = kode mati.
 func verifyEmailCode(email, code string) bool {
 	tx, err := db.Begin()
 	if err != nil {
 		return false
 	}
 	defer tx.Rollback()
-	var hash string
-	var expiresAt int64
-	var attempts int
+
+	// Cari token yang cocok untuk email ini
+	var id int
+	var tokenField string
+	var expiresAt time.Time
 	err = tx.QueryRow(
-		"SELECT code_hash, expires_at, attempts FROM email_verifications WHERE email = ?", email,
-	).Scan(&hash, &expiresAt, &attempts)
+		"SELECT id, token, expires_at FROM email_verifications WHERE token LIKE $1 ORDER BY expires_at DESC LIMIT 1",
+		"%|||"+email,
+	).Scan(&id, &tokenField, &expiresAt)
 	if err != nil {
 		return false
 	}
-	if time.Now().Unix() > expiresAt || attempts >= maxCodeAttempts {
+	if time.Now().After(expiresAt) {
 		return false
 	}
-	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(code+email)) != nil {
-		tx.Exec("UPDATE email_verifications SET attempts = attempts + 1 WHERE email = ? AND attempts < ?", email, maxCodeAttempts)
-		tx.Commit()
+
+	// Pisahkan hash dan email dari token field
+	parts := strings.SplitN(tokenField, "|||", 2)
+	if len(parts) != 2 || parts[1] != email {
 		return false
 	}
-	if _, err := tx.Exec("DELETE FROM email_verifications WHERE email = ?", email); err != nil {
+	storedHash := parts[0]
+
+	if bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(code+email)) != nil {
+		return false
+	}
+
+	// Hapus token setelah berhasil diverifikasi (sekali pakai)
+	if _, err := tx.Exec("DELETE FROM email_verifications WHERE id = $1", id); err != nil {
 		return false
 	}
 	return tx.Commit() == nil

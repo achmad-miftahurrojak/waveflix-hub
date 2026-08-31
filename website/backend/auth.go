@@ -52,6 +52,7 @@ type authResponse struct {
 		Avatar   string `json:"avatar"`
 		Banner   string `json:"banner"`
 		Language string `json:"language"`
+		Role     string `json:"role"`
 	} `json:"user"`
 }
 
@@ -97,24 +98,30 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := db.Exec(
-		"INSERT INTO users(email, username, password_hash) VALUES(?,?,?)",
+	// PostgreSQL: gunakan RETURNING id untuk mendapat ID baru
+	var id int64
+	err = db.QueryRow(
+		"INSERT INTO users(email, username, password_hash) VALUES($1,$2,$3) RETURNING id",
 		body.Email, body.Username, string(hash),
-	)
+	).Scan(&id)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") {
+		if strings.Contains(err.Error(), "unique") || strings.Contains(err.Error(), "duplicate") {
 			httpError(w, http.StatusConflict, "email sudah terdaftar")
 			return
 		}
 		httpError(w, http.StatusInternalServerError, "gagal mendaftarkan user")
 		return
 	}
-	id, _ := res.LastInsertId()
-	if _, err := db.Exec("INSERT INTO profiles (user_id, name) VALUES (?, ?)", id, body.Username); err != nil {
+
+	// Buat profil default dengan is_default = true
+	if _, err := db.Exec(
+		"INSERT INTO profiles (user_id, name, is_default) VALUES ($1, $2, true)",
+		id, body.Username,
+	); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal membuat profil awal")
 		return
 	}
-	writeAuth(w, id, body.Email, body.Username, "", "", "id")
+	writeAuth(w, id, body.Email, body.Username, "", "", "id", "user")
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -130,10 +137,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	body.Email = strings.TrimSpace(strings.ToLower(body.Email))
 
 	var id int64
-	var username, hash, avatar, banner, language string
+	var username, hash, avatar, banner, language, role string
 	err := db.QueryRow(
-		"SELECT id, username, password_hash, COALESCE(avatar,''), COALESCE(banner,''), COALESCE(language,'id') FROM users WHERE email = ?", body.Email,
-	).Scan(&id, &username, &hash, &avatar, &banner, &language)
+		"SELECT id, username, password_hash, COALESCE(avatar_url,''), COALESCE(banner,''), COALESCE(language,'id'), COALESCE(role,'user') FROM users WHERE email = $1",
+		body.Email,
+	).Scan(&id, &username, &hash, &avatar, &banner, &language, &role)
 	if err != nil {
 		httpError(w, http.StatusUnauthorized, "email atau password salah")
 		return
@@ -142,7 +150,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusUnauthorized, "email atau password salah")
 		return
 	}
-	writeAuth(w, id, body.Email, username, avatar, banner, language)
+	writeAuth(w, id, body.Email, username, avatar, banner, language, role)
 }
 
 func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +160,7 @@ func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var exists bool
-	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&exists)
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal mengecek email")
 		return
@@ -163,19 +171,19 @@ func handleCheckEmail(w http.ResponseWriter, r *http.Request) {
 
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
-	var email, username, avatar, banner, bio, nameFont, joined, language string
+	var email, username, avatar, banner, bio, nameFont, joined, language, role string
 	if err := db.QueryRow(
-		`SELECT email, username, COALESCE(avatar,''), COALESCE(banner,''),
-		        COALESCE(bio,''), COALESCE(name_font,''), COALESCE(created_at,''), COALESCE(language,'id')
-		 FROM users WHERE id = ?`, uid).
-		Scan(&email, &username, &avatar, &banner, &bio, &nameFont, &joined, &language); err != nil {
+		`SELECT email, username, COALESCE(avatar_url,''), COALESCE(banner,''),
+		        COALESCE(bio,''), COALESCE(name_font,''), COALESCE(created_at::text,''), COALESCE(language,'id'), COALESCE(role,'user')
+		 FROM users WHERE id = $1`, uid).
+		Scan(&email, &username, &avatar, &banner, &bio, &nameFont, &joined, &language, &role); err != nil {
 		httpError(w, http.StatusNotFound, "user tidak ditemukan")
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"id": uid, "email": email, "username": username,
 		"avatar": avatar, "banner": banner, "bio": bio,
-		"name_font": nameFont, "joined": joined, "language": language,
+		"name_font": nameFont, "joined": joined, "language": language, "role": role,
 	})
 }
 
@@ -196,7 +204,7 @@ func uploadImage(column string) http.HandlerFunc {
 		}
 
 		if body.Image == "" {
-			if _, err := db.Exec("UPDATE users SET "+column+" = ? WHERE id = ?", "", uid); err != nil {
+			if _, err := db.Exec("UPDATE users SET "+column+" = $1 WHERE id = $2", "", uid); err != nil {
 				httpError(w, http.StatusInternalServerError, "gagal hapus gambar")
 				return
 			}
@@ -204,7 +212,7 @@ func uploadImage(column string) http.HandlerFunc {
 			return
 		}
 
-		if len(body.Image) > 8_000_000 { // ~6MB file
+		if len(body.Image) > 8_000_000 {
 			httpError(w, http.StatusRequestEntityTooLarge, "ukuran gambar terlalu besar (maks ~6MB)")
 			return
 		}
@@ -224,7 +232,7 @@ func uploadImage(column string) http.HandlerFunc {
 		}
 
 		dbPath := fmt.Sprintf("/uploads/%s", filename)
-		if _, err := db.Exec("UPDATE users SET "+column+" = ? WHERE id = ?", dbPath, uid); err != nil {
+		if _, err := db.Exec("UPDATE users SET "+column+" = $1 WHERE id = $2", dbPath, uid); err != nil {
 			httpError(w, http.StatusInternalServerError, "gagal simpan path gambar")
 			return
 		}
@@ -253,14 +261,17 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	sets := []string{}
 	args := []interface{}{}
+	argIdx := 1
+
 	if body.Username != nil {
 		u := strings.TrimSpace(*body.Username)
 		if u == "" {
 			httpError(w, http.StatusBadRequest, "username wajib diisi")
 			return
 		}
-		sets = append(sets, "username = ?")
+		sets = append(sets, fmt.Sprintf("username = $%d", argIdx))
 		args = append(args, u)
+		argIdx++
 	}
 	if body.Email != nil {
 		e := strings.TrimSpace(strings.ToLower(*body.Email))
@@ -268,28 +279,32 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 			httpError(w, http.StatusBadRequest, "email wajib diisi")
 			return
 		}
-		sets = append(sets, "email = ?")
+		sets = append(sets, fmt.Sprintf("email = $%d", argIdx))
 		args = append(args, e)
+		argIdx++
 	}
 	if body.Bio != nil {
 		if len([]rune(*body.Bio)) > 500 {
 			httpError(w, http.StatusBadRequest, "bio terlalu panjang")
 			return
 		}
-		sets = append(sets, "bio = ?")
+		sets = append(sets, fmt.Sprintf("bio = $%d", argIdx))
 		args = append(args, strings.TrimSpace(*body.Bio))
+		argIdx++
 	}
 	if body.NameFont != nil {
 		if len([]rune(*body.NameFont)) > 80 {
 			httpError(w, http.StatusBadRequest, "font terlalu panjang")
 			return
 		}
-		sets = append(sets, "name_font = ?")
+		sets = append(sets, fmt.Sprintf("name_font = $%d", argIdx))
 		args = append(args, strings.TrimSpace(*body.NameFont))
+		argIdx++
 	}
 	if body.Language != nil {
-		sets = append(sets, "language = ?")
+		sets = append(sets, fmt.Sprintf("language = $%d", argIdx))
 		args = append(args, strings.TrimSpace(*body.Language))
+		argIdx++
 	}
 	if len(sets) == 0 {
 		handleMe(w, r)
@@ -297,7 +312,8 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	args = append(args, uid)
-	if _, err := db.Exec("UPDATE users SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(sets, ", "), argIdx)
+	if _, err := db.Exec(query, args...); err != nil {
 		httpError(w, http.StatusConflict, "gagal update (email mungkin sudah dipakai)")
 		return
 	}
@@ -323,7 +339,7 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var hash string
-	if err := db.QueryRow("SELECT password_hash FROM users WHERE id = ?", uid).Scan(&hash); err != nil {
+	if err := db.QueryRow("SELECT password_hash FROM users WHERE id = $1", uid).Scan(&hash); err != nil {
 		httpError(w, http.StatusNotFound, "user tidak ditemukan")
 		return
 	}
@@ -336,14 +352,14 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusInternalServerError, "gagal memproses password")
 		return
 	}
-	if _, err := db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", string(newHash), uid); err != nil {
+	if _, err := db.Exec("UPDATE users SET password_hash = $1 WHERE id = $2", string(newHash), uid); err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal update password")
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
-func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner, language string) {
+func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner, language, role string) {
 	token, err := signToken(id)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "gagal membuat token")
@@ -359,6 +375,7 @@ func writeAuth(w http.ResponseWriter, id int64, email, username, avatar, banner,
 	resp.User.Avatar = avatar
 	resp.User.Banner = banner
 	resp.User.Language = language
+	resp.User.Role = role
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
@@ -408,9 +425,32 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			httpError(w, http.StatusUnauthorized, "token tidak valid")
 			return
 		}
+
+		// Synchronize with database identity to ensure user still exists
+		var exists bool
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", int64(sub)).Scan(&exists)
+		if err != nil || !exists {
+			httpError(w, http.StatusUnauthorized, "user tidak ditemukan atau akun telah dinonaktifkan")
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), userIDKey, int64(sub))
 		next(w, r.WithContext(ctx))
 	}
+}
+
+// requireRole is a middleware that ensures the user has a specific role (RBAC)
+func requireRole(role string, next http.HandlerFunc) http.HandlerFunc {
+	return requireAuth(func(w http.ResponseWriter, r *http.Request) {
+		uid := r.Context().Value(userIDKey).(int64)
+		var userRole string
+		err := db.QueryRow("SELECT COALESCE(role, 'user') FROM users WHERE id = $1", uid).Scan(&userRole)
+		if err != nil || userRole != role {
+			httpError(w, http.StatusForbidden, "akses ditolak: peran tidak mencukupi")
+			return
+		}
+		next(w, r)
+	})
 }
 
 func validateImageData(dataURL string) (string, []byte, error) {

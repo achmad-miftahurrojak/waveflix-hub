@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,9 +8,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/gorilla/mux"
 )
 
 // HealthStatus represents the overall health status
@@ -69,21 +64,17 @@ type RuntimeStats struct {
 }
 
 type DatabaseStats struct {
-	OpenConnections int           `json:"open_connections"`
-	InUse          int           `json:"in_use"`
-	Idle           int           `json:"idle"`
-	WaitCount      int64         `json:"wait_count"`
-	WaitDuration   time.Duration `json:"wait_duration_ms"`
-	MaxIdleClosed  int64         `json:"max_idle_closed"`
-	MaxLifetime    int64         `json:"max_lifetime_closed"`
+	OpenConnections int `json:"open_connections"`
+	InUse          int `json:"in_use"`
+	IdleConnections int `json:"idle_connections"`
+	MaxOpen        int `json:"max_open"`
+	MaxIdle        int `json:"max_idle"`
 }
 
 type CacheStatsHealth struct {
-	HitRatio     float64 `json:"hit_ratio"`
-	TotalHits    int64   `json:"total_hits"`
-	TotalMisses  int64   `json:"total_misses"`
-	ConnectedClients int `json:"connected_clients"`
-	UsedMemory   int64   `json:"used_memory_bytes"`
+	Enabled         bool `json:"enabled"`
+	RedisConnected  bool `json:"redis_connected"`
+	MemoryCacheSize int  `json:"memory_cache_size"`
 }
 
 type ExternalStats struct {
@@ -94,8 +85,8 @@ type ExternalStats struct {
 
 // HealthChecker manages all health check operations
 type HealthChecker struct {
-	db          *sql.DB
-	redisClient *redis.Client
+	db          DatabaseAdapter
+	redisClient *RedisCacheManager
 	startTime   time.Time
 	version     string
 	mu          sync.RWMutex
@@ -103,7 +94,7 @@ type HealthChecker struct {
 }
 
 // NewHealthChecker creates a new health checker instance
-func NewHealthChecker(db *sql.DB, redisClient *redis.Client, version string) *HealthChecker {
+func NewHealthChecker(db DatabaseAdapter, redisClient *RedisCacheManager, version string) *HealthChecker {
 	hc := &HealthChecker{
 		db:          db,
 		redisClient: redisClient,
@@ -116,11 +107,11 @@ func NewHealthChecker(db *sql.DB, redisClient *redis.Client, version string) *He
 }
 
 // RegisterHealthRoutes registers health check endpoints
-func (hc *HealthChecker) RegisterHealthRoutes(router *mux.Router) {
-	router.HandleFunc("/health", hc.HealthCheckHandler).Methods("GET")
-	router.HandleFunc("/health/live", hc.LivenessHandler).Methods("GET")
-	router.HandleFunc("/health/ready", hc.ReadinessHandler).Methods("GET")
-	router.HandleFunc("/health/detailed", hc.DetailedHealthHandler).Methods("GET")
+func (hc *HealthChecker) RegisterHealthRoutes(router *http.ServeMux) {
+	router.HandleFunc("/health", hc.HealthCheckHandler)
+	router.HandleFunc("/health/live", hc.LivenessHandler)
+	router.HandleFunc("/health/ready", hc.ReadinessHandler)
+	router.HandleFunc("/health/detailed", hc.DetailedHealthHandler)
 }
 
 // HealthCheckHandler provides basic health status
@@ -227,7 +218,7 @@ func (hc *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request
 
 // DetailedHealthHandler provides comprehensive health information
 func (hc *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	_ = time.Now() // reserved for future latency tracking
 	
 	response := HealthResponse{
 		Timestamp: time.Now(),
@@ -331,13 +322,9 @@ func (hc *HealthChecker) checkDatabase() HealthStatus {
 		return StatusUnhealthy
 	}
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	
-	if err := hc.db.PingContext(ctx); err != nil {
+	if err := hc.db.Ping(); err != nil {
 		return StatusUnhealthy
 	}
-	
 	return StatusHealthy
 }
 
@@ -346,10 +333,8 @@ func (hc *HealthChecker) checkRedis() HealthStatus {
 		return StatusUnhealthy
 	}
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	
-	if err := hc.redisClient.Ping(ctx).Err(); err != nil {
+	stats := hc.redisClient.GetStats()
+	if !stats.RedisConnected {
 		return StatusUnhealthy
 	}
 	
@@ -369,11 +354,8 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 		}
 	}
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	
 	// Check basic connectivity
-	if err := hc.db.PingContext(ctx); err != nil {
+	if err := hc.db.Ping(); err != nil {
 		return ComponentHealth{
 			Status:      StatusUnhealthy,
 			Message:     fmt.Sprintf("Database ping failed: %v", err),
@@ -384,28 +366,24 @@ func (hc *HealthChecker) checkDatabaseDetailed() ComponentHealth {
 	
 	// Get database statistics
 	stats := hc.db.Stats()
-	details := DatabaseStats{
-		OpenConnections: stats.OpenConnections,
-		InUse:          stats.InUse,
-		Idle:           stats.Idle,
-		WaitCount:      stats.WaitCount,
-		WaitDuration:   stats.WaitDuration,
-		MaxIdleClosed:  stats.MaxIdleClosed,
-		MaxLifetime:    stats.MaxLifetimeClosed,
+	var details DatabaseStats
+	if stats != nil {
+		details = DatabaseStats{
+			OpenConnections: stats.OpenConnections,
+			InUse:          stats.InUse,
+			IdleConnections: stats.IdleConnections,
+			MaxOpen:        stats.MaxOpen,
+			MaxIdle:        stats.MaxIdle,
+		}
 	}
 	
 	// Check if we're running low on connections
 	status := StatusHealthy
 	message := "Database connection healthy"
 	
-	if stats.OpenConnections > 80 { // Assuming max 100 connections
+	if stats != nil && stats.OpenConnections > 80 { // Assuming max 100 connections
 		status = StatusDegraded
 		message = "High database connection usage"
-	}
-	
-	if stats.WaitCount > 100 {
-		status = StatusDegraded
-		message = "High database connection wait count"
 	}
 	
 	return ComponentHealth{
@@ -429,73 +407,62 @@ func (hc *HealthChecker) checkRedisDetailed() ComponentHealth {
 		}
 	}
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	
-	// Check basic connectivity
-	if err := hc.redisClient.Ping(ctx).Err(); err != nil {
+	cacheStats := hc.redisClient.GetStats()
+	if !cacheStats.RedisConnected {
 		return ComponentHealth{
 			Status:      StatusUnhealthy,
-			Message:     fmt.Sprintf("Redis ping failed: %v", err),
+			Message:     "Redis ping failed or disconnected",
 			LastChecked: time.Now(),
 			Duration:    time.Since(start).String(),
+			Details:     cacheStats,
 		}
 	}
-	
-	// Get Redis info
-	info := hc.redisClient.Info(ctx, "stats", "clients", "memory")
-	
-	// Parse basic stats (simplified)
-	details := CacheStats{
-		ConnectedClients: 1, // Default placeholder
-		UsedMemory:      0,  // Would need to parse from info
-	}
-	
+
 	return ComponentHealth{
 		Status:      StatusHealthy,
 		Message:     "Redis connection healthy",
 		LastChecked: time.Now(),
 		Duration:    time.Since(start).String(),
-		Details:     details,
+		Details:     cacheStats,
 	}
 }
 
 func (hc *HealthChecker) checkTMDBAPI() ComponentHealth {
 	start := time.Now()
 	
-	// Use existing circuit breaker from api_protection.go
-	err := ExecuteWithCircuitBreaker("tmdb", func() error {
+	// Direct HTTP check instead of circuit breaker
+	var checkErr error
+	func() {
 		// Simple health check - try to get configuration
 		client := &http.Client{Timeout: 5 * time.Second}
-		
+
 		tmdbAPIKey := os.Getenv("TMDB_API_KEY")
 		if tmdbAPIKey == "" {
-			return fmt.Errorf("TMDB API key not configured")
+			checkErr = fmt.Errorf("TMDB API key not configured")
+			return
 		}
-		
 		url := fmt.Sprintf("https://api.themoviedb.org/3/configuration?api_key=%s", tmdbAPIKey)
 		resp, err := client.Get(url)
 		if err != nil {
-			return err
+			checkErr = err
+			return
 		}
 		defer resp.Body.Close()
-		
+
 		if resp.StatusCode != 200 {
-			return fmt.Errorf("TMDB API returned status %d", resp.StatusCode)
+			checkErr = fmt.Errorf("TMDB API returned status %d", resp.StatusCode)
 		}
-		
-		return nil
-	})
-	
-	if err != nil {
+	}()
+
+	if checkErr != nil {
 		return ComponentHealth{
 			Status:      StatusDegraded,
-			Message:     fmt.Sprintf("TMDB API check failed: %v", err),
+			Message:     fmt.Sprintf("TMDB API check failed: %v", checkErr),
 			LastChecked: time.Now(),
 			Duration:    time.Since(start).String(),
 		}
 	}
-	
+
 	return ComponentHealth{
 		Status:      StatusHealthy,
 		Message:     "TMDB API accessible",

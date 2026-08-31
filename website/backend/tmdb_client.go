@@ -1,4 +1,4 @@
-﻿// Package main provides optimized TMDB API client with intelligent caching.
+// Package main provides optimized TMDB API client with intelligent caching.
 //
 // The TMDB client implements advanced caching strategies, request batching,
 // and rate limiting to maximize API efficiency and prevent rate limit violations.
@@ -419,6 +419,69 @@ return tc.cache.GetStats()
 // Close closes the TMDB client and cleanup resources.
 func (tc *TMDBClient) Close() error {
 return tc.cache.Close()
+}
+
+// HandleTrending is an HTTP handler wrapper for GetTrending.
+func (tc *TMDBClient) HandleTrending(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	media := getMediaParam(q)
+	timeWindow := q.Get("time_window")
+	if timeWindow == "" {
+		timeWindow = "day"
+	}
+	language := getTmdbLang(q)
+
+	data, err := tc.GetTrending(media, timeWindow, language)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, `{"error":"TMDB API error"}`)
+		return
+	}
+	sanitizeTMDBData(data, media)
+	responseJSON, _ := json.Marshal(data)
+	writeJSON(w, string(responseJSON))
+}
+
+// HandleDetail is an HTTP handler wrapper for GetMovie.
+func (tc *TMDBClient) HandleDetail(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, `{"error":"id required"}`)
+		return
+	}
+	// Currently GetMovie is supported
+	language := getTmdbLang(q)
+	data, err := tc.GetMovie(id, language, "credits,videos,recommendations,similar,images")
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, `{"error":"TMDB API error"}`)
+		return
+	}
+	sanitizeTMDBData(data, "movie")
+	responseJSON, _ := json.Marshal(data)
+	writeJSON(w, string(responseJSON))
+}
+
+// HandlePerson is an HTTP handler wrapper for getting person detail.
+func (tc *TMDBClient) HandlePerson(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, `{"error":"id required"}`)
+		return
+	}
+	targetUrl := fmt.Sprintf("%s/person/%s?api_key=%s&language=%s&append_to_response=combined_credits,images", tc.baseURL, id, tc.apiKey, getTmdbLang(q))
+	data, err := tc.fetchWithDeduplication(targetUrl, "tmdb:person:"+id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, `{"error":"TMDB API error"}`)
+		return
+	}
+	// the data from fetchWithDeduplication is []byte
+	writeJSON(w, string(data))
 }
 
 // Global instance for backward compatibility

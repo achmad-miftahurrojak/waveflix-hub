@@ -2,18 +2,14 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sync"
 	"time"
-
-	"github.com/go-redis/redis/v8"
 )
 
-// ReadinessChecker checks if the application is ready to serve requests
 type ReadinessChecker struct {
-	db          *sql.DB
-	redisClient *redis.Client
+	db          DatabaseAdapter
+	redisClient *RedisCacheManager
 	checks      map[string]ReadinessCheck
 	mu          sync.RWMutex
 }
@@ -57,8 +53,7 @@ type ReadinessSummary struct {
 	RequiredFailed int `json:"required_failed"`
 }
 
-// NewReadinessChecker creates a new readiness checker
-func NewReadinessChecker(db *sql.DB, redisClient *redis.Client) *ReadinessChecker {
+func NewReadinessChecker(db DatabaseAdapter, redisClient *RedisCacheManager) *ReadinessChecker {
 	rc := &ReadinessChecker{
 		db:          db,
 		redisClient: redisClient,
@@ -245,11 +240,7 @@ func (rc *ReadinessChecker) checkDatabase() error {
 	if rc.db == nil {
 		return fmt.Errorf("database connection not initialized")
 	}
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	
-	return rc.db.PingContext(ctx)
+	return rc.db.Ping()
 }
 
 func (rc *ReadinessChecker) checkRedis() error {
@@ -257,10 +248,11 @@ func (rc *ReadinessChecker) checkRedis() error {
 		return fmt.Errorf("redis client not initialized")
 	}
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	
-	return rc.redisClient.Ping(ctx).Err()
+	stats := rc.redisClient.GetStats()
+	if !stats.RedisConnected {
+		return fmt.Errorf("redis disconnected")
+	}
+	return nil
 }
 
 func (rc *ReadinessChecker) checkDatabaseSchema() error {
@@ -279,9 +271,7 @@ func (rc *ReadinessChecker) checkDatabaseSchema() error {
 			AND table_name = $1
 		)`
 		
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		err := rc.db.QueryRowContext(ctx, query, table).Scan(&exists)
-		cancel()
+		err := rc.db.QueryRow(query, table).Scan(&exists)
 		
 		if err != nil {
 			return fmt.Errorf("failed to check table %s: %w", table, err)

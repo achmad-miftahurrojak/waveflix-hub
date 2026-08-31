@@ -12,7 +12,6 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -85,7 +84,7 @@ func NewCDNOptimizer() *CDNOptimizer {
 		enableAVIF:     false, // Enable when supported
 		jpegQuality:    85,
 		enableLazyLoad: true,
-		cdnBaseURL:     getEnv("CDN_BASE_URL", ""),
+		cdnBaseURL:     getenv("CDN_BASE_URL", ""),
 	}
 	
 	// Start cleanup routine
@@ -497,8 +496,8 @@ func initCDNOptimizer() {
 		EnableCompression: true,
 		EnableBrotli:      true,
 		CacheMaxAge:       time.Hour * 24 * 365,
-		CDNEnabled:        getEnv("CDN_ENABLED", "false") == "true",
-		CDNBaseURL:        getEnv("CDN_BASE_URL", ""),
+		CDNEnabled:        getenv("CDN_ENABLED", "false") == "true",
+		CDNBaseURL:        getenv("CDN_BASE_URL", ""),
 	}
 	
 	staticAssetOptimizer = NewStaticAssetOptimizer(staticConfig)

@@ -287,7 +287,7 @@ func (mq *MessageQueue) GetMetrics(ctx context.Context) (*QueueMetrics, error) {
 	defaultLen := pipe.LLen(ctx, QueueDefault)
 	highLen := pipe.LLen(ctx, QueueHighPrio)
 	lowLen := pipe.LLen(ctx, QueueLowPrio)
-	scheduledLen := pipe.ZCard(ctx, QueueScheduled)
+	_ = pipe.ZCard(ctx, QueueScheduled)
 	failedLen := pipe.LLen(ctx, QueueDeadLetter)
 
 	_, err := pipe.Exec(ctx)
@@ -489,7 +489,7 @@ func (mq *MessageQueue) handleEmailJob(ctx context.Context, job *Job) error {
 	
 	// Use existing email functionality
 	if to != "" && subject != "" && body != "" {
-		return sendEmail(to, subject, body)
+		return sendVerificationEmail(to, body)
 	}
 	
 	return nil
@@ -530,4 +530,52 @@ func (mq *MessageQueue) handleCacheWarmJob(ctx context.Context, job *Job) error 
 	// Implement cache warming logic here
 	// Pre-populate frequently accessed data
 	return nil
+}
+
+// Shutdown menghentikan message queue dan worker pool secara graceful.
+func (mq *MessageQueue) Shutdown(ctx context.Context) error {
+	if mq == nil || !mq.enabled {
+		return nil
+	}
+	log.Println("[queue] Shutting down message queue...")
+	if mq.workerPool != nil {
+		if err := mq.workerPool.Shutdown(ctx); err != nil {
+			return err
+		}
+	}
+	if mq.client != nil {
+		return mq.client.Close()
+	}
+	return nil
+}
+
+// Shutdown menghentikan worker pool dan menunggu semua job selesai.
+func (wp *WorkerPool) Shutdown(ctx context.Context) error {
+	if wp == nil {
+		return nil
+	}
+	if wp.cancel != nil {
+		wp.cancel()
+	}
+	// Tunggu goroutine selesai dengan timeout dari context
+	done := make(chan struct{})
+	go func() {
+		wp.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-done:
+		return nil
+	}
+}
+
+// GetActiveJobCount mengembalikan jumlah job yang sedang aktif diproses.
+func (wp *WorkerPool) GetActiveJobCount() int {
+	if wp == nil {
+		return 0
+	}
+	// Estimasi berdasarkan jumlah pekerjaan dalam channel
+	return len(wp.jobChan)
 }

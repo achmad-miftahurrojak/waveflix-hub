@@ -1,4 +1,4 @@
-﻿// Package main provides PostgreSQL schema creation and management.
+// Package main provides PostgreSQL schema creation and management.
 //
 // The PostgreSQL schema builder creates tables, indexes, and foreign key constraints
 // optimized for PostgreSQL with proper data types, indexing strategies, and referential
@@ -132,10 +132,17 @@ id SERIAL PRIMARY KEY,
 email VARCHAR(255) UNIQUE NOT NULL,
 username VARCHAR(100) UNIQUE NOT NULL,
 password_hash VARCHAR(255) NOT NULL,
+role VARCHAR(20) DEFAULT 'user',
 is_verified BOOLEAN DEFAULT FALSE,
 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)`
+);
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS users_isolation_policy ON users;
+CREATE POLICY users_isolation_policy ON users 
+    FOR ALL 
+    USING (id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create users table: %w", err)
@@ -172,7 +179,9 @@ token VARCHAR(255) UNIQUE NOT NULL,
 expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)`
+);
+ALTER TABLE email_verifications ENABLE ROW LEVEL SECURITY;
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create email_verifications table: %w", err)
@@ -223,7 +232,13 @@ created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 UNIQUE(user_id, name)
-)`
+);
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS profiles_isolation_policy ON profiles;
+CREATE POLICY profiles_isolation_policy ON profiles 
+    FOR ALL 
+    USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create profiles table: %w", err)
@@ -281,7 +296,13 @@ added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
 UNIQUE(profile_id, tmdb_id, media_type)
-)`
+);
+ALTER TABLE watchlist ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS watchlist_isolation_policy ON watchlist;
+CREATE POLICY watchlist_isolation_policy ON watchlist 
+    FOR ALL 
+    USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create watchlist table: %w", err)
@@ -340,7 +361,13 @@ added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
 UNIQUE(profile_id, tmdb_id, media_type)
-)`
+);
+ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS favorites_isolation_policy ON favorites;
+CREATE POLICY favorites_isolation_policy ON favorites 
+    FOR ALL 
+    USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create favorites table: %w", err)
@@ -411,7 +438,13 @@ watched_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
-)`
+);
+ALTER TABLE history ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS history_isolation_policy ON history;
+CREATE POLICY history_isolation_policy ON history 
+    FOR ALL 
+    USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
+`
 
 if _, err := psb.db.Exec(query); err != nil {
 return fmt.Errorf("failed to create history table: %w", err)

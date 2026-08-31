@@ -30,7 +30,10 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		rows, err := db.Query("SELECT id, user_id, name, COALESCE(avatar,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE user_id = ? ORDER BY id ASC", userID)
+		rows, err := db.Query(
+			"SELECT id, user_id, name, COALESCE(avatar_url,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE user_id = $1 ORDER BY id ASC",
+			userID,
+		)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			writeJSON(w, `{"error":"failed to get profiles"}`)
@@ -72,22 +75,26 @@ func handleProfiles(w http.ResponseWriter, r *http.Request) {
 
 		// limit check (max 4 per account)
 		var count int
-		db.QueryRow("SELECT COUNT(*) FROM profiles WHERE user_id = ?", userID).Scan(&count)
+		db.QueryRow("SELECT COUNT(*) FROM profiles WHERE user_id = $1", userID).Scan(&count)
 		if count >= 4 {
 			w.WriteHeader(http.StatusBadRequest)
 			writeJSON(w, `{"error":"maksimum 4 profil per akun"}`)
 			return
 		}
 
-		res, err := db.Exec("INSERT INTO profiles (user_id, name, avatar, banner, bio) VALUES (?, ?, ?, ?, ?)", userID, p.Name, p.Avatar, p.Banner, p.Bio)
+		// PostgreSQL: RETURNING id
+		var newID int
+		err := db.QueryRow(
+			"INSERT INTO profiles (user_id, name, avatar_url, banner, bio) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+			userID, p.Name, p.Avatar, p.Banner, p.Bio,
+		).Scan(&newID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			writeJSON(w, `{"error":"failed to create profile"}`)
 			return
 		}
 
-		id, _ := res.LastInsertId()
-		p.ID = int(id)
+		p.ID = newID
 		p.UserID = userID
 
 		w.Header().Set("Content-Type", "application/json")
@@ -121,7 +128,7 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 
 	// Verify ownership
 	var ownerID int
-	err = db.QueryRow("SELECT user_id FROM profiles WHERE id = ?", profileID).Scan(&ownerID)
+	err = db.QueryRow("SELECT user_id FROM profiles WHERE id = $1", profileID).Scan(&ownerID)
 	if err != nil || ownerID != userID {
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -130,8 +137,10 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		var p Profile
-		err := db.QueryRow("SELECT id, user_id, name, COALESCE(avatar,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE id = ?", profileID).
-			Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.Banner, &p.Bio, &p.CreatedAt)
+		err := db.QueryRow(
+			"SELECT id, user_id, name, COALESCE(avatar_url,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE id = $1",
+			profileID,
+		).Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.Banner, &p.Bio, &p.CreatedAt)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -141,7 +150,7 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 
 	case "PUT", "PATCH":
 		var p Profile
-		r.Body = http.MaxBytesReader(w, r.Body, 15_000_000) // limit to ~15MB
+		r.Body = http.MaxBytesReader(w, r.Body, 15_000_000)
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			writeJSON(w, `{"error":"invalid request"}`)
@@ -160,30 +169,48 @@ func handleProfileDetail(w http.ResponseWriter, r *http.Request) {
 			p.Banner = processProfileImage(p.Banner, "banner", profileID)
 		}
 
-		// Update all provided fields
-		db.Exec(
-			"UPDATE profiles SET name = CASE WHEN ? != '' THEN ? ELSE name END, avatar = CASE WHEN ? != '' THEN ? ELSE avatar END, banner = CASE WHEN ? != '' THEN ? ELSE banner END, bio = ? WHERE id = ?",
-			p.Name, p.Name,
-			p.Avatar, p.Avatar,
-			p.Banner, p.Banner,
-			p.Bio,
-			profileID,
-		)
+		// Build dynamic update query
+		sets := []string{}
+		args := []interface{}{}
+		argIdx := 1
+
+		if p.Name != "" {
+			sets = append(sets, fmt.Sprintf("name = $%d", argIdx))
+			args = append(args, p.Name)
+			argIdx++
+		}
+		if p.Avatar != "" {
+			sets = append(sets, fmt.Sprintf("avatar_url = $%d", argIdx))
+			args = append(args, p.Avatar)
+			argIdx++
+		}
+		if p.Banner != "" {
+			sets = append(sets, fmt.Sprintf("banner = $%d", argIdx))
+			args = append(args, p.Banner)
+			argIdx++
+		}
+		sets = append(sets, fmt.Sprintf("bio = $%d", argIdx))
+		args = append(args, p.Bio)
+		argIdx++
+
+		args = append(args, profileID)
+		if len(sets) > 0 {
+			db.Exec(fmt.Sprintf("UPDATE profiles SET %s WHERE id = $%d", strings.Join(sets, ", "), argIdx), args...)
+		}
 
 		// Return updated profile
 		var updated Profile
-		db.QueryRow("SELECT id, user_id, name, COALESCE(avatar,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE id = ?", profileID).
-			Scan(&updated.ID, &updated.UserID, &updated.Name, &updated.Avatar, &updated.Banner, &updated.Bio, &updated.CreatedAt)
+		db.QueryRow(
+			"SELECT id, user_id, name, COALESCE(avatar_url,''), COALESCE(banner,''), COALESCE(bio,''), created_at FROM profiles WHERE id = $1",
+			profileID,
+		).Scan(&updated.ID, &updated.UserID, &updated.Name, &updated.Avatar, &updated.Banner, &updated.Bio, &updated.CreatedAt)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(updated)
 
 	case "DELETE":
-		db.Exec("DELETE FROM profiles WHERE id = ?", profileID)
-		// Delete related records
-		db.Exec("DELETE FROM history WHERE profile_id = ?", profileID)
-		db.Exec("DELETE FROM watchlist WHERE profile_id = ?", profileID)
-		db.Exec("DELETE FROM favorites WHERE profile_id = ?", profileID)
+		// CASCADE constraints handle related records automatically
+		db.Exec("DELETE FROM profiles WHERE id = $1", profileID)
 		writeJSON(w, `{"status":"ok"}`)
 
 	default:

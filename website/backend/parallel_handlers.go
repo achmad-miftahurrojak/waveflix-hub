@@ -6,8 +6,8 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"

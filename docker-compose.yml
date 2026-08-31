@@ -68,43 +68,6 @@ services:
       -c log_min_duration_statement=1000
       -c shared_preload_libraries=pg_stat_statements
 
-  # PostgreSQL Backup Service
-  postgres-backup:
-    build:
-      context: .
-      dockerfile: Dockerfile.backup
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:-waveflix}
-      - POSTGRES_USER=${POSTGRES_USER:-waveflix}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - BACKUP_DIR=/backups
-      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
-      - S3_BUCKET=${S3_BUCKET:-}
-      - SLACK_WEBHOOK=${SLACK_WEBHOOK:-}
-      - WEBHOOK_URL=${WEBHOOK_URL:-}
-    volumes:
-      - backup_data:/backups
-      - ./scripts:/scripts:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - waveflix-network
-    restart: unless-stopped
-    # Run backup every day at 2 AM
-    command: >
-      sh -c "
-        while true; do
-          if [ $$(date +%H) -eq 2 ] && [ $$(date +%M) -eq 0 ]; then
-            /scripts/backup_postgres.sh backup daily
-            sleep 3600
-          fi
-          sleep 60
-        done
-      "
-
   # Redis Cache & Queue
   redis:
     image: redis:7-alpine
@@ -202,98 +165,6 @@ services:
           cpus: '0.25'
           memory: 256M
 
-  # Prometheus (Metrics Collection)
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/backup-monitoring.yml:/etc/prometheus/rules/backup.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-    networks:
-      - waveflix-network
-    restart: unless-stopped
-
-  # Grafana (Metrics Visualization)
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-    depends_on:
-      - prometheus
-    networks:
-      - waveflix-network
-    restart: unless-stopped
-
-  # Backup Health Monitor
-  backup-monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.backup
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:-waveflix}
-      - POSTGRES_USER=${POSTGRES_USER:-waveflix}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - BACKUP_DIR=/backups
-      - SLACK_WEBHOOK=${SLACK_WEBHOOK:-}
-      - WEBHOOK_URL=${WEBHOOK_URL:-}
-    volumes:
-      - backup_data:/backups:ro
-      - ./scripts:/scripts:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - waveflix-network
-    restart: unless-stopped
-    # Run health check every hour
-    command: >
-      sh -c "
-        while true; do
-          /scripts/backup_health_check.sh check
-          sleep 3600
-        done
-      "
-
-  # Auto-scaler (Custom service for Docker Compose scaling)
-  autoscaler:
-    build:
-      context: ./autoscaler
-      dockerfile: Dockerfile
-    environment:
-      - PROMETHEUS_URL=http://prometheus:9090
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - SCALE_UP_THRESHOLD=80
-      - SCALE_DOWN_THRESHOLD=30
-      - MIN_REPLICAS=2
-      - MAX_REPLICAS=10
-      - SCALE_INTERVAL=60s
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - waveflix-network
-    restart: unless-stopped
-    depends_on:
-      - prometheus
 
 volumes:
   postgres_data:
@@ -303,22 +174,10 @@ volumes:
       o: bind
       device: ${DATA_PATH:-./data}/postgres
   
-  backup_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${BACKUP_PATH:-./backups}
-  
+
   redis_data:
     driver: local
-  
-  prometheus_data:
-    driver: local
-    
-  grafana_data:
-    driver: local
-    
+
   nginx_cache:
     driver: local
     
