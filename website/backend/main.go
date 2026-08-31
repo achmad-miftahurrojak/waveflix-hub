@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	loadDotEnv(".env")
 	log.Println("[main] Starting WaveFlix Hub backend...")
 
 	initSentry()
