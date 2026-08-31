@@ -1,0 +1,161 @@
+# Prometheus Production Configuration for WaveFlix Hub
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'waveflix-prod'
+    environment: 'production'
+
+# Rules and alerting
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 10s
+    metrics_path: /metrics
+
+  # WaveFlix Backend API
+  - job_name: 'waveflix-backend'
+    static_configs:
+      - targets: ['backend:8080']  # Docker service name
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # WaveFlix Frontend (if exporting metrics)
+  - job_name: 'waveflix-frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+    scrape_interval: 30s
+    metrics_path: /api/metrics
+    scrape_timeout: 10s
+
+  # PostgreSQL Database
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Redis Cache & Queue
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Nginx Load Balancer
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:8080']  # Nginx metrics port
+    scrape_interval: 15s
+    metrics_path: /nginx-metrics
+    scrape_timeout: 10s
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # cAdvisor (container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Blackbox exporter for health checks
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://waveflix.local/health
+        - https://api.waveflix.local/health
+        - https://waveflix.local/api/trending
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+# Remote write (for long-term storage - optional)
+# remote_write:
+#   - url: "https://prometheus-us-central1.grafana.net/api/prom/push"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-api-key"
+
+# Remote read (for federation - optional)
+# remote_read:
+#   - url: "https://prometheus-us-central1.grafana.net/api/prom/read"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-api-key"
+
+# Recording rules for better performance
+recording_rules:
+  - name: "waveflix.rules"
+    rules:
+      # Request rate
+      - record: waveflix:http_request_rate
+        expr: rate(http_requests_total[5m])
+      
+      # Error rate
+      - record: waveflix:http_error_rate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])
+      
+      # Response time percentiles
+      - record: waveflix:http_request_duration_p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+      
+      - record: waveflix:http_request_duration_p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+      
+      - record: waveflix:http_request_duration_p50
+        expr: histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+
+      # Database metrics
+      - record: waveflix:db_connections_usage
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100
+      
+      # Cache hit ratio
+      - record: waveflix:redis_hit_ratio
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) * 100
+
+      # CPU and Memory usage
+      - record: waveflix:cpu_usage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      
+      - record: waveflix:memory_usage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+
+# Performance tuning
+query:
+  max_concurrency: 20
+  timeout: 2m
+  max_samples: 50000000

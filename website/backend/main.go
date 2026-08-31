@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +15,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -158,6 +163,8 @@ var (
 	tmdbApiKey        string
 	traktClientID     string
 	traktClientSecret string
+	cache             *RedisCacheManager
+	messageQueue      *MessageQueue
 )
 
 func loadConfig() {
@@ -800,73 +807,179 @@ func proxyRequest(w http.ResponseWriter, targetUrl string, rootMedia string) {
 	w.Write(bodyBytes)
 }
 
+var (
+	startTime = time.Now()
+	healthChecker *HealthChecker
+	gracefulShutdown *GracefulShutdown
+)
+
 func main() {
 	loadConfig()
 	initJWTSecret()
 	initDB()
+	
+	// Initialize cache, message queue, metrics, worker pools, concurrent TMDB client, and CDN optimizer
+	cache = NewRedisCacheManager()
+	messageQueue = NewMessageQueue()
+	initMetrics()
+	initWorkerPools()
+	initConcurrentTMDB()
+	initCDNOptimizer()
+	
+	// Start metrics collection
+	go collectSystemMetrics()
+	
+	// Initialize health checker and readiness checker
+	healthChecker = NewHealthChecker(db, cache.redisClient, "1.0.0")
+	readinessChecker := NewReadinessChecker(db, cache.redisClient)
+	
+	// Create HTTP server
+	server := &http.Server{
+		Addr:         ":" + getEnv("PORT", "8080"),
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	
+	// Initialize graceful shutdown
+	gracefulShutdown = NewGracefulShutdown(server, db, cache.redisClient, workerPoolManager, messageQueue)
+	gracefulShutdown.Start()
+	
+	// Add shutdown hooks for proper cleanup
+	gracefulShutdown.AddShutdownHook(func() error {
+		log.Println("🔄 Flushing CDN optimizer cache...")
+		if cdnOptimizer != nil {
+			return cdnOptimizer.Flush()
+		}
+		return nil
+	})
+	
+	gracefulShutdown.AddShutdownHook(func() error {
+		log.Println("🔄 Stopping metrics collection...")
+		// Stop any background metric collection here
+		return nil
+	})
+	
+	gracefulShutdown.AddShutdownHook(func() error {
+		log.Println("🔄 Clearing in-memory caches...")
+		// Clear any in-memory caches
+		cacheMu.Lock()
+		memCache = make(map[string]cacheItem)
+		cacheMu.Unlock()
+		return nil
+	})
 
 	os.MkdirAll("./uploads", 0755)
 
-	mux := http.NewServeMux()
-	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
-	// Public content API — rate limit umum (browsing normal ~120 req/menit per IP)
-	mux.HandleFunc("/api/trending", rateLimit("api", 120, time.Minute, handleTrending))
-	mux.HandleFunc("/api/homepage", rateLimit("api", 120, time.Minute, handleHomepage))
-	mux.HandleFunc("/api/discover", rateLimit("api", 120, time.Minute, handleDiscover))
-	mux.HandleFunc("/api/detail", rateLimit("api", 120, time.Minute, handleDetail))
-	mux.HandleFunc("/api/detail-batch", rateLimit("api", 60, time.Minute, handleDetailBatch))
-	mux.HandleFunc("/api/person", rateLimit("api", 120, time.Minute, handlePerson))
-	mux.HandleFunc("/api/season", rateLimit("api", 120, time.Minute, handleSeason))
-	mux.HandleFunc("/api/images", rateLimit("api", 120, time.Minute, handleImages))
-	mux.HandleFunc("/api/search", rateLimit("api", 60, time.Minute, handleSearch))
-	mux.HandleFunc("/api/stream", rateLimit("api", 60, time.Minute, handleStream))
+	// Register health check routes using Gorilla mux for better routing
+	router := mux.NewRouter()
+	
+	// Add graceful shutdown middleware to all routes
+	router.Use(gracefulShutdown.ShutdownMiddleware)
+	
+	// Register health check routes
+	healthChecker.RegisterHealthRoutes(router)
+	
+	// Additional health endpoints
+	router.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		result := readinessChecker.CheckReadiness()
+		w.Header().Set("Content-Type", "application/json")
+		if result.Ready {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		json.NewEncoder(w).Encode(result)
+	})
+	router.HandleFunc("/health/shutdown", func(w http.ResponseWriter, r *http.Request) {
+		status := gracefulShutdown.GetShutdownStatus()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(status)
+	})
+	router.HandleFunc("/health/circuit-breakers", func(w http.ResponseWriter, r *http.Request) {
+		stats := GetAllCircuitBreakerStats()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"circuit_breakers": stats,
+			"timestamp":       time.Now(),
+		})
+	})
+	
+	// File uploads and optimized image serving
+	router.HandleFunc("/uploads/{filename}", handleUploadsWithOptimization)
+	router.HandleFunc("/cache/images/{filename}", handleCachedImages)
+	router.HandleFunc("/api/image-proxy", rateLimit("api", 300, time.Minute, handleImageProxy))
+	
+	// Public content API with parallel processing where beneficial
+	router.HandleFunc("/api/trending", metricsMiddleware(rateLimit("api", 120, time.Minute, handleTrending)))
+	router.HandleFunc("/api/homepage", metricsMiddleware(rateLimit("api", 120, time.Minute, handleHomepage)))
+	router.HandleFunc("/api/discover", metricsMiddleware(rateLimit("api", 120, time.Minute, handleDiscoverParallel)))
+	router.HandleFunc("/api/detail", metricsMiddleware(rateLimit("api", 120, time.Minute, handleDetail)))
+	router.HandleFunc("/api/detail-batch", metricsMiddleware(rateLimit("api", 60, time.Minute, handleDetailBatchParallel)))
+	router.HandleFunc("/api/person", metricsMiddleware(rateLimit("api", 120, time.Minute, handlePerson)))
+	router.HandleFunc("/api/season", metricsMiddleware(rateLimit("api", 120, time.Minute, handleSeason)))
+	router.HandleFunc("/api/images", metricsMiddleware(rateLimit("api", 120, time.Minute, handleImages)))
+	router.HandleFunc("/api/search", metricsMiddleware(rateLimit("api", 60, time.Minute, handleSearchParallel)))
+	router.HandleFunc("/api/stream", metricsMiddleware(rateLimit("api", 60, time.Minute, handleStream)))
 
 	// Auth
-	mux.HandleFunc("/api/auth/register", rateLimit("auth-reg", 3, time.Minute, handleRegister))
-	mux.HandleFunc("/api/auth/send-code", rateLimit("auth-code", 3, time.Minute, handleSendCode))
-	mux.HandleFunc("/api/auth/login", rateLimit("auth-login", 5, time.Minute, handleLogin))
-	mux.HandleFunc("/api/auth/logout", handleLogout)
-	mux.HandleFunc("/api/auth/check-email", rateLimit("auth-email", 5, time.Minute, handleCheckEmail))
-	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
-	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
-	mux.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))
-	mux.HandleFunc("/api/auth/avatar", requireAuth(uploadImage("avatar")))
-	mux.HandleFunc("/api/auth/banner", requireAuth(uploadImage("banner")))
+	router.HandleFunc("/api/auth/register", rateLimit("auth-reg", 3, time.Minute, handleRegister))
+	router.HandleFunc("/api/auth/send-code", rateLimit("auth-code", 3, time.Minute, handleSendCodeAsync))
+	router.HandleFunc("/api/auth/login", rateLimit("auth-login", 5, time.Minute, handleLogin))
+	router.HandleFunc("/api/auth/logout", handleLogout)
+	router.HandleFunc("/api/auth/check-email", rateLimit("auth-email", 5, time.Minute, handleCheckEmail))
+	router.HandleFunc("/api/auth/me", requireAuth(handleMe))
+	router.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
+	router.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))
+	router.HandleFunc("/api/auth/avatar", requireAuth(uploadImage("avatar")))
+	router.HandleFunc("/api/auth/banner", requireAuth(uploadImage("banner")))
 
 	// Data user
-	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
-	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
-	mux.HandleFunc("/api/history", requireAuth(handleHistory))
+	router.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
+	router.HandleFunc("/api/favorites", requireAuth(handleFavorites))
+	router.HandleFunc("/api/history", requireAuth(handleHistory))
 
 	// Profiles
-	mux.HandleFunc("/api/profiles", requireAuth(handleProfiles))
-	mux.HandleFunc("/api/profiles/", requireAuth(handleProfileDetail))
+	router.HandleFunc("/api/profiles", requireAuth(handleProfiles))
+	router.HandleFunc("/api/profiles/{id}", requireAuth(handleProfileDetail))
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		if err := db.Ping(); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			writeJSON(w, `{"status":"error","database":"disconnected"}`)
-			return
-		}
-		writeJSON(w, `{"status":"ok","database":"connected"}`)
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// CDN and optimization endpoints
+	router.HandleFunc("/api/cdn-status", handleCDNStatus)
+	router.HandleFunc("/api/preload", handlePreload)
+	
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		setResourceHints(w)
 		writeJSON(w, `{"service":"waveflix-api","status":"ok"}`)
 	})
 
-	handler := enableCORS(mux)
+	// Metrics endpoint
+	router.Handle("/metrics", metricsHandler())
+
+	handler := enableCORS(router)
 	handler = secureHeaders(handler)
 	handler = recoveryMiddleware(handler)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	server.Handler = handler
+
+	// Start server in a goroutine
+	go func() {
+		log.Printf("🚀 WaveFlix API server starting on :%s\n", getEnv("PORT", "8080"))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("❌ Server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for shutdown signal
+	gracefulShutdown.WaitForShutdown()
+	log.Println("✅ Server shutdown completed")
+}
+
+// Helper function to get environment variables with default values
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-	log.Printf("Summer Tide API berjalan di http://localhost:%s\n", port)
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
-		log.Fatalf("Server gagal: %v", err)
-	}
+	return defaultValue
 }
 
 func recoveryMiddleware(next http.Handler) http.Handler {

@@ -1,0 +1,220 @@
+# WaveFlix Hub Alert Rules for Production Monitoring
+
+groups:
+- name: waveflix.critical
+  rules:
+  # Service availability
+  - alert: ServiceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Service {{ $labels.instance }} is down"
+      description: "Service {{ $labels.instance }} has been down for more than 1 minute."
+
+  # High error rate
+  - alert: HighErrorRate
+    expr: waveflix:http_error_rate > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate is {{ $value }}% over the last 5 minutes."
+
+  # Database connection issues
+  - alert: DatabaseConnectionHigh
+    expr: waveflix:db_connections_usage > 80
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Database connection usage is high"
+      description: "Database connection usage is {{ $value }}%."
+
+  # Memory usage critical
+  - alert: HighMemoryUsage
+    expr: waveflix:memory_usage > 90
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High memory usage detected"
+      description: "Memory usage is {{ $value }}%."
+
+- name: waveflix.warning
+  rules:
+  # High response time
+  - alert: HighResponseTime
+    expr: waveflix:http_request_duration_p95 > 2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is {{ $value }}s."
+
+  # CPU usage warning
+  - alert: HighCPUUsage
+    expr: waveflix:cpu_usage > 80
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage detected"
+      description: "CPU usage is {{ $value }}%."
+
+  # Low cache hit ratio
+  - alert: LowCacheHitRatio
+    expr: waveflix:redis_hit_ratio < 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low Redis cache hit ratio"
+      description: "Cache hit ratio is {{ $value }}%."
+
+  # Disk space warning
+  - alert: DiskSpaceWarning
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low disk space"
+      description: "Disk space is below 20% on {{ $labels.instance }}."
+
+  # Database slow queries
+  - alert: SlowDatabaseQueries
+    expr: increase(pg_stat_database_blk_read_time[5m]) / increase(pg_stat_database_blks_read[5m]) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Database queries are slow"
+      description: "Average query time is high on {{ $labels.instance }}."
+
+- name: waveflix.info
+  rules:
+  # High request volume (information only)
+  - alert: HighRequestVolume
+    expr: rate(http_requests_total[5m]) > 100
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "High request volume"
+      description: "Request rate is {{ $value }} requests/second."
+
+  # Container restart
+  - alert: ContainerRestart
+    expr: increase(kube_pod_container_status_restarts_total[10m]) > 0
+    for: 0m
+    labels:
+      severity: info
+    annotations:
+      summary: "Container restarted"
+      description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has restarted."
+
+  # High API latency (non-critical)
+  - alert: APILatencyHigh
+    expr: waveflix:http_request_duration_p99 > 5
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "API latency is high"
+      description: "99th percentile response time is {{ $value }}s."
+
+- name: waveflix.infrastructure
+  rules:
+  # PostgreSQL down
+  - alert: PostgreSQLDown
+    expr: up{job="postgres"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: database
+    annotations:
+      summary: "PostgreSQL database is down"
+      description: "PostgreSQL database has been down for more than 1 minute."
+
+  # Redis down
+  - alert: RedisDown
+    expr: up{job="redis"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: cache
+    annotations:
+      summary: "Redis cache is down"
+      description: "Redis cache has been down for more than 1 minute."
+
+  # Load balancer issues
+  - alert: LoadBalancerDown
+    expr: up{job="nginx"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: loadbalancer
+    annotations:
+      summary: "Load balancer is down"
+      description: "Nginx load balancer has been down for more than 1 minute."
+
+  # Backend service issues
+  - alert: BackendServiceDown
+    expr: up{job="waveflix-backend"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: backend
+    annotations:
+      summary: "Backend service is down"
+      description: "WaveFlix backend service has been down for more than 1 minute."
+
+  # Frontend service issues
+  - alert: FrontendServiceDown
+    expr: up{job="waveflix-frontend"} == 0
+    for: 1m
+    labels:
+      severity: warning
+      service: frontend
+    annotations:
+      summary: "Frontend service is down"
+      description: "WaveFlix frontend service has been down for more than 1 minute."
+
+- name: waveflix.business
+  rules:
+  # Low user activity (business metric)
+  - alert: LowUserActivity
+    expr: rate(http_requests_total{endpoint=~"/api/(movies|tv|search).*"}[1h]) < 1
+    for: 30m
+    labels:
+      severity: info
+      team: product
+    annotations:
+      summary: "Low user activity detected"
+      description: "API usage is below normal levels."
+
+  # High search error rate (user experience)
+  - alert: HighSearchErrorRate
+    expr: rate(http_requests_total{endpoint="/api/search",status=~"5.."}[5m]) / rate(http_requests_total{endpoint="/api/search"}[5m]) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+      team: product
+    annotations:
+      summary: "High search error rate"
+      description: "Search API error rate is {{ $value }}%."
+
+  # TMDB API quota issues
+  - alert: TMDBQuotaWarning
+    expr: rate(http_requests_total{endpoint=~".*tmdb.*",status="429"}[1h]) > 0
+    for: 5m
+    labels:
+      severity: warning
+      team: infrastructure
+    annotations:
+      summary: "TMDB API quota warning"
+      description: "Receiving rate limit responses from TMDB API."

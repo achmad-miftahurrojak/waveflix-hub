@@ -1,0 +1,64 @@
+/** @type {import('next-sitemap').IConfig} */
+module.exports = {
+  siteUrl: process.env.SITE_URL || 'https://localhost:3000',
+  generateRobotsTxt: true,
+  generateIndexSitemap: false,
+  
+  // Exclude paths that shouldn't be indexed
+  exclude: [
+    '/api/*',
+    '/admin/*',
+    '/dashboard/*',
+    '/profile/*',
+    '/settings/*',
+  ],
+  
+  // Additional paths to include
+  additionalPaths: async (config) => {
+    const result = []
+    
+    // Add popular movie/TV routes (you can fetch these from your API)
+    const popularRoutes = [
+      '/movie/popular',
+      '/tv/popular', 
+      '/trending',
+      '/browse',
+    ]
+    
+    popularRoutes.forEach((route) => {
+      result.push({
+        loc: route,
+        changefreq: 'daily',
+        priority: 0.8,
+        lastmod: new Date().toISOString(),
+      })
+    })
+    
+    return result
+  },
+  
+  robotsTxtOptions: {
+    policies: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/admin/',
+          '/dashboard/',
+          '/profile/',
+          '/settings/',
+        ],
+      },
+      {
+        userAgent: 'Googlebot',
+        allow: '/',
+        crawlDelay: 2,
+      },
+    ],
+    additionalSitemaps: [
+      'https://yourdomain.com/sitemap-movies.xml',
+      'https://yourdomain.com/sitemap-tv.xml',
+    ],
+  },
+}
