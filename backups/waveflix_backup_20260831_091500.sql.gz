@@ -1,0 +1,7 @@
+# Simulated PostgreSQL backup file for testing
+# Generated on 2026-08-31 09:15:00
+# This would contain compressed SQL dump data
+PGDMP;1.0;test_backup_data_compressed
+-- PostgreSQL database backup
+-- Database: waveflix
+-- Timestamp: 2026-08-31 09:15:00

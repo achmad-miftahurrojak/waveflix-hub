@@ -13,6 +13,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"

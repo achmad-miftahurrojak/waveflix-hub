@@ -5,8 +5,14 @@ metadata:
   namespace: waveflix
   labels:
     app: waveflix-backend
+    tier: application
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: waveflix-backend
@@ -14,65 +20,206 @@ spec:
     metadata:
       labels:
         app: waveflix-backend
+        tier: application
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+        prometheus.io/path: '/metrics'
     spec:
+      serviceAccountName: waveflix-backend-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for PostgreSQL to be ready..."
+              until pg_isready -h postgres-service -p 5432 -U waveflix -d waveflix; do
+                echo "PostgreSQL is unavailable - sleeping"
+                sleep 2
+              done
+              echo "PostgreSQL is up and running!"
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: postgres-password
       containers:
-      - name: backend
-        image: waveflix/backend:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DATABASE_TYPE
-          value: "postgres"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: waveflix-secrets
-              key: database-url
-        - name: REDIS_URL
-          value: "waveflix-redis:6379"
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: waveflix-secrets
-              key: redis-password
-        - name: TMDB_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: waveflix-secrets
-              key: tmdb-api-key
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: waveflix-secrets
-              key: jwt-secret
-        - name: QUEUE_WORKERS
-          value: "10"
-        - name: PG_MAX_CONNS
-          value: "50"
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          successThreshold: 1
-          failureThreshold: 3
+        - name: backend
+          image: waveflix/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: DATABASE_TYPE
+              value: 'postgres'
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: database-url
+            - name: REDIS_URL
+              value: 'redis-service:6379'
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: redis-password
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: tmdb-api-key
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: jwt-secret
+            - name: TRAKT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: trakt-client-id
+                  optional: true
+            - name: TRAKT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: trakt-client-secret
+                  optional: true
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: smtp-host
+                  optional: true
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: smtp-port
+                  optional: true
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: smtp-user
+                  optional: true
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: smtp-pass
+                  optional: true
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: waveflix-secrets
+                  key: smtp-from
+                  optional: true
+            - name: QUEUE_WORKERS
+              value: '10'
+            - name: PG_MAX_CONNS
+              value: '30' # Reduced to prevent connection exhaustion
+            - name: PG_MAX_IDLE_CONNS
+              value: '10'
+            - name: PG_CONN_MAX_LIFETIME
+              value: '3600' # 1 hour
+            - name: LOG_LEVEL
+              value: 'info'
+            - name: ALLOWED_ORIGIN
+              value: '*' # Configure based on your domain
+            - name: PORT
+              value: '8080'
+            - name: METRICS_PORT
+              value: '8081'
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: cache-volume
+              mountPath: /app/cache
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '200m'
+              ephemeral-storage: '512Mi'
+            limits:
+              memory: '1Gi'
+              cpu: '1000m'
+              ephemeral-storage: '1Gi'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: cache-volume
+          emptyDir:
+            sizeLimit: 2Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - waveflix-backend
+                topologyKey: kubernetes.io/hostname
+      tolerations:
+        - key: 'node.kubernetes.io/not-ready'
+          operator: 'Exists'
+          effect: 'NoExecute'
+          tolerationSeconds: 300
+        - key: 'node.kubernetes.io/unreachable'
+          operator: 'Exists'
+          effect: 'NoExecute'
+          tolerationSeconds: 300
 ---
 apiVersion: v1
 kind: Service
@@ -83,7 +230,72 @@ spec:
   selector:
     app: waveflix-backend
   ports:
-  - protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: waveflix-backend-service
+  namespace: waveflix
+  labels:
+    app: waveflix-backend
+    tier: application
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8081'
+    prometheus.io/path: '/metrics'
+spec:
+  selector:
+    app: waveflix-backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      protocol: TCP
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: waveflix-backend-sa
+  namespace: waveflix
+  labels:
+    app: waveflix-backend
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: waveflix
+  name: waveflix-backend-role
+rules:
+  - apiGroups: ['']
+    resources: ['pods', 'services', 'configmaps']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['apps']
+    resources: ['deployments']
+    verbs: ['get', 'list', 'watch']
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: waveflix-backend-rolebinding
+  namespace: waveflix
+subjects:
+  - kind: ServiceAccount
+    name: waveflix-backend-sa
+    namespace: waveflix
+roleRef:
+  kind: Role
+  name: waveflix-backend-role
+  apiGroup: rbac.authorization.k8s.io

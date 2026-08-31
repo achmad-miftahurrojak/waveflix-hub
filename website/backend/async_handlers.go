@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -67,7 +68,7 @@ func handleSendCodeAsync(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[async] Failed to queue email job: %v", err)
 		
 		// Fallback to synchronous email sending
-		if err := sendEmail(req.Email, job.Payload["subject"].(string), job.Payload["body"].(string)); err != nil {
+		if err := sendVerificationEmail(req.Email, job.Payload["code"].(string)); err != nil {
 			log.Printf("[async] Fallback email also failed: %v", err)
 		}
 	}
@@ -78,12 +79,14 @@ func handleSendCodeAsync(w http.ResponseWriter, r *http.Request) {
 
 // generateAndStoreVerificationCode generates and stores verification code synchronously.
 func generateAndStoreVerificationCode(email string) (string, error) {
-	// This logic should be extracted from existing handleSendCode function
-	// For now, we'll use a simple implementation
-	code := generateVerificationCode()
+	// Use existing generateCode function from emailverify.go
+	code, err := generateCode()
+	if err != nil {
+		return "", err
+	}
 	
 	// Store in database with expiration
-	_, err := db.Exec(`
+	_, err = db.Exec(`
 		INSERT OR REPLACE INTO email_verifications (email, code, expires_at, created_at)
 		VALUES (?, ?, ?, ?)
 	`, email, code, time.Now().Add(10*time.Minute), time.Now())

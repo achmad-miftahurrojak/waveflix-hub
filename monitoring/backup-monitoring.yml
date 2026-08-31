@@ -1,0 +1,233 @@
+# WaveFlix Hub - Backup Monitoring Configuration
+# This file defines monitoring rules and alerts for database backup system
+
+groups:
+  - name: waveflix.backup.rules
+    rules:
+      # Backup Success Rate
+      - alert: BackupFailureHigh
+        expr: |
+          (
+            increase(waveflix_backup_failures_total[24h]) /
+            (increase(waveflix_backup_attempts_total[24h]) + 1)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "High backup failure rate detected"
+          description: "Backup failure rate is {{ $value | humanizePercentage }} in the last 24h"
+
+      # Missing Daily Backup
+      - alert: DailyBackupMissing
+        expr: |
+          time() - waveflix_backup_last_success_timestamp{type="daily"} > 86400
+        for: 1h
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Daily backup is missing"
+          description: "No successful daily backup in the last 24 hours"
+
+      # Missing Weekly Backup
+      - alert: WeeklyBackupMissing
+        expr: |
+          time() - waveflix_backup_last_success_timestamp{type="weekly"} > 604800
+        for: 2h
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Weekly backup is missing"
+          description: "No successful weekly backup in the last 7 days"
+
+      # Missing Monthly Backup
+      - alert: MonthlyBackupMissing
+        expr: |
+          time() - waveflix_backup_last_success_timestamp{type="monthly"} > 2678400
+        for: 4h
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Monthly backup is missing"
+          description: "No successful monthly backup in the last 31 days"
+
+      # Backup Size Anomaly
+      - alert: BackupSizeAnomaly
+        expr: |
+          abs(
+            waveflix_backup_size_bytes - 
+            avg_over_time(waveflix_backup_size_bytes[7d])
+          ) / avg_over_time(waveflix_backup_size_bytes[7d]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Backup size anomaly detected"
+          description: "Latest backup size {{ $value | humanize1024 }}B differs significantly from 7-day average"
+
+      # Backup Duration Too Long
+      - alert: BackupDurationHigh
+        expr: |
+          waveflix_backup_duration_seconds > 3600
+        for: 0m
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Backup taking too long"
+          description: "Backup duration {{ $value | humanizeDuration }} exceeds 1 hour"
+
+      # Backup Storage Usage High
+      - alert: BackupStorageUsageHigh
+        expr: |
+          waveflix_backup_storage_usage_ratio > 0.8
+        for: 15m
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Backup storage usage high"
+          description: "Backup storage usage is {{ $value | humanizePercentage }} of available space"
+
+      # Backup Storage Full
+      - alert: BackupStorageFull
+        expr: |
+          waveflix_backup_storage_usage_ratio > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Backup storage nearly full"
+          description: "Backup storage usage is {{ $value | humanizePercentage }} - cleanup required"
+
+      # Backup Integrity Check Failed
+      - alert: BackupIntegrityCheckFailed
+        expr: |
+          increase(waveflix_backup_integrity_failures_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Backup integrity check failed"
+          description: "{{ $value }} backup integrity checks failed in the last hour"
+
+      # S3 Upload Failures
+      - alert: S3UploadFailures
+        expr: |
+          increase(waveflix_backup_s3_upload_failures_total[6h]) > 3
+        for: 15m
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "S3 upload failures detected"
+          description: "{{ $value }} S3 upload failures in the last 6 hours"
+
+      # Database Connection Issues During Backup
+      - alert: BackupDatabaseConnectionIssues
+        expr: |
+          increase(waveflix_backup_db_connection_failures_total[30m]) > 2
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Database connection issues during backup"
+          description: "{{ $value }} database connection failures during backup in last 30 minutes"
+
+  - name: waveflix.backup.slo.rules
+    rules:
+      # Backup SLO: 99.5% success rate over 30 days
+      - record: waveflix:backup_success_rate_30d
+        expr: |
+          (
+            sum(increase(waveflix_backup_successes_total[30d])) /
+            sum(increase(waveflix_backup_attempts_total[30d]))
+          )
+
+      # Backup availability SLI
+      - record: waveflix:backup_availability_7d
+        expr: |
+          (
+            count(
+              count by (day)(
+                waveflix_backup_last_success_timestamp > 
+                (time() - 7*24*3600 + on() group_left() day_of_month() * 24 * 3600)
+              )
+            ) / 7
+          )
+
+      # Average backup duration trend
+      - record: waveflix:backup_duration_avg_7d
+        expr: |
+          avg_over_time(waveflix_backup_duration_seconds[7d])
+
+      # Backup size growth rate (weekly)
+      - record: waveflix:backup_size_growth_rate_7d
+        expr: |
+          (
+            avg_over_time(waveflix_backup_size_bytes[1d]) - 
+            avg_over_time(waveflix_backup_size_bytes[8d:7d])
+          ) / avg_over_time(waveflix_backup_size_bytes[8d:7d])
+
+# Alertmanager routing configuration for backup alerts
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Sample alertmanager.yml configuration for backup alerts
+# This should be added to your main alertmanager configuration
+
+# route:
+#   group_by: ['alertname', 'component']
+#   group_wait: 10s
+#   group_interval: 10s
+#   repeat_interval: 1h
+#   receiver: 'default'
+#   routes:
+#   - match:
+#       component: backup
+#     receiver: backup-alerts
+#     routes:
+#     - match:
+#         severity: critical
+#       receiver: backup-critical
+# 
+# receivers:
+# - name: 'default'
+#   webhook_configs:
+#   - url: 'http://localhost:5001/'
+# 
+# - name: 'backup-alerts'
+#   slack_configs:
+#   - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+#     channel: '#waveflix-alerts'
+#     title: 'WaveFlix Hub Backup Alert'
+#     text: '{{ range .Alerts }}{{ .Annotations.summary }}: {{ .Annotations.description }}{{ end }}'
+# 
+# - name: 'backup-critical'
+#   slack_configs:
+#   - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+#     channel: '#waveflix-critical'
+#     title: 'CRITICAL: WaveFlix Hub Backup Alert'
+#     text: '{{ range .Alerts }}{{ .Annotations.summary }}: {{ .Annotations.description }}{{ end }}'
+#   email_configs:
+#   - to: 'admin@yourdomain.com'
+#     from: 'alerts@yourdomain.com'
+#     smarthost: 'smtp.yourdomain.com:587'
+#     subject: 'CRITICAL: WaveFlix Hub Backup Alert'
+#     body: |
+#       {{ range .Alerts }}
+#       Alert: {{ .Annotations.summary }}
+#       Description: {{ .Annotations.description }}
+#       Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+#       {{ end }}
