@@ -1,69 +1,71 @@
 # Waveflix Hub
 
-Platform streaming katalog film & serial berbasis web — jelajah katalog TMDB, watchlist, riwayat tontonan, dan akun pengguna dengan autentikasi JWT.
+Web-based streaming catalog platform for movies and TV series. Browse TMDB catalog, manage watchlists, track viewing history, and user accounts with JWT authentication.
+
+**Tags:** `streaming` `catalog` `fullstack`
 
 ![CI](https://github.com/hamin-baek/waveflix-hub/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-## Fitur
+## Features
 
-- **Katalog lengkap** — trending Indonesia, per-platform (Netflix, Disney+ Hotstar, Apple TV+, HBO Max), recently added
-- **Halaman detail** movie/TV — sinopsis, genre, cast, episode + season selector
-- **Browse & filter** — media, genre, tahun, negara, platform, urutan
-- **Pencarian** instan
-- **Akun** — register/login (JWT), email verification opsional via SMTP
-- **Watchlist & riwayat** — sinkron ke server saat login, fallback localStorage saat belum login
-- **Multi-bahasa** konten (id-ID dengan fallback en-US)
-- ISR revalidate 15 menit → konten baru cepat masuk
+- **Complete catalog** with trending Indonesian content, platform-specific sections (Netflix, Disney+ Hotstar, Apple TV+, HBO Max), and recently added titles
+- **Detailed pages** for movies/TV shows including synopsis, genres, cast, and episode/season navigation
+- **Browse and filter** by media type, genre, year, country, platform, and sorting options
+- **Instant search** functionality
+- **User accounts** with registration/login (JWT), optional email verification via SMTP
+- **Watchlist and history** synchronized to server when logged in, localStorage fallback when offline
+- **Multi-language content** support (id-ID with en-US fallback)
+- **ISR revalidation** every 15 minutes for fresh content delivery
 
 ## Tech Stack
 
-| Bagian | Teknologi |
+| Component | Technology |
 |---|---|
 | Frontend | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3 |
-| Backend | Go 1.25, chi/net-http, PostgreSQL (`pgx`), JWT |
-| Testing | Playwright (E2E), `go test` |
-| CI | GitHub Actions |
+| Backend | Go 1.25, chi/net-http, PostgreSQL (pgx), JWT |
+| Testing | Playwright (E2E), go test |
+| CI/CD | GitHub Actions |
 
-## Struktur
+## Project Structure
 
 ```
 waveflix-hub/
 ├── website/
-│   ├── backend/     # API Go (proxy TMDB, auth, watchlist, history)
-│   └── frontend/    # Next.js app
+│   ├── backend/     # Go API (TMDB proxy, auth, watchlist, history)
+│   └── frontend/    # Next.js application
 └── .github/
-    └── workflows/   # CI: backend test + frontend build & Playwright
+    └── workflows/   # CI: backend tests + frontend build & Playwright
 ```
 
-## Menjalankan
+## Getting Started
 
-Prasyarat: Go ≥ 1.25, Node.js 20.
+Prerequisites: Go ≥ 1.25, Node.js 20.
 
-### 1. Backend (:8080)
+### 1. Backend Server (:8080)
 
 ```bash
 cd website/backend
-cp .env.example .env   # lalu isi nilai
+cp .env.example .env   # Configure environment variables
 go run .
 ```
 
-Konfigurasi `website/backend/.env`:
+Configure `website/backend/.env`:
 
-| Var | Wajib? | Keterangan |
+| Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Ya | URL koneksi ke PostgreSQL |
-| `TMDB_API_KEY` | Ya | Dari [TMDB](https://www.themoviedb.org/settings/api) |
-| `JWT_SECRET` | Ya | String acak minimal 32 karakter |
-| `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Opsional | Integrasi Trakt.tv |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Opsional | Email verification |
-| `SMTP_FROM` | Prod | Alamat pengirim email verifikasi |
-| `PORT` | Tidak | Default `8080` |
-| `ALLOWED_ORIGIN` | Prod | CORS origin frontend |
-| `TRUSTED_PROXY_IPS` | Prod | IP/CIDR reverse proxy, comma-separated |
-| `AUTH_COOKIE_SECURE` | Prod | Set `1` saat memakai HTTPS |
+| `DATABASE_URL` | Yes | PostgreSQL connection URL |
+| `TMDB_API_KEY` | Yes | API key from [TMDB](https://www.themoviedb.org/settings/api) |
+| `JWT_SECRET` | Yes | Random string minimum 32 characters |
+| `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Optional | Trakt.tv integration |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Optional | Email verification setup |
+| `SMTP_FROM` | Production | Sender address for verification emails |
+| `PORT` | No | Default `8080` |
+| `ALLOWED_ORIGIN` | Production | CORS origin for frontend |
+| `TRUSTED_PROXY_IPS` | Production | Reverse proxy IPs/CIDRs, comma-separated |
+| `AUTH_COOKIE_SECURE` | Production | Set `1` when using HTTPS |
 
-### 2. Frontend (:3000)
+### 2. Frontend Application (:3000)
 
 ```bash
 cd website/frontend
@@ -71,44 +73,44 @@ npm install
 npm run dev
 ```
 
-Konfigurasi `website/frontend/.env.local`:
+Configure `website/frontend/.env.local`:
 
-- `BACKEND_URL` — dipakai server-side
-- `NEXT_PUBLIC_BACKEND_URL` — dipakai browser (default `http://localhost:8080`)
+- `BACKEND_URL` for server-side requests
+- `NEXT_PUBLIC_BACKEND_URL` for browser requests (default `http://localhost:8080`)
 
-Di production, isi `BACKEND_URL` dan `NEXT_PUBLIC_BACKEND_URL` dengan URL HTTPS backend yang sebenarnya.
+For production, configure both `BACKEND_URL` and `NEXT_PUBLIC_BACKEND_URL` with actual HTTPS backend URLs.
 
-Untuk Gmail, gunakan App Password, bukan password akun utama. Setelah mengisi variabel SMTP di `website/backend/.env`, restart backend lalu gunakan tombol kirim ulang kode.
+For Gmail integration, use App Passwords instead of main account password. After configuring SMTP variables in `website/backend/.env`, restart backend and use the resend code button.
 
-Buka http://localhost:3000.
+Open http://localhost:3000.
 
-## Rute Utama
+## Main Routes
 
-- `/` — homepage: hero, trending Indonesia, per-platform
-- `/browse` — jelajah + filter
-- `/search?q=` — pencarian
-- `/[media]/[id]` — detail movie/tv
-- `/daftar-saya`, `/riwayat` — watchlist & tontonan
-- `/masuk`, `/daftar` — login/register
+- `/` — Homepage with hero section, trending Indonesian content, platform sections
+- `/browse` — Browse and filter interface
+- `/search?q=` — Search results
+- `/[media]/[id]` — Movie/TV show details
+- `/daftar-saya`, `/riwayat` — Watchlist and viewing history
+- `/masuk`, `/daftar` — Login and registration
 
 ## Testing
 
 ```bash
-# Backend
+# Backend tests
 cd website/backend && go test ./...
 
-# Frontend E2E (perlu backend jalan)
+# Frontend E2E tests (requires running backend)
 cd website/frontend && npm run test:e2e
 ```
 
-CI menjalankan keduanya pada push/PR ke `main`/`master`.
+CI runs both test suites on push/PR to `main`/`master` branches.
 
-## Kontribusi
+## Contributing
 
-1. Fork & buat branch fitur
-2. Pastikan `go test` dan Playwright lolos
-3. Buka PR ke `main`
+1. Fork the repository and create a feature branch
+2. Ensure `go test` and Playwright tests pass
+3. Open a pull request to `main`
 
-## Lisensi
+## License
 
 [MIT](LICENSE)
