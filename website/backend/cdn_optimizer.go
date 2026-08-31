@@ -1,5 +1,3 @@
-
-
 package main
 
 import (
@@ -23,23 +21,23 @@ import (
 )
 
 type CDNOptimizer struct {
-	cacheDir        string
-	tmdbImageCache  map[string]*CachedImage
-	mu              sync.RWMutex
-	maxCacheSize    int64
+	cacheDir         string
+	tmdbImageCache   map[string]*CachedImage
+	mu               sync.RWMutex
+	maxCacheSize     int64
 	currentCacheSize int64
 
-	enableWebP       bool
-	enableAVIF       bool
-	jpegQuality      int
-	enableLazyLoad   bool
-	cdnBaseURL       string
+	enableWebP     bool
+	enableAVIF     bool
+	jpegQuality    int
+	enableLazyLoad bool
+	cdnBaseURL     string
 }
 
 type CachedImage struct {
 	OriginalURL    string
 	LocalPath      string
-	OptimizedPaths map[string]string 
+	OptimizedPaths map[string]string
 	Size           int64
 	CreatedAt      time.Time
 	AccessedAt     time.Time
@@ -47,12 +45,12 @@ type CachedImage struct {
 }
 
 type ImageOptimizationRequest struct {
-	SourceURL    string
-	Width        int
-	Height       int
-	Quality      int
-	Format       string 
-	Lazy         bool
+	SourceURL string
+	Width     int
+	Height    int
+	Quality   int
+	Format    string
+	Lazy      bool
 }
 
 type StaticAssetConfig struct {
@@ -70,9 +68,9 @@ func NewCDNOptimizer() *CDNOptimizer {
 	optimizer := &CDNOptimizer{
 		cacheDir:       cacheDir,
 		tmdbImageCache: make(map[string]*CachedImage),
-		maxCacheSize:   2 * 1024 * 1024 * 1024, 
+		maxCacheSize:   2 * 1024 * 1024 * 1024,
 		enableWebP:     true,
-		enableAVIF:     false, 
+		enableAVIF:     false,
 		jpegQuality:    85,
 		enableLazyLoad: true,
 		cdnBaseURL:     getenv("CDN_BASE_URL", ""),
@@ -143,7 +141,7 @@ func (co *CDNOptimizer) downloadAndOptimize(imageURL string, width, height int, 
 		return "", err
 	}
 
-	log.Printf("[cdn] Downloaded image: %s (format: %s, size: %dx%d)", 
+	log.Printf("[cdn] Downloaded image: %s (format: %s, size: %dx%d)",
 		imageURL, originalFormat, img.Bounds().Max.X, img.Bounds().Max.Y)
 
 	if width > 0 || height > 0 {
@@ -244,7 +242,7 @@ func (co *CDNOptimizer) ServeOptimizedImage(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	co.setCacheHeaders(w, time.Hour*24*30) 
+	co.setCacheHeaders(w, time.Hour*24*30)
 
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext {
@@ -332,7 +330,7 @@ func (co *CDNOptimizer) cleanup() {
 	defer co.mu.Unlock()
 
 	now := time.Now()
-	maxAge := time.Hour * 24 * 7 
+	maxAge := time.Hour * 24 * 7
 
 	var toDelete []string
 
@@ -356,7 +354,7 @@ func (co *CDNOptimizer) cleanup() {
 		delete(co.tmdbImageCache, key)
 	}
 
-	log.Printf("[cdn] Cleaned up %d cached images, cache size: %d bytes", 
+	log.Printf("[cdn] Cleaned up %d cached images, cache size: %d bytes",
 		len(toDelete), co.currentCacheSize)
 }
 
@@ -365,10 +363,10 @@ func (co *CDNOptimizer) GetCacheStats() map[string]interface{} {
 	defer co.mu.RUnlock()
 
 	return map[string]interface{}{
-		"cached_images":    len(co.tmdbImageCache),
-		"cache_size_bytes": co.currentCacheSize,
-		"cache_size_mb":    co.currentCacheSize / 1024 / 1024,
-		"max_cache_mb":     co.maxCacheSize / 1024 / 1024,
+		"cached_images":     len(co.tmdbImageCache),
+		"cache_size_bytes":  co.currentCacheSize,
+		"cache_size_mb":     co.currentCacheSize / 1024 / 1024,
+		"max_cache_mb":      co.maxCacheSize / 1024 / 1024,
 		"cache_utilization": float64(co.currentCacheSize) / float64(co.maxCacheSize) * 100,
 	}
 }
@@ -410,7 +408,7 @@ func (sao *StaticAssetOptimizer) setStaticAssetHeaders(w http.ResponseWriter, r 
 
 	maxAge := sao.config.CacheMaxAge
 	if maxAge == 0 {
-		maxAge = time.Hour * 24 * 365 
+		maxAge = time.Hour * 24 * 365
 	}
 
 	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", int(maxAge.Seconds())))

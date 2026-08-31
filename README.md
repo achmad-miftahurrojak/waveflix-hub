@@ -2,8 +2,6 @@
 
 Web-based streaming catalog platform for movies and TV series. Browse TMDB catalog, manage watchlists, track viewing history, and user accounts with JWT authentication.
 
-**Tags:** `streaming` `catalog` `fullstack`
-
 ![CI](https://github.com/hamin-baek/waveflix-hub/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -20,12 +18,12 @@ Web-based streaming catalog platform for movies and TV series. Browse TMDB catal
 
 ## Tech Stack
 
-| Component | Technology |
-|---|---|
-| Frontend | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3 |
-| Backend | Go 1.25, chi/net-http, PostgreSQL (pgx), JWT |
-| Testing | Playwright (E2E), go test |
-| CI/CD | GitHub Actions |
+| Component | Technology                                                      |
+| --------- | --------------------------------------------------------------- |
+| Frontend  | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 3 |
+| Backend   | Go 1.25, chi/net-http, PostgreSQL (pgx), JWT                    |
+| Testing   | Playwright (E2E), go test                                       |
+| CI/CD     | GitHub Actions                                                  |
 
 ## Project Structure
 
@@ -52,18 +50,18 @@ go run .
 
 Configure `website/backend/.env`:
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection URL |
-| `TMDB_API_KEY` | Yes | API key from [TMDB](https://www.themoviedb.org/settings/api) |
-| `JWT_SECRET` | Yes | Random string minimum 32 characters |
-| `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Optional | Trakt.tv integration |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Optional | Email verification setup |
-| `SMTP_FROM` | Production | Sender address for verification emails |
-| `PORT` | No | Default `8080` |
-| `ALLOWED_ORIGIN` | Production | CORS origin for frontend |
-| `TRUSTED_PROXY_IPS` | Production | Reverse proxy IPs/CIDRs, comma-separated |
-| `AUTH_COOKIE_SECURE` | Production | Set `1` when using HTTPS |
+| Variable                                                         | Required   | Description                                                  |
+| ---------------------------------------------------------------- | ---------- | ------------------------------------------------------------ |
+| `DATABASE_URL`                                                   | Yes        | PostgreSQL connection URL                                    |
+| `TMDB_API_KEY`                                                   | Yes        | API key from [TMDB](https://www.themoviedb.org/settings/api) |
+| `JWT_SECRET`                                                     | Yes        | Random string minimum 32 characters                          |
+| `TRAKT_CLIENT_ID` / `TRAKT_CLIENT_SECRET` / `TRAKT_REDIRECT_URI` | Optional   | Trakt.tv integration                                         |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS`            | Optional   | Email verification setup                                     |
+| `SMTP_FROM`                                                      | Production | Sender address for verification emails                       |
+| `PORT`                                                           | No         | Default `8080`                                               |
+| `ALLOWED_ORIGIN`                                                 | Production | CORS origin for frontend                                     |
+| `TRUSTED_PROXY_IPS`                                              | Production | Reverse proxy IPs/CIDRs, comma-separated                     |
+| `AUTH_COOKIE_SECURE`                                             | Production | Set `1` when using HTTPS                                     |
 
 ### 2. Frontend Application (:3000)
 

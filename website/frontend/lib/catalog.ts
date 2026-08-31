@@ -1,4 +1,3 @@
-
 import type { MediaType } from "./types";
 
 export const MOVIE_GENRES: { id: number; name: string }[] = [

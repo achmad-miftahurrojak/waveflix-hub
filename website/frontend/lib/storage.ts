@@ -1,4 +1,3 @@
-
 export const TOKEN_KEY = "waveflix_token";
 export const LIST_KEY = "waveflix_mylist";
 export const FAV_KEY = "waveflix_favorites";
