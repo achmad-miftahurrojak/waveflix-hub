@@ -1,6 +1,8 @@
 import type { MediaType } from "@/lib/types";
 import { YEARS } from "@/lib/catalog";
 import CategoryTiles from "@/components/CategoryTiles";
+import HeroCarousel from "@/components/HeroCarousel";
+import { getTrendingGlobal, getHeroSlides } from "@/lib/tmdb";
 
 export default async function YearsPage({
   searchParams,
@@ -13,5 +15,16 @@ export default async function YearsPage({
     label: y,
     href: `/browse?media=${media}&year=${y}`,
   }));
-  return <CategoryTiles title="Browse by Year" tiles={tiles} compact />;
+
+  const trending = await getTrendingGlobal();
+  const heroSlides = await getHeroSlides(trending, 5);
+
+  return (
+    <main className="min-h-screen pb-16">
+      {heroSlides.length > 0 && <HeroCarousel slides={heroSlides} />}
+      <div className={heroSlides.length > 0 ? "pt-8" : "pt-28"}>
+        <CategoryTiles title="Browse by Year" tiles={tiles} compact disableWrapper={true} />
+      </div>
+    </main>
+  );
 }

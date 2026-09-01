@@ -338,6 +338,10 @@ func (tc *TMDBClient) HandleTrending(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sanitizeTMDBData(data, media)
+	if results, ok := data["results"].([]interface{}); ok {
+		filtered := filterByMajorProviderParallel(results, media)
+		data["results"] = filtered
+	}
 	responseJSON, _ := json.Marshal(data)
 	writeJSON(w, string(responseJSON))
 }

@@ -1,9 +1,11 @@
 import {
   getTrendingGlobal,
   getTrendingIndonesia,
+  getTrendingKDrama,
   getLatest,
   getLatestEpisodes,
   getHeroSlides,
+  MAJOR_PROVIDERS,
 } from "@/lib/tmdb";
 import HeroCarousel from "@/components/HeroCarousel";
 import TrendingSection from "@/components/TrendingSection";
@@ -12,15 +14,14 @@ import SwitchableCarousel, {
   type SwitchGroup,
 } from "@/components/SwitchableCarousel";
 import LatestEpisodesRow from "@/components/LatestEpisodesRow";
-
 import ContinueWatchingRow from "@/components/ContinueWatchingRow";
 
-const ORIGINALS: SwitchGroup[] = [
-  { label: "category.netflix", id: 8 },
-  { label: "category.disney", id: 122 },
-  { label: "category.hbo", id: 1899 },
-  { label: "category.prime", id: 119 },
-  { label: "category.apple", id: 350 },
+const PLATFORMS: SwitchGroup[] = [
+  { label: "Netflix", id: 8 },
+  { label: "Disney+", id: 122 },
+  { label: "Apple TV", id: 350 },
+  { label: "Prime Video", id: 119 },
+  { label: "HBO", id: 1899 },
 ].map(
   (p): SwitchGroup => ({
     label: p.label,
@@ -31,27 +32,34 @@ const ORIGINALS: SwitchGroup[] = [
   })
 );
 
-import { MAJOR_PROVIDERS } from "@/lib/tmdb";
-
 const REGIONS: SwitchGroup[] = [
-  { label: "category.korean", sources: [{ media: "tv", params: `country=KR&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "category.japanese", sources: [{ media: "tv", params: `country=JP&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "category.chinese", sources: [{ media: "tv", params: `country=CN&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "category.thai", sources: [{ media: "tv", params: `country=TH&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "category.anime", sources: [{ media: "tv", params: `genre=16&country=JP&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Korean Drama", sources: [{ media: "tv", params: `country=KR&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Chinese Drama", sources: [{ media: "tv", params: `country=CN&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Japanese Drama", sources: [{ media: "tv", params: `country=JP&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Thai Drama", sources: [{ media: "tv", params: `country=TH&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Anime", sources: [{ media: "tv", params: `genre=16&country=JP&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
 ];
 
 export default async function Home() {
-  const [trendingGlobal, trendingIndonesia, latestMovies, latestSeries, latestEpisodes] =
+  const [trendingGlobal, trendingIndonesia, trendingKDrama, latestMovies, latestSeries, latestEpisodes] =
     await Promise.all([
       getTrendingGlobal(),
       getTrendingIndonesia(),
+      getTrendingKDrama(),
       getLatest("movie"),
       getLatest("tv"),
       getLatestEpisodes(14),
     ]);
 
-  const heroSlides = await getHeroSlides(trendingIndonesia, 10);
+  // Combine Top Indonesia and KDrama for the hero slides, removing duplicates
+  const combinedTrending = [...trendingIndonesia];
+  for (const item of trendingKDrama) {
+    if (!combinedTrending.find((x) => x.id === item.id)) {
+      combinedTrending.push(item);
+    }
+  }
+
+  const heroSlides = await getHeroSlides(combinedTrending, 15);
 
   return (
     <main>
@@ -59,15 +67,12 @@ export default async function Home() {
 
       <div className="relative z-[2] pt-4">
         <ContinueWatchingRow />
-        <TrendingSection title="ui.trendingNow" items={trendingGlobal} />
-        <TrendingSection
-          title="ui.trendingIndonesia"
-          items={trendingIndonesia}
-        />
-        <SwitchableCarousel groups={ORIGINALS} />
+        <TrendingSection title="Trending Now" items={trendingGlobal} />
+        <TrendingSection title="Trending KDrama" items={trendingKDrama} />
+        <SwitchableCarousel groups={PLATFORMS} />
         <SwitchableCarousel groups={REGIONS} />
-        <MovieRow title="ui.latestMovies" items={latestMovies} />
-        <MovieRow title="ui.latestSeries" items={latestSeries} />
+        <MovieRow title="Latest Movies" items={latestMovies} />
+        <MovieRow title="Latest Series" items={latestSeries} />
         <LatestEpisodesRow episodes={latestEpisodes} />
       </div>
     </main>

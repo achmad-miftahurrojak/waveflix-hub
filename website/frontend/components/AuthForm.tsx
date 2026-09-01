@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { useAuth } from "./AuthProvider";
-import { CheckIcon } from "./Icons";
+import { CheckIcon, EyeIcon, EyeOffIcon } from "./Icons";
 import { BACKEND } from "@/lib/helpers";
 
 const PERKS = [
@@ -20,6 +20,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState(searchParams.get("email") || "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -119,15 +120,25 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputCls}
               />
-              <input
-                type="password"
-                required
-                placeholder="Password"
-                aria-label="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputCls}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="Password"
+                  aria-label="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputCls}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
 
               {error && (
                 <p className="rounded-md bg-red-500/15 px-3 py-2 text-sm text-red-300">
@@ -230,16 +241,26 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
                   <label htmlFor="reg-password" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-white/50">
                     Password
                   </label>
-                  <input
-                    id="reg-password"
-                    type="password"
-                    required
-                    minLength={8}
-                    placeholder="At least 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls}
-                  />
+                  <div className="relative">
+                    <input
+                      id="reg-password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={8}
+                      placeholder="At least 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={inputCls}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

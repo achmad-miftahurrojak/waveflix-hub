@@ -7,6 +7,7 @@ import type { FormEvent } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { NAME_FONTS, nameFontCss, profileFontVars } from "@/lib/profileFonts";
 import { useTranslation } from "@/lib/i18n";
+import { EyeIcon, EyeOffIcon } from "@/components/Icons";
 
 const pillSpring = { type: "spring", stiffness: 380, damping: 30 } as const;
 
@@ -57,6 +58,9 @@ export default function SettingsPage() {
   const [cur, setCur] = useState("");
   const [nw, setNw] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showCur, setShowCur] = useState(false);
+  const [showNw, setShowNw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [pwMsg, setPwMsg] = useState<Msg>(null);
   const [newEmail, setNewEmail] = useState("");
   const [emailMsg, setEmailMsg] = useState<Msg>(null);
@@ -358,15 +362,30 @@ export default function SettingsPage() {
             <p className="mb-5 text-sm text-white/50">{t("settings.security.changePwDesc")}</p>
             <div className="mb-4">
               <label className={label}>{t("settings.security.curPw")}</label>
-              <input type="password" className={inputCls} value={cur} onChange={(e) => setCur(e.target.value)} required />
+              <div className="relative">
+                <input type={showCur ? "text" : "password"} className={inputCls} value={cur} onChange={(e) => setCur(e.target.value)} required />
+                <button type="button" onClick={() => setShowCur(!showCur)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
+                  {showCur ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="mb-4">
               <label className={label}>{t("settings.security.newPw")}</label>
-              <input type="password" minLength={8} className={inputCls} value={nw} onChange={(e) => setNw(e.target.value)} required />
+              <div className="relative">
+                <input type={showNw ? "text" : "password"} minLength={8} className={inputCls} value={nw} onChange={(e) => setNw(e.target.value)} required />
+                <button type="button" onClick={() => setShowNw(!showNw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
+                  {showNw ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="mb-4">
               <label className={label}>{t("settings.security.confirmPw")}</label>
-              <input type="password" minLength={8} className={inputCls} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+              <div className="relative">
+                <input type={showConfirm ? "text" : "password"} minLength={8} className={inputCls} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
+                  {showConfirm ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={savingPw} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-dark disabled:opacity-60">
               {savingPw ? t("settings.security.updating") : t("settings.security.updatePw")}

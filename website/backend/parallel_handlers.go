@@ -115,10 +115,32 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	p.Set("language", getTmdbLang(q))
 	p.Set("include_image_language", getImageLangs(q))
 	p.Set("watch_region", "ID")
+	
+	if provider := q.Get("provider"); provider != "" {
+		p.Set("with_watch_providers", provider)
+	} else {
+		p.Set("with_watch_providers", "8|119|350|122|158|483|489|1899")
+	}
 
 	for key, values := range q {
-		if key != "media" && len(values) > 0 {
-			p.Set(key, values[0])
+		if key != "media" && key != "provider" && len(values) > 0 {
+			val := values[0]
+			switch key {
+			case "genre":
+				p.Set("with_genres", val)
+			case "year":
+				if media == "movie" {
+					p.Set("primary_release_year", val)
+				} else {
+					p.Set("first_air_date_year", val)
+				}
+			case "country":
+				p.Set("with_origin_country", val)
+			case "network":
+				p.Set("with_networks", val)
+			default:
+				p.Set(key, val)
+			}
 		}
 	}
 
@@ -209,7 +231,10 @@ func enhanceResultItem(item map[string]interface{}, media string) {
 }
 
 func handleSearchParallel(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("query")
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		query = r.URL.Query().Get("query")
+	}
 	if query == "" {
 		httpError(w, http.StatusBadRequest, "query parameter required")
 		return
@@ -233,7 +258,9 @@ func handleSearchParallel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if results, ok := data["results"].([]interface{}); ok {
-		processSearchResultsParallel(results)
+		filtered := filterByMajorProviderParallel(results, "multi")
+		data["results"] = filtered
+		processSearchResultsParallel(filtered)
 	}
 
 	responseJSON, _ := json.Marshal(data)

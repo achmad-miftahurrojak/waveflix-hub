@@ -76,6 +76,17 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     migrateStorage();
     const saved = localStorage.getItem(TOKEN_KEY);
+    const savedUserStr = localStorage.getItem("waveflix_user");
+    
+    if (saved) {
+      setToken(saved);
+    }
+    if (savedUserStr) {
+      try {
+        setUser(JSON.parse(savedUserStr));
+      } catch (e) {}
+    }
+
     fetch(`${BACKEND}/api/auth/me`, {
       credentials: "include",
       headers: saved ? { Authorization: `Bearer ${saved}` } : undefined,
@@ -87,6 +98,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       .then((u) => {
         setToken(saved || "cookie");
         setUser(u);
+        localStorage.setItem("waveflix_user", JSON.stringify(u));
         if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
         const storedProfileId = localStorage.getItem("activeProfileId");
         if (storedProfileId) {
@@ -103,22 +115,35 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((err) => {
-
+        console.error("Auth fetch failed:", err, "saved token was:", saved ? "PRESENT" : "NULL");
         if (err?.status === 401 || err?.status === 403) {
           localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem("waveflix_user");
           setToken(null);
+          setUser(null);
+        } else {
+          if (saved) {
+            setToken(saved);
+          }
         }
-
       })
       .finally(() => setReady(true));
   }, []);
 
   const persist = (tok: string, u: AuthUser) => {
-
     setToken(tok || null);
-    localStorage.removeItem(TOKEN_KEY);
+    if (tok) {
+      localStorage.setItem(TOKEN_KEY, tok);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
     setUser(u);
-    if (u.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
+    if (u) {
+      localStorage.setItem("waveflix_user", JSON.stringify(u));
+    } else {
+      localStorage.removeItem("waveflix_user");
+    }
+    if (u?.language) document.cookie = `waveflix_lang=${u.language}; path=/; max-age=31536000`;
   };
 
   const login = useCallback(async (email: string, password: string) => {
@@ -163,6 +188,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     fetch(`${BACKEND}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("waveflix_user");
     localStorage.removeItem("activeProfileId");
     sessionStorage.removeItem("profileSelected");
     setToken(null);

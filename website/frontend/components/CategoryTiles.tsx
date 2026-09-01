@@ -10,13 +10,15 @@ export default function CategoryTiles({
   title,
   tiles,
   compact,
+  disableWrapper = false,
 }: {
   title: string;
   tiles: Tile[];
   compact?: boolean;
+  disableWrapper?: boolean;
 }) {
-  return (
-    <main className="min-h-screen px-[4%] pb-16 pt-28">
+  const content = (
+    <>
       <h1 className="mb-8 text-3xl font-bold">{title}</h1>
       <div
         className={`grid gap-3 ${
@@ -38,6 +40,16 @@ export default function CategoryTiles({
           </Link>
         ))}
       </div>
+    </>
+  );
+
+  if (disableWrapper) {
+    return <div className="px-[4%]">{content}</div>;
+  }
+
+  return (
+    <main className="min-h-screen px-[4%] pb-16 pt-28">
+      {content}
     </main>
   );
 }

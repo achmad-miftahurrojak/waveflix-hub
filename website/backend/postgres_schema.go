@@ -114,6 +114,8 @@ id SERIAL PRIMARY KEY,
 user_id INTEGER NOT NULL,
 name VARCHAR(100) NOT NULL,
 avatar_url VARCHAR(255),
+banner VARCHAR(255),
+bio VARCHAR(500),
 is_default BOOLEAN DEFAULT FALSE,
 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -127,24 +129,28 @@ CREATE POLICY profiles_isolation_policy ON profiles
     USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::integer);
 `
 
-if _, err := psb.db.Exec(query); err != nil {
-return fmt.Errorf("failed to create profiles table: %w", err)
-}
+	if _, err := psb.db.Exec(query); err != nil {
+		return fmt.Errorf("failed to create profiles table: %w", err)
+	}
 
-indexQuery := `
+	indexQuery := `
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id 
 ON profiles(user_id)`
 
-if _, err := psb.db.Exec(indexQuery); err != nil {
-return fmt.Errorf("failed to create profiles user_id index: %w", err)
-}
+	if _, err := psb.db.Exec(indexQuery); err != nil {
+		return fmt.Errorf("failed to create profiles user_id index: %w", err)
+	}
 
-log.Println("[schema] Created profiles table")
-return nil
+	// Add missing columns to existing table
+	_, _ = psb.db.Exec(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS banner VARCHAR(255);`)
+	_, _ = psb.db.Exec(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS bio VARCHAR(500);`)
+
+	log.Println("[schema] Created profiles table")
+	return nil
 }
 
 func (psb *PostgreSQLSchemaBuilder) createWatchlistTable() error {
-query := `
+	query := `
 CREATE TABLE IF NOT EXISTS watchlist (
 id SERIAL PRIMARY KEY,
 user_id INTEGER NOT NULL,

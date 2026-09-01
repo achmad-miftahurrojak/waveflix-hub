@@ -63,29 +63,29 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/register", handleRegister)
 	mux.HandleFunc("/api/login", handleLogin)
 	mux.HandleFunc("/api/logout", handleLogout)
-	mux.HandleFunc("/api/me", handleMe)
+	mux.HandleFunc("/api/me", requireAuth(handleMe))
 	mux.HandleFunc("/api/check-email", handleCheckEmail)
-	mux.HandleFunc("/api/update-profile", handleUpdateProfile)
-	mux.HandleFunc("/api/change-password", handleChangePassword)
+	mux.HandleFunc("/api/update-profile", requireAuth(handleUpdateProfile))
+	mux.HandleFunc("/api/change-password", requireAuth(handleChangePassword))
 
 	mux.HandleFunc("/api/auth/register", handleRegister)
 	mux.HandleFunc("/api/auth/login", handleLogin)
 	mux.HandleFunc("/api/auth/logout", handleLogout)
-	mux.HandleFunc("/api/auth/me", handleMe)
+	mux.HandleFunc("/api/auth/me", requireAuth(handleMe))
 	mux.HandleFunc("/api/auth/check-email", handleCheckEmail)
-	mux.HandleFunc("/api/auth/profile", handleUpdateProfile)
-	mux.HandleFunc("/api/auth/password", handleChangePassword)
-	mux.HandleFunc("/api/auth/avatar", handleUpdateProfile)
-	mux.HandleFunc("/api/auth/banner", handleUpdateProfile)
+	mux.HandleFunc("/api/auth/profile", requireAuth(handleUpdateProfile))
+	mux.HandleFunc("/api/auth/password", requireAuth(handleChangePassword))
+	mux.HandleFunc("/api/auth/avatar", requireAuth(uploadImage("avatar_url")))
+	mux.HandleFunc("/api/auth/banner", requireAuth(uploadImage("banner")))
 
-	mux.HandleFunc("/api/profiles", handleProfiles)
-	mux.HandleFunc("/api/profiles/", handleProfileDetail)
+	mux.HandleFunc("/api/profiles", requireAuth(handleProfiles))
+	mux.HandleFunc("/api/profiles/", requireAuth(handleProfileDetail))
 
 	mux.HandleFunc("/api/send-code", handleSendCode)
 	mux.HandleFunc("/api/send-code-async", handleSendCodeAsync)
 	mux.HandleFunc("/api/auth/send-code", handleSendCode)
 
-	mux.HandleFunc("/api/history", handleHistory)
+	mux.HandleFunc("/api/history", requireAuth(handleHistory))
 
 	tmdbClient := NewTMDBClient(cache)
 	mux.HandleFunc("/api/trending", tmdbClient.HandleTrending)
@@ -111,13 +111,13 @@ func setupRoutes(mux *http.ServeMux) {
 
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := os.Getenv("ALLOWED_ORIGIN")
+		origin := r.Header.Get("Origin")
 		if origin == "" {
-			origin = "http://localhost:3000"
+			origin = "*"
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID, X-Profile-ID")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID, X-Profile-ID, Cache-Control, Pragma, Expires")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == http.MethodOptions {

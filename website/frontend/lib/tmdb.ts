@@ -35,8 +35,7 @@ async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promi
   try {
     const res = await fetch(`${BACKEND}${p}`, { next: { revalidate } });
     if (!res.ok) {
-
-      if (res.status !== 403 && res.status !== 404) {
+      if (res.status !== 403 && res.status !== 404 && res.status !== 502 && res.status !== 429) {
         console.error(`[tmdb] gagal (${res.status}):`, path);
       }
       return fallback;
@@ -115,6 +114,15 @@ export async function getTrendingGlobal(): Promise<TmdbItem[]> {
   return withPoster(merged).slice(0, 20);
 }
 
+export async function getTrendingKDrama(): Promise<TmdbItem[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const krTv = await api<TmdbListResponse>(
+    `/api/discover?media=tv&country=KR&sort_by=popularity.desc&released_before=${today}&without_genres=16,10764,99,10767,10763&provider=${MAJOR_PROVIDERS}`,
+    { page: 1, results: [] }
+  );
+  return tag(withPoster(krTv.results), "tv").slice(0, 20);
+}
+
 export async function discoverByProvider(
   provider: number,
   media: MediaType
@@ -151,17 +159,18 @@ export interface LatestEpisode {
 export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
   const today = new Date().toISOString().slice(0, 10);
   const list = await api<TmdbListResponse>(
-    `/api/discover?media=tv&sort_by=first_air_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
+    `/api/discover?media=tv&sort_by=popularity.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
     { page: 1, results: [] }
   );
   const shows = withPoster(list.results).slice(0, count);
   if (shows.length === 0) return [];
 
   const ids = shows.map((s) => s.id).join(",");
-  const detailsMap = await api<Record<string, TmdbDetail>>(
-    `/api/detail-batch?media=tv&ids=${ids}`,
-    {}
+  const batchResponse = await api<{ results: Record<string, TmdbDetail> }>(
+    `/api/batch?media=tv&ids=${ids}`,
+    { results: {} }
   );
+  const detailsMap = batchResponse.results || {};
 
   const out: LatestEpisode[] = [];
   for (const s of shows) {

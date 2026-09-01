@@ -36,8 +36,6 @@ export default function Navbar() {
     { label: t("nav.movies"), href: "/browse?media=movie", icon: FilmIcon },
     { label: t("nav.tv"), href: "/browse?media=tv", icon: TvIcon },
     { label: t("nav.reality"), href: "/reality", icon: SparklesIcon },
-    { label: t("nav.asian"), href: "/asian", icon: GlobeIcon },
-    { label: t("nav.anime"), href: "/anime", icon: SparklesIcon },
     { label: t("nav.myList"), href: "/daftar-saya", icon: BookmarkIcon },
   ];
 
@@ -112,7 +110,7 @@ export default function Navbar() {
           <div 
             className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
               scrolled && !isLandingPage
-                ? "rounded-full border border-white/20 bg-black/50 shadow-glass backdrop-blur-[35px]"
+                ? "rounded-full border border-white/20 bg-white/5 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)]"
                 : "border-0 border-transparent bg-gradient-to-b from-black/70 via-black/30 to-transparent shadow-none backdrop-blur-none"
             }`}
           />
@@ -178,7 +176,7 @@ export default function Navbar() {
                   </button>
                   {openMore && (
                     <div className="absolute left-0 top-full pt-4">
-                      <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-glass backdrop-blur-[35px]">
+                      <div className="w-56 rounded-xl border border-white/20 bg-white/5 p-2 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)]">
                         {moreMenu.map(({ label, href, icon: Icon }) => (
                           <Link
                             key={label}
@@ -233,7 +231,7 @@ export default function Navbar() {
                 </button>
                 {openAccount && (
                   <div className="absolute right-0 top-full pt-4">
-                    <div className="w-56 rounded-xl border border-white/20 bg-black/50 p-2 shadow-glass backdrop-blur-[35px]">
+                    <div className="w-56 rounded-xl border border-white/20 bg-white/5 p-2 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)]">
                       <div className="px-3 py-2">
                         <div className="truncate text-sm font-semibold">
                           {activeProfile ? (activeProfile as any).name : user.username}

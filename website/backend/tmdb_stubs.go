@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -85,6 +86,99 @@ func checkVidlinkAvailability(media, id string) bool {
 }
 
 func checkMajorProvider(media, id string) bool {
+	if tmdbClient == nil {
+		return false
+	}
+	data, err := tmdbClient.GetWatchProviders(media, id)
+	if err != nil {
+		return false
+	}
 
+	results, ok := data["results"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	idRegion, ok := results["ID"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	majorProviders := map[int]bool{
+		8:    true, // Netflix
+		119:  true, // Amazon Prime
+		350:  true, // Apple TV
+		122:  true, // Disney+
+		158:  true, // Viu
+		483:  true, // MAX Stream
+		489:  true, // Vidio
+		1899: true, // HBO Max
+	}
+
+	checkList := []string{"flatrate", "rent", "buy"}
+	for _, t := range checkList {
+		if list, ok := idRegion[t].([]interface{}); ok {
+			for _, item := range list {
+				if provider, ok := item.(map[string]interface{}); ok {
+					if pid, ok := provider["provider_id"].(float64); ok {
+						if majorProviders[int(pid)] {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
 	return false
+}
+
+func filterByMajorProviderParallel(results []interface{}, defaultMedia string) []interface{} {
+	var mu sync.Mutex
+	filtered := make([]interface{}, 0, len(results))
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 5)
+
+	for _, item := range results {
+		wg.Add(1)
+		go func(item interface{}) {
+			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			data, ok := item.(map[string]interface{})
+			if !ok {
+				return
+			}
+			
+			media := defaultMedia
+			if mt, ok := data["media_type"].(string); ok {
+				media = mt
+			}
+
+			if media == "person" {
+				mu.Lock()
+				filtered = append(filtered, item)
+				mu.Unlock()
+				return
+			}
+			
+			idStr := ""
+			if id, ok := data["id"].(float64); ok {
+				idStr = fmt.Sprintf("%.0f", id)
+			}
+			
+			if idStr == "" {
+				return
+			}
+
+			if checkMajorProvider(media, idStr) {
+				mu.Lock()
+				filtered = append(filtered, item)
+				mu.Unlock()
+			}
+		}(item)
+	}
+
+	wg.Wait()
+	return filtered
 }

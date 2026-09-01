@@ -1,6 +1,8 @@
 import type { MediaType } from "@/lib/types";
 import { genresFor } from "@/lib/catalog";
 import CategoryTiles from "@/components/CategoryTiles";
+import HeroCarousel from "@/components/HeroCarousel";
+import { getTrendingGlobal, getHeroSlides } from "@/lib/tmdb";
 
 export default async function GenresPage({
   searchParams,
@@ -13,5 +15,16 @@ export default async function GenresPage({
     label: g.name,
     href: `/browse?media=${media}&genre=${g.id}`,
   }));
-  return <CategoryTiles title="Genres" tiles={tiles} />;
+
+  const trending = await getTrendingGlobal();
+  const heroSlides = await getHeroSlides(trending, 5);
+
+  return (
+    <main className="min-h-screen pb-16">
+      {heroSlides.length > 0 && <HeroCarousel slides={heroSlides} />}
+      <div className={heroSlides.length > 0 ? "pt-8" : "pt-28"}>
+        <CategoryTiles title="Genres" tiles={tiles} disableWrapper={true} />
+      </div>
+    </main>
+  );
 }

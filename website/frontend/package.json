@@ -11,7 +11,10 @@
     "postbuild": "next-sitemap"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "@sentry/nextjs": "^10.72.0",
+    "@types/three": "^0.185.4",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "framer-motion": "^13.1.0",
@@ -19,7 +22,8 @@
     "next": "^16.3.3",
     "next-sitemap": "^4.2.3",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",

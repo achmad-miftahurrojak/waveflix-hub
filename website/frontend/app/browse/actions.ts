@@ -29,9 +29,9 @@ export async function fetchBrowsePage(
       page,
     };
 
-    const sortUi = sp.sort_by ?? "";
-    let sortMovie = isNetwork ? "popularity.desc" : "primary_release_date.desc";
-    let sortTv = isNetwork ? "popularity.desc" : "first_air_date.desc";
+    const sortUi = sp.sort_by ?? "terpopuler";
+    let sortMovie = isNetwork ? "popularity.desc" : "popularity.desc";
+    let sortTv = isNetwork ? "popularity.desc" : "popularity.desc";
 
     if (sortUi === "terpopuler") {
       sortMovie = "popularity.desc"; sortTv = "popularity.desc";
