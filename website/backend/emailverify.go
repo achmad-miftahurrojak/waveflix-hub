@@ -22,10 +22,6 @@ const (
 )
 
 func handleSendCode(w http.ResponseWriter, r *http.Request) {
-	if !smtpConfigured() && os.Getenv("E2E_TEST_MODE") != "1" {
-		httpError(w, http.StatusServiceUnavailable, "layanan email belum dikonfigurasi")
-		return
-	}
 	r.Body = http.MaxBytesReader(w, r.Body, 1_000)
 	var body struct {
 		Email string `json:"email"`
