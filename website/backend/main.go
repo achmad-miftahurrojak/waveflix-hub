@@ -68,13 +68,24 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/update-profile", handleUpdateProfile)
 	mux.HandleFunc("/api/change-password", handleChangePassword)
 
-	mux.HandleFunc("/api/send-code", handleSendCode)
-	mux.HandleFunc("/api/send-code-async", handleSendCodeAsync)
-
-	mux.HandleFunc("/api/history", handleHistory)
+	mux.HandleFunc("/api/auth/register", handleRegister)
+	mux.HandleFunc("/api/auth/login", handleLogin)
+	mux.HandleFunc("/api/auth/logout", handleLogout)
+	mux.HandleFunc("/api/auth/me", handleMe)
+	mux.HandleFunc("/api/auth/check-email", handleCheckEmail)
+	mux.HandleFunc("/api/auth/profile", handleUpdateProfile)
+	mux.HandleFunc("/api/auth/password", handleChangePassword)
+	mux.HandleFunc("/api/auth/avatar", handleUpdateProfile)
+	mux.HandleFunc("/api/auth/banner", handleUpdateProfile)
 
 	mux.HandleFunc("/api/profiles", handleProfiles)
 	mux.HandleFunc("/api/profiles/", handleProfileDetail)
+
+	mux.HandleFunc("/api/send-code", handleSendCode)
+	mux.HandleFunc("/api/send-code-async", handleSendCodeAsync)
+	mux.HandleFunc("/api/auth/send-code", handleSendCode)
+
+	mux.HandleFunc("/api/history", handleHistory)
 
 	tmdbClient := NewTMDBClient(cache)
 	mux.HandleFunc("/api/trending", tmdbClient.HandleTrending)
