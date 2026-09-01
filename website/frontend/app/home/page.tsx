@@ -5,7 +5,6 @@ import {
   getLatest,
   getLatestEpisodes,
   getHeroSlides,
-  MAJOR_PROVIDERS,
 } from "@/lib/tmdb";
 import HeroCarousel from "@/components/HeroCarousel";
 import TrendingSection from "@/components/TrendingSection";
@@ -19,9 +18,10 @@ import ContinueWatchingRow from "@/components/ContinueWatchingRow";
 const PLATFORMS: SwitchGroup[] = [
   { label: "Netflix", id: 8 },
   { label: "Disney+", id: 122 },
-  { label: "Apple TV", id: 350 },
+  { label: "HBO Max", id: 384 },
+  { label: "Apple TV+", id: 350 },
   { label: "Prime Video", id: 119 },
-  { label: "HBO", id: 1899 },
+  { label: "Viu", id: 158 },
 ].map(
   (p): SwitchGroup => ({
     label: p.label,
@@ -33,11 +33,10 @@ const PLATFORMS: SwitchGroup[] = [
 );
 
 const REGIONS: SwitchGroup[] = [
-  { label: "Korean Drama", sources: [{ media: "tv", params: `country=KR&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "Chinese Drama", sources: [{ media: "tv", params: `country=CN&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "Japanese Drama", sources: [{ media: "tv", params: `country=JP&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "Thai Drama", sources: [{ media: "tv", params: `country=TH&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
-  { label: "Anime", sources: [{ media: "tv", params: `genre=16&country=JP&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}` }] },
+  { label: "Korean Drama", sources: [{ media: "tv", params: `country=KR&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc` }] },
+  { label: "Chinese Drama", sources: [{ media: "tv", params: `country=CN&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc` }] },
+  { label: "Japanese Drama", sources: [{ media: "tv", params: `country=JP&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc` }] },
+  { label: "Thai Drama", sources: [{ media: "tv", params: `country=TH&without_genres=16,10764,99,10767,10763&sort_by=popularity.desc` }] },
 ];
 
 export default async function Home() {
@@ -51,7 +50,6 @@ export default async function Home() {
       getLatestEpisodes(14),
     ]);
 
-  // Combine Top Indonesia and KDrama for the hero slides, removing duplicates
   const combinedTrending = [...trendingIndonesia];
   for (const item of trendingKDrama) {
     if (!combinedTrending.find((x) => x.id === item.id)) {
@@ -78,3 +76,4 @@ export default async function Home() {
     </main>
   );
 }
+

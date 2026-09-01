@@ -45,7 +45,7 @@ func getImageLangs(q url.Values) string {
 	if lang := q.Get("include_image_language"); lang != "" {
 		return lang
 	}
-	return "id,null"
+	return "en,null"
 }
 
 func fetchJSON(targetURL string, mediaType string) (map[string]interface{}, error) {

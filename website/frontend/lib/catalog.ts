@@ -48,10 +48,11 @@ export const COUNTRIES: { code: string; name: string }[] = [
 
 export const PROVIDERS: { id: number; name: string }[] = [
   { id: 8, name: "Netflix" },
-  { id: 337, name: "Disney+" },
-  { id: 119, name: "Prime Video" },
-  { id: 350, name: "Apple TV+" },
+  { id: 122, name: "Disney+" },
   { id: 384, name: "HBO Max" },
+  { id: 350, name: "Apple TV+" },
+  { id: 119, name: "Prime Video" },
+  { id: 158, name: "Viu" },
 ];
 
 export const SORTS: { value: string; label: string }[] = [

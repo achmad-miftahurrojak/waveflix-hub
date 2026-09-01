@@ -51,6 +51,7 @@ const withPoster = (items: TmdbItem[] = []) => (items || []).filter((m) => m.pos
 const tag = (items: TmdbItem[], media: MediaType) =>
   (items || []).map((m) => ({ ...m, media_type: media }));
 
+
 export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const [movies, tv, krTv, krMovie] = await Promise.all([
@@ -134,7 +135,7 @@ export async function discoverByProvider(
   return tag(withPoster(data.results), media);
 }
 
-export const MAJOR_PROVIDERS = "8|119|337|350|384|190|158|489|623|344|356|198|199";
+export const MAJOR_PROVIDERS = "8|122|384|350|119|158";
 
 export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
