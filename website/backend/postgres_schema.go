@@ -79,11 +79,9 @@ func (psb *PostgreSQLSchemaBuilder) createEmailVerificationsTable() error {
 query := `
 CREATE TABLE IF NOT EXISTS email_verifications (
 id SERIAL PRIMARY KEY,
-user_id INTEGER NOT NULL,
 token VARCHAR(255) UNIQUE NOT NULL,
 expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ALTER TABLE email_verifications ENABLE ROW LEVEL SECURITY;
 `

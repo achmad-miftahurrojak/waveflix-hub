@@ -58,8 +58,8 @@ func handleSendCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := db.Exec(
-		`INSERT INTO email_verifications(user_id, token, expires_at)
-		 VALUES(0, $1, $2)`,
+		`INSERT INTO email_verifications(token, expires_at)
+		 VALUES($1, $2)`,
 
 		string(hash)+"|||"+email,
 		time.Now().Add(codeTTL),
