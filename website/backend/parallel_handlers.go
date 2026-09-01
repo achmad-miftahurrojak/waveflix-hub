@@ -64,7 +64,7 @@ func handleDetailBatchParallel(w http.ResponseWriter, r *http.Request) {
 				imageLangs := getImageLangs(r.URL.Query())
 				targetUrl := base + "?language=" + getTmdbLang(r.URL.Query()) + 
 					"&append_to_response=credits,videos,recommendations,similar,images" +
-					"&include_image_language=" + imageLangs + "&api_key=" + tmdbApiKey
+					"&include_image_language=" + imageLangs + "&api_key=" + getTmdbApiKey()
 
 				data, fetchErr := fetchJSON(targetUrl, media)
 				if fetchErr == nil {
@@ -111,7 +111,7 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	media := getMediaParam(q)
 
 	p := url.Values{}
-	p.Set("api_key", tmdbApiKey)
+	p.Set("api_key", getTmdbApiKey())
 	p.Set("language", getTmdbLang(q))
 	p.Set("include_image_language", getImageLangs(q))
 	p.Set("watch_region", "ID")
@@ -125,6 +125,7 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + p.Encode()
 	data, err := fetchJSON(targetUrl, media)
 	if err != nil {
+		log.Printf("[tmdb] Error in handleDiscoverParallel: %v", err)
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, `{"error":"TMDB API error"}`)
 		return
@@ -222,7 +223,7 @@ func handleSearchParallel(w http.ResponseWriter, r *http.Request) {
 	imageLangs := getImageLangs(r.URL.Query())
 	targetUrl := tmdbBaseUrl + "/search/multi?query=" + url.QueryEscape(query) +
 		"&language=" + getTmdbLang(r.URL.Query()) + "&include_image_language=" + imageLangs + 
-		"&page=" + page + "&include_adult=false&api_key=" + tmdbApiKey
+		"&page=" + page + "&include_adult=false&api_key=" + getTmdbApiKey()
 
 	data, err := fetchJSON(targetUrl, "multi")
 	if err != nil {
@@ -312,7 +313,7 @@ func processTMDBBatch(ids []string, media string, query url.Values) map[string]i
 				imageLangs := getImageLangs(query)
 				targetUrl := base + "?language=" + getTmdbLang(query) + 
 					"&append_to_response=credits,videos,recommendations,similar,images" +
-					"&include_image_language=" + imageLangs + "&api_key=" + tmdbApiKey
+					"&include_image_language=" + imageLangs + "&api_key=" + getTmdbApiKey()
 
 				data, err := fetchJSON(targetUrl, media)
 				if err == nil {

@@ -19,7 +19,15 @@ const (
 
 var tmdbBaseUrl = "https://api.themoviedb.org/3"
 
-var tmdbApiKey = os.Getenv("TMDB_API_KEY")
+var tmdbApiKey = ""
+
+func getTmdbApiKey() string {
+	if tmdbApiKey != "" {
+		return tmdbApiKey
+	}
+	tmdbApiKey = os.Getenv("TMDB_API_KEY")
+	return tmdbApiKey
+}
 
 func getMediaParam(q url.Values) string {
 	return normalizeMedia(q.Get("media"))
