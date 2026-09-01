@@ -114,11 +114,19 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	p.Set("api_key", getTmdbApiKey())
 	p.Set("language", getTmdbLang(q))
 	p.Set("include_image_language", getImageLangs(q))
-	p.Set("watch_region", "ID")
-	
+
+	hasCountry := q.Get("country") != ""
+
+	if !hasCountry {
+		p.Set("watch_region", "ID")
+	}
+
 	if provider := q.Get("provider"); provider != "" {
 		p.Set("with_watch_providers", provider)
-	} else {
+		if !hasCountry {
+			p.Set("watch_region", "ID")
+		}
+	} else if !hasCountry {
 		p.Set("with_watch_providers", "8|119|350|122|158|483|489|1899")
 	}
 
