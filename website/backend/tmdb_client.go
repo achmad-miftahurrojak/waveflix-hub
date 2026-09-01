@@ -108,6 +108,39 @@ tc.cache.SetJSON(cacheKey, result, DefaultCacheTTL().MovieDetail)
 return result, nil
 }
 
+func (tc *TMDBClient) GetTV(tvID, language, appendToResponse string) (map[string]interface{}, error) {
+	cacheKey := fmt.Sprintf("tmdb:tv:%s:%s:%s", tvID, language, appendToResponse)
+
+	var cachedData map[string]interface{}
+	if tc.cache.GetJSON(cacheKey, &cachedData) {
+		return cachedData, nil
+	}
+
+	params := url.Values{
+		"api_key":  {tc.apiKey},
+		"language": {language},
+	}
+	if appendToResponse != "" {
+		params.Set("append_to_response", appendToResponse)
+	}
+
+	apiURL := fmt.Sprintf("%s/tv/%s?%s", tc.baseURL, tvID, params.Encode())
+
+	data, err := tc.fetchWithDeduplication(apiURL, cacheKey)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	tc.cache.SetJSON(cacheKey, result, DefaultCacheTTL().TVDetail)
+
+	return result, nil
+}
+
 func (tc *TMDBClient) GetTrending(mediaType, timeWindow, language string) (map[string]interface{}, error) {
 cacheKey := fmt.Sprintf("tmdb:trending:%s:%s:%s", mediaType, timeWindow, language)
 
@@ -318,14 +351,23 @@ func (tc *TMDBClient) HandleDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	media := getMediaParam(q)
 	language := getTmdbLang(q)
-	data, err := tc.GetMovie(id, language, "credits,videos,recommendations,similar,images")
+	var data map[string]interface{}
+	var err error
+
+	if media == "tv" {
+		data, err = tc.GetTV(id, language, "credits,videos,recommendations,similar,images")
+	} else {
+		data, err = tc.GetMovie(id, language, "credits,videos,recommendations,similar,images")
+	}
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, `{"error":"TMDB API error"}`)
 		return
 	}
-	sanitizeTMDBData(data, "movie")
+	sanitizeTMDBData(data, media)
 	responseJSON, _ := json.Marshal(data)
 	writeJSON(w, string(responseJSON))
 }
