@@ -71,26 +71,35 @@ export default function QuickViewModal({
     setLoadingOverview(true);
     const media = isTv(item) ? "tv" : "movie";
 
-    fetch(`${BACKEND}/api/detail?media=${media}&id=${item.id}&lang=en`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    const imgLang = item.original_language || "en";
+
+    Promise.all([
+      fetch(`${BACKEND}/api/detail?media=${media}&id=${item.id}&lang=en`).then((r) => (r.ok ? r.json() : null)),
+      imgLang !== "en"
+        ? fetch(`${BACKEND}/api/detail?media=${media}&id=${item.id}&lang=${imgLang}`).then((r) => (r.ok ? r.json() : null))
+        : Promise.resolve(null),
+    ])
+      .then(([dEn, dOrig]) => {
         if (cancelled) return;
-        const ov: string = d?.overview ?? "";
+        const ov: string = dEn?.overview ?? "";
         setOverview(ov.trim());
-        setTagline(typeof d?.tagline === "string" ? d.tagline.trim() : null);
+        setTagline(typeof dEn?.tagline === "string" ? dEn.tagline.trim() : null);
         setMeta({
-          runtime: typeof d?.runtime === "number" ? d.runtime : undefined,
-          seasons:
-            typeof d?.number_of_seasons === "number" ? d.number_of_seasons : undefined,
-          genres: Array.isArray(d?.genres)
-            ? d.genres.map((g: { name?: string }) => g?.name).filter(Boolean).slice(0, 2)
+          runtime: typeof dEn?.runtime === "number" ? dEn.runtime : undefined,
+          seasons: typeof dEn?.number_of_seasons === "number" ? dEn.number_of_seasons : undefined,
+          genres: Array.isArray(dEn?.genres)
+            ? dEn.genres.map((g: { name?: string }) => g?.name).filter(Boolean).slice(0, 2)
             : undefined,
         });
 
-        const logos: TmdbLogo[] = d?.images?.logos ?? [];
+        const logosEn: TmdbLogo[] = dEn?.images?.logos ?? [];
+        const logosOrig: TmdbLogo[] = dOrig?.images?.logos ?? [];
+        const logos = [...logosEn, ...logosOrig];
+
         const best =
           logos.find((l) => l.iso_639_1 === "en") ??
           logos.find((l) => l.iso_639_1 === null) ??
+          logos.find((l) => l.iso_639_1 === imgLang) ??
           logos[0];
         setLogoPath(best?.file_path ?? null);
       })
