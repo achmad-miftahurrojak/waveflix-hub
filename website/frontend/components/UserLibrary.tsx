@@ -56,13 +56,9 @@ export default function UserLibrary({ title, endpoint, localFallbackKey }: Props
         top5.map(async (item) => {
           const media = mediaTypeOf(item);
           try {
-            const [detailRes, imagesRes] = await Promise.all([
-              authFetch(`/api/detail?media=${media}&id=${item.id}`),
-              authFetch(`/api/images?media=${media}&id=${item.id}`)
-            ]);
-
+            const detailRes = await authFetch(`/api/detail?media=${media}&id=${item.id}`);
             const detail = await detailRes.json();
-            const images = await imagesRes.json();
+            const images = detail.images || {};
 
             const enLogo = images.logos?.find((l: any) => l.iso_639_1 === "en");
             const anyLogo = images.logos?.length > 0 ? images.logos[0] : null;
