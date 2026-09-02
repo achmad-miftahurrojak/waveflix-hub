@@ -33,7 +33,7 @@ func getList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
 	pid := getProfileID(r, uid)
 	rows, err := db.Query(
-		"SELECT tmdb_id, media_type, title, poster_path, vote_average FROM "+
+		"SELECT tmdb_id, media_type, title, poster_path FROM "+
 			table+" WHERE user_id = $1 AND profile_id = $2 ORDER BY added_at DESC",
 		uid, pid,
 	)
@@ -46,7 +46,7 @@ func getList(w http.ResponseWriter, r *http.Request, table string) {
 	items := []mediaItem{}
 	for rows.Next() {
 		var it mediaItem
-		rows.Scan(&it.TmdbID, &it.MediaType, &it.Title, &it.PosterPath, &it.VoteAverage)
+		rows.Scan(&it.TmdbID, &it.MediaType, &it.Title, &it.PosterPath)
 		items = append(items, it)
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{"results": items})
