@@ -28,10 +28,10 @@ export default async function DetailPage({
   const { media, id } = await params;
   if (media !== "movie" && media !== "tv") notFound();
 
-  const detail = await getDetail(media as MediaType, id);
+  const detail = await getDetail(media as MediaType, id, "en");
   if (!detail) notFound();
 
-  const logo = await getHeroLogo(detail);
+  const logo = await getHeroLogo(detail, "en");
   const tv = isTv(detail);
   const genres = genreNames(detail);
   const cast = detail.credits?.cast ?? [];
@@ -112,14 +112,13 @@ export default async function DetailPage({
       >
         <div className="relative z-[2] w-full max-w-3xl px-[4%] pb-24">
           {logo ? (
-
             <img
               src={logo}
               alt={itemTitle(detail)}
-              className="mb-4 max-h-20 w-auto max-w-[260px] object-contain object-left drop-shadow-logo md:max-h-28 md:max-w-[340px]"
+              className="mb-4 max-h-24 w-auto max-w-[280px] object-contain object-left drop-shadow-logo md:max-h-36 md:max-w-[400px]"
             />
           ) : (
-            <h1 className="mb-4 text-4xl font-bold drop-shadow-title md:text-5xl">
+            <h1 className="mb-4 text-4xl font-black tracking-tight drop-shadow-title md:text-5xl">
               {itemTitle(detail)}
             </h1>
           )}
@@ -130,6 +129,10 @@ export default async function DetailPage({
               {genres.join("  ·  ")}
             </p>
           )}
+
+          <p className="mb-6 max-w-2xl text-sm leading-relaxed text-white/90 drop-shadow md:text-base line-clamp-3 md:line-clamp-4">
+            {detail.overview || "No description available for this title."}
+          </p>
 
           {}
           <DetailActions item={detail} />
@@ -186,14 +189,9 @@ export default async function DetailPage({
             </p>
           )}
 
-          <p className="max-w-2xl text-base leading-7 text-white/75">
-            {detail.overview || "No description available for this title."}
-          </p>
-
           {studios.length > 0 && (
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               {studios.map((s) => (
-
                 <img
                   key={s.id}
                   src={`https://image.tmdb.org/t/p/w200${s.logo_path}`}
