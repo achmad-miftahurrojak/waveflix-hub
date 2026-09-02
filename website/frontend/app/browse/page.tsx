@@ -1,9 +1,8 @@
 import type { MediaType } from "@/lib/types";
-import { discoverMany, getHeroSlides, getTrendingGlobal, MAJOR_PROVIDERS } from "@/lib/tmdb";
+import { discoverMany, MAJOR_PROVIDERS } from "@/lib/tmdb";
 import { fetchBrowsePage } from "./actions";
 import { MOVIE_GENRES, TV_GENRES, COUNTRIES } from "@/lib/catalog";
 import PosterGrid from "@/components/PosterGrid";
-import HeroCarousel from "@/components/HeroCarousel";
 import BrowseControls from "@/components/BrowseControls";
 import InfinitePosterGrid from "@/components/InfinitePosterGrid";
 
@@ -52,7 +51,7 @@ export default async function BrowsePage({
 
   return (
     <main className="min-h-screen pb-16">
-      {heroSlides.length > 0 && <HeroCarousel slides={heroSlides} />}
+
 
       <div className={`px-[4%] ${heroSlides.length > 0 ? "pt-8" : "pt-28"}`}>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -68,3 +67,7 @@ export default async function BrowsePage({
     </main>
   );
 }
+
+
+
+
