@@ -1,7 +1,7 @@
 import type { MediaType } from "@/lib/types";
 import { discoverMany, MAJOR_PROVIDERS, getHeroSlides } from "@/lib/tmdb";
 import { fetchBrowsePage } from "./actions";
-import { MOVIE_GENRES, TV_GENRES, COUNTRIES } from "@/lib/catalog";
+import { MOVIE_GENRES, TV_GENRES, COUNTRIES, COLLECTIONS } from "@/lib/catalog";
 import PosterGrid from "@/components/PosterGrid";
 import BrowseControls from "@/components/BrowseControls";
 import InfinitePosterGrid from "@/components/InfinitePosterGrid";
@@ -34,6 +34,10 @@ export default async function BrowsePage({
   }
 
   const title = (() => {
+    if (sp.collection) {
+      const col = COLLECTIONS.find((x) => String(x.id) === sp.collection);
+      if (col) return col.name;
+    }
     if (sp.genre) {
       const g = [...MOVIE_GENRES, ...TV_GENRES].find((x) => String(x.id) === sp.genre);
       if (g) return g.name;
