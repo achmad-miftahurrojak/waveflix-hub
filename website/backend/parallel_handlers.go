@@ -147,6 +147,18 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 				p.Set("with_origin_country", val)
 			case "network":
 				p.Set("with_networks", val)
+			case "released_after":
+				if media == "movie" {
+					p.Set("primary_release_date.gte", val)
+				} else {
+					p.Set("first_air_date.gte", val)
+				}
+			case "released_before":
+				if media == "movie" {
+					p.Set("primary_release_date.lte", val)
+				} else {
+					p.Set("first_air_date.lte", val)
+				}
 			default:
 				p.Set(key, val)
 			}

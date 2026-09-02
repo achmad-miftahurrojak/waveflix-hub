@@ -30,36 +30,19 @@ export async function fetchBrowsePage(
     };
 
     const sortUi = sp.sort_by ?? "terpopuler";
-    let sortMovie = isNetwork ? "popularity.desc" : "popularity.desc";
-    let sortTv = isNetwork ? "popularity.desc" : "popularity.desc";
+    let sortKey = isNetwork ? "popularity.desc" : "popularity.desc";
 
-    if (sortUi === "terpopuler") {
-      sortMovie = "popularity.desc"; sortTv = "popularity.desc";
-    } else if (sortUi === "terlama") {
-      sortMovie = "primary_release_date.asc"; sortTv = "first_air_date.asc";
+    if (sortUi === "terlama") {
+      sortKey = media === "tv" ? "first_air_date.asc" : "primary_release_date.asc";
     } else if (sortUi === "terbaru") {
-      sortMovie = "primary_release_date.desc"; sortTv = "first_air_date.desc";
+      sortKey = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
     }
 
-    const [mv, tvr] = await Promise.all([
-      discover({ ...base, media: "movie", sort_by: sortMovie }),
-      discover({ ...base, media: "tv", sort_by: sortTv }),
-    ]);
-
-    const merged = [...(mv.results || []), ...(tvr.results || [])];
-
-    if (sortMovie.startsWith("popularity")) {
-      merged.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
-    } else if (sortMovie.endsWith("asc")) {
-      const dateVal = (m: TmdbItem) => new Date(m.release_date || m.first_air_date || 0).getTime();
-      merged.sort((a, b) => dateVal(a) - dateVal(b));
-    } else {
-      const dateVal = (m: TmdbItem) => new Date(m.release_date || m.first_air_date || 0).getTime();
-      merged.sort((a, b) => dateVal(b) - dateVal(a));
-    }
-
-    const hasMore = (mv.total_pages || 0) > page || (tvr.total_pages || 0) > page;
-    return { results: merged, hasMore };
+    const data = await discover({ ...base, media, sort_by: sortKey });
+    return { 
+      results: data.results || [], 
+      hasMore: (data.total_pages || 0) > page 
+    };
   } else {
     let sortUi = sp.sort_by ?? "popularity.desc";
     if (sortUi === "terbaru") sortUi = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
