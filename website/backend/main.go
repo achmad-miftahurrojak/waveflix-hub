@@ -91,6 +91,7 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/trending", tmdbClient.HandleTrending)
 	mux.HandleFunc("/api/detail", tmdbClient.HandleDetail)
 	mux.HandleFunc("/api/person", tmdbClient.HandlePerson)
+	mux.HandleFunc("/api/season", tmdbClient.HandleSeason)
 	mux.HandleFunc("/api/search", handleSearchParallel)
 	mux.HandleFunc("/api/discover", handleDiscoverParallel)
 	mux.HandleFunc("/api/batch", handleDetailBatchParallel)

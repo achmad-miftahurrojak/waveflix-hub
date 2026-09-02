@@ -395,6 +395,30 @@ func (tc *TMDBClient) HandlePerson(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, string(data))
 }
 
+func (tc *TMDBClient) HandleSeason(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	season := q.Get("season")
+	if id == "" || season == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, `{"error":"id and season required"}`)
+		return
+	}
+
+	language := getTmdbLang(q)
+	cacheKey := fmt.Sprintf("tmdb:season:%s:%s:%s", id, season, language)
+	targetUrl := fmt.Sprintf("%s/tv/%s/season/%s?api_key=%s&language=%s", tc.baseURL, id, season, tc.apiKey, language)
+	
+	data, err := tc.fetchWithDeduplication(targetUrl, cacheKey)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, `{"error":"TMDB API error"}`)
+		return
+	}
+
+	writeJSON(w, string(data))
+}
+
 var tmdbClient *TMDBClient
 
 func InitOptimizedTMDB(cache *RedisCacheManager) {
