@@ -86,6 +86,8 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/auth/send-code", handleSendCode)
 
 	mux.HandleFunc("/api/history", requireAuth(handleHistory))
+	mux.HandleFunc("/api/watchlist", requireAuth(handleWatchlist))
+	mux.HandleFunc("/api/favorites", requireAuth(handleFavorites))
 
 	tmdbClient := NewTMDBClient(cache)
 	mux.HandleFunc("/api/trending", tmdbClient.HandleTrending)

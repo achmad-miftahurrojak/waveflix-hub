@@ -137,9 +137,11 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 		if it.MediaType != "tv" {
 			it.MediaType = "movie"
 		}
+		db.Exec("DELETE FROM history WHERE user_id = $1 AND profile_id = $2 AND tmdb_id = $3 AND media_type = $4", uid, pid, it.TmdbID, it.MediaType)
+
 		if _, err := db.Exec(
-			`INSERT INTO history(user_id, profile_id, tmdb_id, media_type, title, poster_path, season_number, episode_number, progress_seconds, duration_seconds)
-			 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+			`INSERT INTO history(user_id, profile_id, tmdb_id, media_type, title, poster_path, season_number, episode_number, progress_seconds, duration_seconds, watched_at)
+			 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())`,
 			uid, pid, it.TmdbID, it.MediaType, it.Title, it.PosterPath, it.Season, it.Episode, it.Progress, it.Runtime,
 		); err != nil {
 			httpError(w, http.StatusInternalServerError, "gagal simpan history")
@@ -150,11 +152,10 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.Query(
-		`SELECT DISTINCT ON (tmdb_id, media_type) 
-		  tmdb_id, media_type, title, poster_path, season_number, episode_number, progress_seconds, duration_seconds, watched_at
+		`SELECT tmdb_id, media_type, title, poster_path, season_number, episode_number, progress_seconds, duration_seconds, watched_at
 		 FROM history 
 		 WHERE user_id = $1 AND profile_id = $2
-		 ORDER BY tmdb_id, media_type, watched_at DESC
+		 ORDER BY watched_at DESC
 		 LIMIT 50`,
 		uid, pid,
 	)
