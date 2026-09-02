@@ -1,5 +1,7 @@
 import AuthForm from "@/components/AuthForm";
+import { getTrendingGlobal } from "@/lib/tmdb";
 
-export default function MasukPage() {
-  return <AuthForm mode="login" />;
+export default async function MasukPage() {
+  const trending = await getTrendingGlobal();
+  return <AuthForm mode="login" trending={trending} />;
 }

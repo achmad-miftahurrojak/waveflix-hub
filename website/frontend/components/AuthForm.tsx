@@ -5,7 +5,7 @@ import { useAuth } from "./AuthProvider";
 import { AuthComponent } from "./ui/auth-component";
 import { BACKEND } from "@/lib/helpers";
 
-export default function AuthForm({ mode }: { mode: "login" | "register" }) {
+export default function AuthForm({ mode, trending }: { mode: "login" | "register", trending?: any[] }) {
   const router = useRouter();
   const { login, register } = useAuth();
 
@@ -43,6 +43,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <AuthComponent
       initialMode={mode}
+      trendingItems={trending}
       onLogin={handleLogin}
       onRegisterSendCode={handleRegisterSendCode}
       onRegisterVerify={handleRegisterVerify}

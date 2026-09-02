@@ -20,6 +20,7 @@ export interface AuthComponentProps {
   initialMode?: "login" | "register";
   logo?: React.ReactNode;
   brandName?: string;
+  trendingItems?: any[];
   onLogin: (email: string, pass: string) => Promise<string | null>;
   onRegisterSendCode: (email: string) => Promise<{ error?: string; test_code?: string }>;
   onRegisterVerify: (email: string, username: string, pass: string, code: string) => Promise<string | null>;
@@ -30,6 +31,7 @@ export const AuthComponent = ({
   initialMode = "register",
   logo = <FilmIcon className="size-6 text-primary" />,
   brandName = "Waveflix",
+  trendingItems = [],
   onLogin,
   onRegisterSendCode,
   onRegisterVerify,
@@ -94,7 +96,7 @@ export const AuthComponent = ({
 
   return (
 		<main className="relative md:h-screen md:overflow-hidden lg:grid lg:grid-cols-2">
-			<div className="bg-muted/60 relative hidden h-full flex-col border-r p-10 lg:flex">
+			<div className="bg-muted/60 relative hidden h-full flex-col border-r p-10 lg:flex overflow-hidden">
 				<div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
 				<div className="z-10 flex items-center gap-2">
 					{logo}
@@ -110,10 +112,7 @@ export const AuthComponent = ({
 						</footer>
 					</blockquote>
 				</div>
-				<div className="absolute inset-0">
-					<FloatingPaths position={1} />
-					<FloatingPaths position={-1} />
-				</div>
+				<TrendingMarquee items={trendingItems} />
 			</div>
 			<div className="relative flex min-h-screen flex-col justify-center p-4">
 				<div
@@ -314,51 +313,63 @@ export const AuthComponent = ({
 	);
 }
 
-const FloatingPaths = React.memo(function FloatingPaths({ position }: { position: number }) {
-	const paths = Array.from({ length: 36 }, (_, i) => ({
-		id: i,
-		d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
-			380 - i * 5 * position
-		} -${189 + i * 6} -${312 - i * 5 * position} ${216 - i * 6} ${
-			152 - i * 5 * position
-		} ${343 - i * 6}C${616 - i * 5 * position} ${470 - i * 6} ${
-			684 - i * 5 * position
-		} ${875 - i * 6} ${684 - i * 5 * position} ${875 - i * 6}`,
-		color: `rgba(15,23,42,${0.1 + i * 0.03})`,
-		width: 0.5 + i * 0.03,
-	}));
+const MarqueeCard = ({ item }: { item: any }) => (
+  <div className="mx-2 shrink-0 overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+    <img
+      src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+      alt={item.title || item.name}
+      className="h-48 w-32 object-cover sm:h-64 sm:w-44"
+      loading="lazy"
+    />
+  </div>
+);
 
-	return (
-		<div className="pointer-events-none absolute inset-0">
-			<svg
-				className="h-full w-full text-slate-950 dark:text-white"
-				viewBox="0 0 696 316"
-				fill="none"
-			>
-				<title>Background Paths</title>
-				{paths.map((path) => (
-					<motion.path
-						key={path.id}
-						d={path.d}
-						stroke="currentColor"
-						strokeWidth={path.width}
-						strokeOpacity={0.1 + path.id * 0.03}
-						initial={{ pathLength: 0.3, opacity: 0.6 }}
-						animate={{
-							pathLength: 1,
-							opacity: [0.3, 0.6, 0.3],
-							pathOffset: [0, 1, 0],
-						}}
-						transition={{
-							duration: 20 + (path.id % 10),
-							repeat: Number.POSITIVE_INFINITY,
-							ease: 'linear',
-						}}
-					/>
-				))}
-			</svg>
-		</div>
-	);
+const MarqueeRow = React.memo(function MarqueeRow({
+  data,
+  reverse = false,
+  speed = 40,
+}: {
+  data: any[];
+  reverse?: boolean;
+  speed?: number;
+}) {
+  const doubled = React.useMemo(() => [...data, ...data], [data]);
+  return (
+    <div className="relative w-full max-w-full overflow-hidden isolation-isolate">
+      <div className="pointer-events-none absolute left-0 top-0 h-full w-12 z-10 bg-gradient-to-r from-background to-transparent" />
+      <div
+        className={`flex transform-gpu min-w-[200%] ${reverse ? "pt-2 pb-4" : "pt-4 pb-2"}`}
+        style={{
+          animation: `marqueeScroll ${speed}s linear infinite`,
+          animationDirection: reverse ? "reverse" : "normal",
+        }}
+      >
+        {doubled.map((item, i) => (
+          <MarqueeCard key={`${item.id}-${i}`} item={item} />
+        ))}
+      </div>
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-12 z-10 bg-gradient-to-l from-background to-transparent" />
+    </div>
+  );
+});
+
+const TrendingMarquee = React.memo(function TrendingMarquee({ items }: { items: any[] }) {
+  if (!items || items.length === 0) return null;
+  const row1 = items.slice(0, 7);
+  const row2 = items.slice(7, 14);
+
+  return (
+    <div className="absolute inset-0 flex flex-col justify-center gap-2 overflow-hidden opacity-80">
+      <style>{`
+        @keyframes marqueeScroll {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+      <MarqueeRow data={row1} reverse={false} speed={30} />
+      <MarqueeRow data={row2} reverse={true} speed={35} />
+    </div>
+  );
 });
 
 const GoogleIcon = (props: React.ComponentProps<'svg'>) => (
