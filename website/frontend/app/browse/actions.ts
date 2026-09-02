@@ -8,7 +8,7 @@ export async function fetchBrowsePage(
   page: number
 ): Promise<{ results: TmdbItem[]; hasMore: boolean }> {
   const media: MediaType = sp.media === "tv" ? "tv" : "movie";
-  const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider);
+  const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider || sp.collection);
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
   const since5y = `${new Date().getFullYear() - 5}-01-01`;
@@ -22,6 +22,7 @@ export async function fetchBrowsePage(
       genre: sp.genre,
       year: sp.year,
       country: sp.country,
+      collection: sp.collection,
       provider: isNetwork ? sp.provider : MAJOR_PROVIDERS,
       released_after: noDate ? undefined : since5y,
       released_before: noDate ? undefined : today,

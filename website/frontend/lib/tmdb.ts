@@ -214,6 +214,7 @@ export async function discover(params: {
   min_votes?: string;
   without_genres?: string;
   page?: number;
+  collection?: string;
 }): Promise<TmdbListResponse> {
   const qs = new URLSearchParams({
     media: params.media,
@@ -221,6 +222,7 @@ export async function discover(params: {
   if (params.genre) qs.set("genre", params.genre);
   if (params.year) qs.set("year", params.year);
   if (params.country) qs.set("country", params.country);
+  if (params.collection) qs.set("collection", params.collection);
   
   // Default to major providers if no specific provider is selected
   qs.set("provider", params.provider || MAJOR_PROVIDERS);
