@@ -12,9 +12,10 @@ interface Props {
   noPadding?: boolean;
   small?: boolean;
   quickView?: boolean;
+  isLanding?: boolean;
 }
 
-export default function Carousel({ items, noPadding, small, quickView }: Props) {
+export default function Carousel({ items, noPadding, small, quickView, isLanding }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [selectedItem, setSelectedItem] = useState<TmdbItem | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -76,6 +77,7 @@ export default function Carousel({ items, noPadding, small, quickView }: Props) 
             isOpen={true}
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
+            isLanding={isLanding}
           />
         )}
 

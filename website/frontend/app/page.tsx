@@ -1,4 +1,5 @@
 import { getTrendingIndonesia } from "@/lib/tmdb";
+import Carousel from "@/components/Carousel";
 import EmailForm from "@/components/EmailForm";
 import PosterWall from "@/components/landing/PosterWall";
 import Faq from "@/components/landing/Faq";
@@ -82,6 +83,16 @@ export default async function LandingPage() {
           </p>
           <EmailForm />
         </div>
+      </section>
+
+      <section className="relative z-10 bg-black pt-24 pb-16">
+        <div
+          className="absolute left-0 right-0 top-0 h-16 bg-black"
+          style={{ borderRadius: "50% 50% 0 0 / 100% 100% 0 0" }}
+          aria-hidden
+        />
+        <h2 className="mx-auto mb-4 max-w-[1080px] text-2xl font-bold md:text-3xl">Sedang Tren Sekarang</h2>
+        <Carousel items={trending} small quickView isLanding={true} />
       </section>
 
       {}

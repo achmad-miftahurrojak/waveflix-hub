@@ -23,10 +23,12 @@ export default function QuickViewModal({
   isOpen,
   onClose,
   item,
+  isLanding,
 }: {
   isOpen: boolean;
   onClose: () => void;
   item: TmdbItem | null;
+  isLanding?: boolean;
 }) {
   const [overview, setOverview] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
@@ -195,10 +197,10 @@ export default function QuickViewModal({
             </p>
 
             <Link
-              href="/masuk"
+              href={isLanding ? "/daftar" : `/title/${isTv(item) ? "tv" : "movie"}/${item.id}`}
               className="inline-flex items-center gap-2 rounded bg-accent px-6 py-3 text-sm font-semibold text-black transition hover:bg-accent-dark"
             >
-              Mulai
+              Watch Now
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
