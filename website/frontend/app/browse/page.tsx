@@ -28,7 +28,7 @@ export default async function BrowsePage({
   const results = initialData.results;
   const initialHasMore = initialData.hasMore;
 
-  let heroSlides = [];
+  let heroSlides: any[] = [];
   if (isCategory && results && results.length > 0) {
     heroSlides = await getHeroSlides(results, 5);
   }
