@@ -119,6 +119,7 @@ func (tc *TMDBClient) GetTV(tvID, language, appendToResponse string) (map[string
 	params := url.Values{
 		"api_key":  {tc.apiKey},
 		"language": {language},
+		"include_image_language": {"en,null"},
 	}
 	if appendToResponse != "" {
 		params.Set("append_to_response", appendToResponse)

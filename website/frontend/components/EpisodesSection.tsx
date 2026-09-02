@@ -56,7 +56,7 @@ export default function EpisodesSection({
 
   const now = Date.now();
   const aired = episodes.filter(
-    (ep) => !ep.air_date || new Date(ep.air_date).getTime() <= now
+    (ep) => ep.air_date && new Date(ep.air_date).getTime() <= now
   );
 
   return (
