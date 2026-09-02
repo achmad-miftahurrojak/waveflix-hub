@@ -363,11 +363,8 @@ export async function getHeroLogo(item: TmdbItem, lang?: string): Promise<string
   }
 
   const media = mediaTypeOf(item);
-  const data = await api<TmdbImagesResponse>(
-    `/api/images?media=${media}&id=${item.id}`,
-    { logos: [] }
-  );
-  const logos = data.logos ?? [];
+  const detail = await getDetail(media, String(item.id), finalLang);
+  const logos = detail?.images?.logos ?? [];
   if (logos.length === 0) return null;
   const loc = logos.find((l) => l.iso_639_1 === finalLang) ?? logos.find((l) => l.iso_639_1 === 'en') ?? logos[0];
   return `https://image.tmdb.org/t/p/w500${loc.file_path}`;

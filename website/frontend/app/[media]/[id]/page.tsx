@@ -31,7 +31,9 @@ export default async function DetailPage({
   const detail = await getDetail(media as MediaType, id, "en");
   if (!detail) notFound();
 
-  const logo = await getHeroLogo(detail, "en");
+  const rawLogos = detail.images?.logos ?? [];
+  const locLogo = rawLogos.find((l) => l.iso_639_1 === "en") ?? rawLogos[0];
+  const logo = locLogo ? `https://image.tmdb.org/t/p/w500${locLogo.file_path}` : null;
   const tv = isTv(detail);
   const genres = genreNames(detail);
   const cast = detail.credits?.cast ?? [];
