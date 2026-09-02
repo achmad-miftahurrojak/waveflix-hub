@@ -314,11 +314,11 @@ export const AuthComponent = ({
 }
 
 const MarqueeCard = ({ item }: { item: any }) => (
-  <div className="mx-2 shrink-0 overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+  <div className="mx-1.5 shrink-0 overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
     <img
       src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
       alt={item.title || item.name}
-      className="h-48 w-32 object-cover sm:h-64 sm:w-44"
+      className="h-32 w-20 object-cover sm:h-40 sm:w-28"
       loading="lazy"
     />
   </div>
@@ -333,12 +333,12 @@ const MarqueeRow = React.memo(function MarqueeRow({
   reverse?: boolean;
   speed?: number;
 }) {
-  const doubled = React.useMemo(() => [...data, ...data], [data]);
+  const doubled = React.useMemo(() => [...data, ...data, ...data, ...data], [data]);
   return (
     <div className="relative w-full max-w-full overflow-hidden isolation-isolate">
       <div className="pointer-events-none absolute left-0 top-0 h-full w-12 z-10 bg-gradient-to-r from-background to-transparent" />
       <div
-        className={`flex transform-gpu min-w-[200%] ${reverse ? "pt-2 pb-4" : "pt-4 pb-2"}`}
+        className={`flex transform-gpu min-w-[200%] pt-1 pb-1`}
         style={{
           animation: `marqueeScroll ${speed}s linear infinite`,
           animationDirection: reverse ? "reverse" : "normal",
@@ -355,11 +355,14 @@ const MarqueeRow = React.memo(function MarqueeRow({
 
 const TrendingMarquee = React.memo(function TrendingMarquee({ items }: { items: any[] }) {
   if (!items || items.length === 0) return null;
-  const row1 = items.slice(0, 7);
-  const row2 = items.slice(7, 14);
+  const row1 = items.slice(0, 4);
+  const row2 = items.slice(4, 8);
+  const row3 = items.slice(8, 12);
+  const row4 = items.slice(12, 16);
+  const row5 = items.slice(16, 20);
 
   return (
-    <div className="absolute inset-0 flex flex-col justify-center gap-2 overflow-hidden opacity-80">
+    <div className="absolute inset-0 flex flex-col justify-center gap-1 overflow-hidden opacity-70 rotate-[-4deg] scale-110">
       <style>{`
         @keyframes marqueeScroll {
           0% { transform: translateX(0%); }
@@ -368,6 +371,9 @@ const TrendingMarquee = React.memo(function TrendingMarquee({ items }: { items: 
       `}</style>
       <MarqueeRow data={row1} reverse={false} speed={30} />
       <MarqueeRow data={row2} reverse={true} speed={35} />
+      <MarqueeRow data={row3} reverse={false} speed={40} />
+      <MarqueeRow data={row4} reverse={true} speed={45} />
+      <MarqueeRow data={row5} reverse={false} speed={50} />
     </div>
   );
 });
