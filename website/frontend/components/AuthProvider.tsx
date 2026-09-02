@@ -115,9 +115,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((err) => {
-        if (err?.status !== 401) {
-          console.error("Auth fetch failed:", err, "saved token was:", saved ? "PRESENT" : "NULL");
-        }
+        // Silently handle fetch failure (e.g. network error)
         if (err?.status === 401 || err?.status === 403) {
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem("waveflix_user");
