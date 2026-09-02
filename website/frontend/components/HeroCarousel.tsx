@@ -239,20 +239,6 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
                     <PlayIcon className="text-black" /> {t("ui.watchNow")}
                   </Link>
-                  <button 
-                    onClick={() => {
-                      if (s.item.trailer) {
-                        // Normally this would open a modal, but for now we just play/unmute
-                        setMuted(false);
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 rounded-md bg-white/20 px-8 py-3 text-base font-semibold text-white backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    Trailer
-                  </button>
                 </div>
               </div>
             );

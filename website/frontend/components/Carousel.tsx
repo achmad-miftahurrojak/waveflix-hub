@@ -9,13 +9,12 @@ import { ChevronLeft, ChevronRight } from "./Icons";
 
 interface Props {
   items: TmdbItem[];
-  ranked?: boolean;
   noPadding?: boolean;
-  small?: boolean; 
-  quickView?: boolean; 
+  small?: boolean;
+  quickView?: boolean;
 }
 
-export default function Carousel({ items, ranked, noPadding, small, quickView }: Props) {
+export default function Carousel({ items, noPadding, small, quickView }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [selectedItem, setSelectedItem] = useState<TmdbItem | null>(null);
 
@@ -43,7 +42,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
         side === "left"
           ? "bg-gradient-to-r from-bg to-transparent"
           : "bg-gradient-to-l from-bg to-transparent"
-      } text-white opacity-0 transition group-hover/car:opacity-100 group-focus-within/car:opacity-100 md:flex hover:text-accent`}
+      } text-white md:flex hover:text-accent`}
     >
       {side === "left" ? <ChevronLeft /> : <ChevronRight />}
     </button>
@@ -114,7 +113,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
       <button
         onClick={() => scroll(-1)}
         aria-label="Previous"
-        className="absolute left-0 top-0 bottom-0 z-20 hidden w-12 items-center justify-center bg-gradient-to-r from-bg to-transparent text-white opacity-0 transition group-hover/car:opacity-100 md:flex hover:text-accent"
+        className="absolute left-0 top-0 bottom-0 z-20 hidden w-12 items-center justify-center bg-gradient-to-r from-bg to-transparent text-white md:flex hover:text-accent"
       >
         <ChevronLeft />
       </button>
@@ -125,7 +124,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
       >
         {items.map((m, i) => (
           <div key={`${m.id}-${i}`} className="w-[185px] shrink-0 snap-start">
-            <MovieCard item={m} rank={ranked ? i + 1 : undefined} />
+            <MovieCard item={m} />
           </div>
         ))}
       </div>
@@ -133,7 +132,7 @@ export default function Carousel({ items, ranked, noPadding, small, quickView }:
       <button
         onClick={() => scroll(1)}
         aria-label="Next"
-        className="absolute right-0 top-0 bottom-0 z-20 hidden w-12 items-center justify-center bg-gradient-to-l from-bg to-transparent text-white opacity-0 transition group-hover/car:opacity-100 md:flex hover:text-accent"
+        className="absolute right-0 top-0 bottom-0 z-20 hidden w-12 items-center justify-center bg-gradient-to-l from-bg to-transparent text-white md:flex hover:text-accent"
       >
         <ChevronRight />
       </button>

@@ -58,7 +58,7 @@ export default function TrendingSection({
           ))}
         </div>
       </div>
-      <Carousel items={filtered} ranked />
+      <Carousel items={filtered} />
     </section>
   );
 }
