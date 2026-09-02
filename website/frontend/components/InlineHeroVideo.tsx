@@ -296,7 +296,7 @@ export default function InlineHeroVideo({
         ref={wrapRef}
         onMouseMove={revealControls}
         onMouseLeave={() => setControlsVisible(false)}
-        className={`relative w-full bg-black ${heightClass}`}
+        className={`relative w-full bg-black h-[70vh] md:h-[80vh]`}
       >
         {isLoading && (
           <div className="absolute inset-0 z-0 flex items-center justify-center bg-black">
@@ -311,7 +311,6 @@ export default function InlineHeroVideo({
           </div>
         )}
 
-        {}
         {status !== "asian-loading" && finalSrc && (
           <iframe
             src={finalSrc}
@@ -324,11 +323,6 @@ export default function InlineHeroVideo({
             allowFullScreen
           />
         )}
-
-        {/* Transparent scroll zones to allow scrolling over greedy iframes & reveal controls */}
-        <div className="absolute inset-x-0 top-0 z-20 h-[15%]" onMouseMove={revealControls} />
-        <div className="absolute left-0 top-0 z-20 h-[80%] w-[12%]" onMouseMove={revealControls} />
-        <div className="absolute right-0 top-0 z-20 h-[80%] w-[12%]" onMouseMove={revealControls} />
 
         <div
           className={`absolute right-5 top-24 z-30 flex items-center gap-3 transition-opacity duration-300 ${
