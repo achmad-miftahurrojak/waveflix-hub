@@ -325,11 +325,10 @@ export default function InlineHeroVideo({
           />
         )}
 
-        {}
-        <div
-          className="absolute inset-x-0 top-0 z-20 h-32"
-          onMouseMove={revealControls}
-        />
+        {/* Transparent scroll zones to allow scrolling over greedy iframes & reveal controls */}
+        <div className="absolute inset-x-0 top-0 z-20 h-[15%]" onMouseMove={revealControls} />
+        <div className="absolute left-0 top-0 z-20 h-[80%] w-[12%]" onMouseMove={revealControls} />
+        <div className="absolute right-0 top-0 z-20 h-[80%] w-[12%]" onMouseMove={revealControls} />
 
         <div
           className={`absolute right-5 top-24 z-30 flex items-center gap-3 transition-opacity duration-300 ${
