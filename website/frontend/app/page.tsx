@@ -1,4 +1,4 @@
-import { getTrendingGlobal } from "@/lib/tmdb";
+import { getTrendingIndonesia } from "@/lib/tmdb";
 import Carousel from "@/components/Carousel";
 import EmailForm from "@/components/EmailForm";
 import PosterWall from "@/components/landing/PosterWall";
@@ -62,7 +62,7 @@ const footerColumns: { label: string; href: string }[][] = [
 
 export default async function LandingPage() {
 
-  const trending = await getTrendingGlobal();
+  const trending = await getTrendingIndonesia();
 
   return (
     <main className="min-h-screen bg-black">
