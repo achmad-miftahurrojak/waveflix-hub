@@ -3,7 +3,7 @@ import type { TmdbItem, TmdbDetail, MediaType } from "./types";
 export const IMG = "https://image.tmdb.org/t/p";
 
 export const BACKEND =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081";
 
 export function isTv(m: TmdbItem): boolean {
   return m.media_type === "tv" || Boolean(m.first_air_date);

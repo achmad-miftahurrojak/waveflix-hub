@@ -21,7 +21,7 @@ const nextConfig = {
         destination: `${
           process.env.NEXT_PUBLIC_BACKEND_URL ??
           process.env.BACKEND_URL ??
-          'http://localhost:8080'
+          'http://localhost:8081'
         }/uploads/:path*`
       }
     ]
@@ -44,7 +44,7 @@ const nextConfig = {
               `connect-src 'self' ${
                 process.env.NEXT_PUBLIC_BACKEND_URL ??
                 process.env.BACKEND_URL ??
-                'http://localhost:8080'
+                'http://localhost:8081'
               }`
             ].join('; ')
           },

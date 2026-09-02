@@ -18,7 +18,7 @@ import {
 
 import { cookies } from "next/headers";
 
-const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8080";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8081";
 const REVALIDATE = 60 * 15; 
 
 async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promise<T> {
@@ -135,7 +135,6 @@ export async function discoverByProvider(
   return tag(withPoster(data.results), media);
 }
 
-export const MAJOR_PROVIDERS = "8|122|384|350|119|158";
 
 export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
@@ -201,6 +200,8 @@ export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   return tag(withPoster(data.results), media);
 }
 
+export const MAJOR_PROVIDERS = "8|337|384|119|350"; // Netflix, Disney+, HBO Max, Prime Video, Apple TV
+
 export async function discover(params: {
   media: MediaType;
   genre?: string;
@@ -220,12 +221,16 @@ export async function discover(params: {
   if (params.genre) qs.set("genre", params.genre);
   if (params.year) qs.set("year", params.year);
   if (params.country) qs.set("country", params.country);
-  if (params.provider) qs.set("provider", params.provider);
+  
+  // Default to major providers if no specific provider is selected
+  qs.set("provider", params.provider || MAJOR_PROVIDERS);
+  
   if (params.sort_by) qs.set("sort_by", params.sort_by);
   if (params.released_after) qs.set("released_after", params.released_after);
   if (params.released_before) qs.set("released_before", params.released_before);
   if (params.without_genres) qs.set("without_genres", params.without_genres);
   if (params.page) qs.set("page", String(params.page));
+  
   const data = await api<TmdbListResponse>(`/api/discover?${qs}`, {
     page: 1,
     results: [],

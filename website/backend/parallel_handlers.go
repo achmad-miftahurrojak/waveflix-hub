@@ -123,11 +123,10 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 
 	if provider := q.Get("provider"); provider != "" {
 		p.Set("with_watch_providers", provider)
-		if !hasCountry {
-			p.Set("watch_region", "ID")
-		}
+		p.Set("watch_region", "ID")
 	} else if !hasCountry {
 		p.Set("with_watch_providers", "8|119|350|122|158|483|489|1899")
+		p.Set("watch_region", "ID")
 	}
 
 	for key, values := range q {
