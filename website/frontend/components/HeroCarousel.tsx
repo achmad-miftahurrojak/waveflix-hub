@@ -73,10 +73,12 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       player = new (window as any).YT.Player(iframeRef.current, {
         events: {
           onReady: (e: any) => {
-            e.target.setPlaybackQuality('hd1080');
+            if (typeof e.target.setPlaybackQuality === 'function') {
+              e.target.setPlaybackQuality('hd1080');
+            }
           },
           onStateChange: (e: any) => {
-            if (e.data === 1) {
+            if (e.data === 1 && typeof e.target.setPlaybackQuality === 'function') {
               e.target.setPlaybackQuality('hd1080');
             }
             if (e.data === 0 && !skipped) {
