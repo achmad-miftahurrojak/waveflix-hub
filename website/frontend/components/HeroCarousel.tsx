@@ -204,19 +204,14 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
       {}
       <div className="relative z-[2] flex h-full items-end">
-        <div className="w-full max-w-2xl px-[4%] pb-[8vh]">
+        <div className="w-full max-w-2xl px-[4%] pb-[10vh]">
           {slides.map((s, i) => {
             const tv = isTv(s.item);
-            const desc = s.overview.length > 220 ? s.overview.slice(0, 220) + "…" : s.overview;
             return (
               <div key={s.item.id} className={i === active ? "block animate-[fadeIn_.5s_ease]" : "hidden"}>
-                <span className="mb-4 inline-block rounded bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">
+                <span className="mb-3 inline-block rounded bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-black shadow">
                   {tv ? t("ui.tvSeries") : t("ui.movie")}
                 </span>
-
-                {s.tagline && (
-                  <p className="mb-2 text-sm italic text-white/70 drop-shadow md:text-base">{s.tagline}</p>
-                )}
 
                 {s.logo ? (
                   <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-24 w-auto max-w-[280px] object-contain object-left drop-shadow-logo md:max-h-36 md:max-w-[400px]" />
@@ -232,19 +227,21 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   <span>{itemYear(s.item)}</span>
                   {s.duration && (<><span className="text-white/40">&bull;</span><span>{s.duration}</span></>)}
                   {s.genres.length > 0 && (<><span className="text-white/40">&bull;</span><span>{s.genres.join(", ")}</span></>)}
-                  {s.status && (
-                    <span className="rounded border border-emerald-500/70 px-2 py-0.5 text-xs font-bold text-emerald-400">{s.status}</span>
-                  )}
                 </div>
 
-                {desc && (
-                  <p className="mb-6 max-w-lg text-xs leading-relaxed text-white/75 drop-shadow md:text-sm">{desc}</p>
+                {s.tagline && (
+                  <p className="mb-6 max-w-lg text-sm leading-relaxed text-white/90 drop-shadow md:text-base italic font-medium">{s.tagline}</p>
                 )}
 
                 <div className="flex flex-wrap items-center gap-3">
                   <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
                     <PlayIcon className="text-black" /> {t("ui.watchNow")}
                   </Link>
+                  {s.status && (
+                    <span className="inline-flex items-center rounded-md border border-white/20 bg-black/40 px-4 py-2.5 text-sm font-bold tracking-wider text-emerald-400 backdrop-blur uppercase">
+                      {s.status}
+                    </span>
+                  )}
                 </div>
               </div>
             );
