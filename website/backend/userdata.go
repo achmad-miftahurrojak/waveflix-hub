@@ -6,8 +6,14 @@ import (
 	"strconv"
 )
 
-func getProfileID(r *http.Request) int {
+func getProfileID(r *http.Request, uid int64) int {
 	pid, _ := strconv.Atoi(r.Header.Get("X-Profile-ID"))
+	if pid == 0 {
+		db.QueryRow("SELECT id FROM profiles WHERE user_id = $1 AND is_default = true LIMIT 1", uid).Scan(&pid)
+	}
+	if pid == 0 {
+		db.QueryRow("SELECT id FROM profiles WHERE user_id = $1 ORDER BY id ASC LIMIT 1", uid).Scan(&pid)
+	}
 	return pid
 }
 
@@ -25,7 +31,7 @@ type mediaItem struct {
 
 func getList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
-	pid := getProfileID(r)
+	pid := getProfileID(r, uid)
 	rows, err := db.Query(
 		"SELECT tmdb_id, media_type, title, poster_path, vote_average FROM "+
 			table+" WHERE user_id = $1 AND profile_id = $2 ORDER BY added_at DESC",
@@ -54,7 +60,7 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 		httpError(w, http.StatusBadRequest, "data tidak valid")
 		return
 	}
-	pid := getProfileID(r)
+	pid := getProfileID(r, uid)
 	if it.MediaType != "tv" {
 		it.MediaType = "movie"
 	}
@@ -74,7 +80,7 @@ func addList(w http.ResponseWriter, r *http.Request, table string) {
 
 func deleteList(w http.ResponseWriter, r *http.Request, table string) {
 	uid := r.Context().Value(userIDKey).(int64)
-	pid := getProfileID(r)
+	pid := getProfileID(r, uid)
 	q := r.URL.Query()
 	idStr := getIDParam(q)
 	tmdbID, _ := strconv.ParseInt(idStr, 10, 64)
@@ -113,7 +119,7 @@ var handleFavorites = listHandler("favorites")
 
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int64)
-	pid := getProfileID(r)
+	pid := getProfileID(r, uid)
 
 	if r.Method == http.MethodDelete {
 		tmdbIDStr := r.URL.Query().Get("tmdb_id")
