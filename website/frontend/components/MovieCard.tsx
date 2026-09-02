@@ -2,8 +2,13 @@
 
 import React, { useRef, useState } from "react";
 import Link from "next/link";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { TmdbItem } from "@/lib/types";
 import { itemTitle, posterUrl, detailHref } from "@/lib/helpers";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Props {
   item: TmdbItem;
@@ -11,11 +16,29 @@ interface Props {
 }
 
 export default function MovieCard({ item, disableLink }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<React.CSSProperties>({
     transform: "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
     transition: "transform 0.4s ease-in-out",
   });
+
+  useGSAP(
+    () => {
+      gsap.from(containerRef.current, {
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top bottom-=50",
+          once: true,
+        },
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+      });
+    },
+    { scope: containerRef }
+  );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -72,7 +95,7 @@ export default function MovieCard({ item, disableLink }: Props) {
 
   if (disableLink) {
     return (
-      <div className="group block w-full text-left" aria-label={itemTitle(item)}>
+      <div ref={containerRef} className="group block w-full text-left" aria-label={itemTitle(item)}>
         {content}
       </div>
     );
@@ -80,6 +103,7 @@ export default function MovieCard({ item, disableLink }: Props) {
 
   return (
     <Link
+      ref={containerRef as any}
       href={detailHref(item)}
       className="group block w-full text-left"
       aria-label={itemTitle(item)}
