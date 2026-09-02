@@ -102,16 +102,6 @@ export const AuthComponent = ({
 					{logo}
 					<p className="text-xl font-semibold">{brandName}</p>
 				</div>
-				<div className="z-10 mt-auto">
-					<blockquote className="space-y-2">
-						<p className="text-xl">
-							&ldquo;Movies are like an expensive form of therapy for me.&rdquo;
-						</p>
-						<footer className="font-mono text-sm font-semibold text-muted-foreground">
-							~ Tim Burton
-						</footer>
-					</blockquote>
-				</div>
 				<TrendingMarquee items={trendingItems} />
 			</div>
 			<div className="relative flex min-h-screen flex-col justify-center p-4">
