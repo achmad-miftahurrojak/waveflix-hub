@@ -165,14 +165,37 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + p.Encode()
-	data, err := fetchJSON(targetUrl, media)
+	collectionID := q.Get("collection")
+
+	var data map[string]interface{}
+	var err error
+
+	if collectionID != "" && media == "movie" {
+		targetUrl := tmdbBaseUrl + "/collection/" + collectionID + "?api_key=" + getTmdbApiKey() + "&language=" + getTmdbLang(q)
+		collData, fetchErr := fetchJSON(targetUrl, media)
+		if fetchErr != nil {
+			err = fetchErr
+		} else {
+			parts, _ := collData["parts"].([]interface{})
+			data = map[string]interface{}{
+				"page": 1,
+				"results": parts,
+				"total_pages": 1,
+				"total_results": len(parts),
+			}
+		}
+	} else {
+		targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + p.Encode()
+		data, err = fetchJSON(targetUrl, media)
+	}
+
 	if err != nil {
 		log.Printf("[tmdb] Error in handleDiscoverParallel: %v", err)
 		w.WriteHeader(http.StatusBadGateway)
 		writeJSON(w, `{"error":"TMDB API error"}`)
 		return
 	}
+
 
 	if results, ok := data["results"].([]interface{}); ok {
 		enhanceResultsParallel(results, media)
