@@ -38,6 +38,12 @@ func getTmdbLang(q url.Values) string {
 	if lang := q.Get("language"); lang != "" {
 		return lang
 	}
+	if lang := q.Get("lang"); lang != "" {
+		if lang == "en" {
+			return "en-US"
+		}
+		return "id-ID"
+	}
 	return "id-ID"
 }
 
