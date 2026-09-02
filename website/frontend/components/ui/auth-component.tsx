@@ -12,7 +12,9 @@ import {
 	KeyRoundIcon,
 	Loader2Icon,
     AlertCircleIcon,
-    FilmIcon
+    FilmIcon,
+    EyeIcon,
+    EyeOffIcon
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,6 +48,7 @@ export const AuthComponent = ({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,8 +183,8 @@ export const AuthComponent = ({
                                 <div className="relative h-max">
                                     <Input
                                         placeholder="password"
-                                        className="peer ps-9"
-                                        type="password"
+                                        className="peer ps-9 pe-9"
+                                        type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
                                         required
@@ -190,6 +193,14 @@ export const AuthComponent = ({
                                     <div className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
                                         <KeyRoundIcon className="size-4" aria-hidden="true" />
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 end-0 flex items-center justify-center pe-3 peer-disabled:opacity-50"
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+                                    </button>
                                 </div>
                             </div>
                             
@@ -232,8 +243,8 @@ export const AuthComponent = ({
                                 <div className="relative h-max">
                                     <Input
                                         placeholder="password (min 6 characters)"
-                                        className="peer ps-9"
-                                        type="password"
+                                        className="peer ps-9 pe-9"
+                                        type={showPassword ? "text" : "password"}
                                         minLength={6}
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
@@ -243,6 +254,14 @@ export const AuthComponent = ({
                                     <div className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
                                         <KeyRoundIcon className="size-4" aria-hidden="true" />
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 end-0 flex items-center justify-center pe-3 peer-disabled:opacity-50"
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+                                    </button>
                                 </div>
                             </div>
 
