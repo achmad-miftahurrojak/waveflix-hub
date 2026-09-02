@@ -62,7 +62,7 @@ const footerColumns: { label: string; href: string }[][] = [
 
 export default async function LandingPage() {
 
-  const trending = await getTrendingIndonesia();
+  const trending = await getTrendingGlobal();
 
   return (
     <main className="min-h-screen bg-black">

@@ -105,17 +105,9 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
                   role="button"
                   tabIndex={0}
                   aria-label={`Lihat detail: ${itemTitle(m)}`}
-                  className="group block w-full cursor-pointer rounded-lg"
+                  className="block w-full focus:outline-none"
                 >
-                  <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-surface shadow-lg transition-transform duration-300 ease-out group-hover:scale-[1.05] group-hover:shadow-card">
-                    <img
-                      src={posterUrl(m)}
-                      alt={itemTitle(m)}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="pointer-events-none absolute inset-0 ring-0 ring-accent/0 transition group-hover:ring-2 group-hover:ring-accent/60" />
-                  </div>
+                  <MovieCard item={m} disableLink={true} />
                 </div>
               ) : (
                 <MovieCard item={m} />
