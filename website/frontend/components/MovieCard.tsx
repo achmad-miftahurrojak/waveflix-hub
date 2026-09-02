@@ -79,7 +79,6 @@ export default function MovieCard({ item, disableLink }: Props) {
         alt={itemTitle(item)}
         loading="lazy"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-300"
-        style={{ transform: "translateZ(-20px) scale(1.1)" }}
       />
       
       {/* Subtle shadow overlay that reacts to the hover */}
