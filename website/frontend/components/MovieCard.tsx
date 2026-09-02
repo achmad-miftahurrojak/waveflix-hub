@@ -25,6 +25,8 @@ export default function MovieCard({ item, disableLink }: Props) {
 
   useGSAP(
     () => {
+      if (!containerRef.current) return;
+      
       gsap.from(containerRef.current, {
         scrollTrigger: {
           trigger: containerRef.current,
@@ -37,7 +39,7 @@ export default function MovieCard({ item, disableLink }: Props) {
         ease: "power3.out",
       });
     },
-    { scope: containerRef }
+    { scope: containerRef, dependencies: [] }
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
