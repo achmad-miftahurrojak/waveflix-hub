@@ -333,21 +333,34 @@ const MarqueeRow = React.memo(function MarqueeRow({
   reverse?: boolean;
   speed?: number;
 }) {
-  const doubled = React.useMemo(() => [...data, ...data, ...data, ...data], [data]);
+  // Multiply data so a single set is wide enough to cover most screens
+  const singleSet = React.useMemo(() => [...data, ...data, ...data, ...data], [data]);
+  
   return (
-    <div className="relative w-full max-w-full overflow-hidden isolation-isolate">
+    <div className="relative w-full max-w-full overflow-hidden isolation-isolate flex">
       <div className="pointer-events-none absolute left-0 top-0 h-full w-12 z-10 bg-gradient-to-r from-background to-transparent" />
+      
       <div
-        className={`flex transform-gpu min-w-[200%] pt-1 pb-1`}
+        className="flex w-max pt-1 pb-1 transform-gpu"
         style={{
           animation: `marqueeScroll ${speed}s linear infinite`,
           animationDirection: reverse ? "reverse" : "normal",
         }}
       >
-        {doubled.map((item, i) => (
-          <MarqueeCard key={`${item.id}-${i}`} item={item} />
-        ))}
+        {/* Set 1 */}
+        <div className="flex shrink-0">
+          {singleSet.map((item, i) => (
+            <MarqueeCard key={`set1-${item.id}-${i}`} item={item} />
+          ))}
+        </div>
+        {/* Set 2 (Duplicate for seamless loop) */}
+        <div className="flex shrink-0">
+          {singleSet.map((item, i) => (
+            <MarqueeCard key={`set2-${item.id}-${i}`} item={item} />
+          ))}
+        </div>
       </div>
+      
       <div className="pointer-events-none absolute right-0 top-0 h-full w-12 z-10 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
