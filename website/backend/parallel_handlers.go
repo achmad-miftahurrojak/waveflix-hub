@@ -314,9 +314,7 @@ func handleSearchParallel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if results, ok := data["results"].([]interface{}); ok {
-		filtered := filterByMajorProviderParallel(results, "multi")
-		data["results"] = filtered
-		processSearchResultsParallel(filtered)
+		processSearchResultsParallel(results)
 	}
 
 	responseJSON, _ := json.Marshal(data)
