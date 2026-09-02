@@ -107,8 +107,8 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
 
 export async function getTrendingGlobal(): Promise<TmdbItem[]> {
   const [p1, p2] = await Promise.all([
-    api<TmdbListResponse>(`/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`, { page: 1, results: [] }),
-    api<TmdbListResponse>(`/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`, { page: 1, results: [] }),
+    api<TmdbListResponse>(`/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}&lang=en`, { page: 1, results: [] }),
+    api<TmdbListResponse>(`/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}&lang=en`, { page: 1, results: [] }),
   ]);
   const items = [...tag(p1.results ?? [], "movie"), ...tag(p2.results ?? [], "tv")];
   const merged = items.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
@@ -118,7 +118,7 @@ export async function getTrendingGlobal(): Promise<TmdbItem[]> {
 export async function getTrendingKDrama(): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const krTv = await api<TmdbListResponse>(
-    `/api/discover?media=tv&country=KR&sort_by=popularity.desc&released_before=${today}&without_genres=16,10764,99,10767,10763&provider=${MAJOR_PROVIDERS}`,
+    `/api/discover?media=tv&country=KR&sort_by=popularity.desc&released_before=${today}&without_genres=16,10764,99,10767,10763&provider=${MAJOR_PROVIDERS}&lang=en`,
     { page: 1, results: [] }
   );
   return tag(withPoster(krTv.results), "tv").slice(0, 20);
@@ -129,7 +129,7 @@ export async function discoverByProvider(
   media: MediaType
 ): Promise<TmdbItem[]> {
   const data = await api<TmdbListResponse>(
-    `/api/discover?media=${media}&provider=${provider}`,
+    `/api/discover?media=${media}&provider=${provider}&lang=en`,
     { page: 1, results: [] }
   );
   return tag(withPoster(data.results), media);
@@ -141,7 +141,7 @@ export async function getLatest(media: MediaType): Promise<TmdbItem[]> {
   const data = await api<TmdbListResponse>(
     `/api/discover?media=${media}&sort_by=${
       media === "tv" ? "first_air_date.desc" : "primary_release_date.desc"
-    }&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
+    }&released_before=${today}&provider=${MAJOR_PROVIDERS}&lang=en`,
     { page: 1, results: [] }
   );
   return tag(withPoster(data.results), media).slice(0, 18);
@@ -159,7 +159,7 @@ export interface LatestEpisode {
 export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
   const today = new Date().toISOString().slice(0, 10);
   const list = await api<TmdbListResponse>(
-    `/api/discover?media=tv&sort_by=popularity.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
+    `/api/discover?media=tv&sort_by=popularity.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}&lang=en`,
     { page: 1, results: [] }
   );
   const shows = withPoster(list.results).slice(0, count);
@@ -167,7 +167,7 @@ export async function getLatestEpisodes(count = 14): Promise<LatestEpisode[]> {
 
   const ids = shows.map((s) => s.id).join(",");
   const batchResponse = await api<{ results: Record<string, TmdbDetail> }>(
-    `/api/batch?media=tv&ids=${ids}`,
+    `/api/batch?media=tv&ids=${ids}&lang=en`,
     { results: {} }
   );
   const detailsMap = batchResponse.results || {};
@@ -194,7 +194,7 @@ export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const sort = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
   const data = await api<TmdbListResponse>(
-    `/api/discover?media=${media}&sort_by=${sort}&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
+    `/api/discover?media=${media}&sort_by=${sort}&released_before=${today}&provider=${MAJOR_PROVIDERS}&lang=en`,
     { page: 1, results: [] }
   );
   return tag(withPoster(data.results), media);
