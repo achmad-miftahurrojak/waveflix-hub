@@ -38,7 +38,7 @@ export default function PlatformRow() {
     setLoading(true);
     Promise.all(
       PLATFORMS[active].sources.map((s) =>
-        fetch(`${BACKEND}/api/discover?media=${s.media}&${s.params}`)
+        fetch(`${BACKEND}/api/discover?media=${s.media}&${s.params}&lang=en`)
           .then((r) => r.json())
           .then((d: { results?: TmdbItem[] }) =>
             (d.results ?? [])
