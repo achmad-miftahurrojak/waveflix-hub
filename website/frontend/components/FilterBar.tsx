@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import type { MediaType } from "@/lib/types";
-import { genresFor, COUNTRIES, SORTS, YEARS } from "@/lib/catalog";
+import { genresFor, COUNTRIES, SORTS, YEARS, COLLECTIONS } from "@/lib/catalog";
 import { useTranslation } from "@/lib/i18n";
 import { GlassButton } from "@/components/ui/glass-button";
 
@@ -15,6 +15,7 @@ export default function FilterBar() {
   const genre = sp.get("genre") ?? "";
   const year = sp.get("year") ?? "";
   const country = sp.get("country") ?? "";
+  const collection = sp.get("collection") ?? "";
   const sort = sp.get("sort_by") ?? "popularity.desc";
 
   const update = (key: string, value: string) => {
@@ -22,6 +23,7 @@ export default function FilterBar() {
     if (value) params.set(key, value);
     else params.delete(key);
     if (key === "media") params.delete("genre"); 
+    if (key === "media" && value === "tv") params.delete("collection");
     params.delete("page");
     router.push(`/browse?${params.toString()}`);
   };
@@ -70,6 +72,18 @@ export default function FilterBar() {
           </option>
         ))}
       </select>
+
+      {media === "movie" && (
+        <select value={collection} onChange={(e) => update("collection", e.target.value)} className={selectCls}>
+          <option value="">All Collections</option>
+          {COLLECTIONS.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
+
 
       <select value={sort} onChange={(e) => update("sort_by", e.target.value)} className={selectCls}>
         {SORTS.map((s) => {

@@ -20,6 +20,7 @@ import {
   GlobeIcon,
   CalendarIcon,
   NetworkIcon,
+  FolderIcon,
 } from "./Icons";
 import SearchBox from "./SearchBox";
 import { useAuth } from "./AuthProvider";
@@ -76,6 +77,11 @@ export default function Navbar() {
     { label: t("nav.year"), href: `/years?media=${activeMedia}`, icon: CalendarIcon },
     { label: t("nav.network"), href: `/networks?media=${activeMedia}`, icon: NetworkIcon },
   ];
+
+  if (activeMedia === "movie") {
+    moreMenu.push({ label: t("nav.collection"), href: `/collections?media=${activeMedia}`, icon: FolderIcon });
+  }
+
 
   const isActive = (href: string) => {
     const [path, query] = href.split("?");
