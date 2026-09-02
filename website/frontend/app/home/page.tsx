@@ -64,13 +64,14 @@ export default async function Home() {
       <HeroCarousel slides={heroSlides} />
 
       <div className="relative z-[2] pt-4">
-        <ContinueWatchingRow />
-        <TrendingSection title="Trending Now" items={trendingGlobal} />
-        <TrendingSection title="Trending KDrama" items={trendingKDrama} />
+        <MovieRow title="Trending Now" items={trendingGlobal} showRank={true} viewAll href="/trending" />
+        <MovieRow title="Trending in Indonesia" items={trendingIndonesia} />
+        
         <SwitchableCarousel groups={PLATFORMS} />
         <SwitchableCarousel groups={REGIONS} />
-        <MovieRow title="Latest Movies" items={latestMovies} />
-        <MovieRow title="Latest Series" items={latestSeries} />
+        
+        <MovieRow title="Latest Movies" items={latestMovies} viewAll href="/movies" />
+        <MovieRow title="Latest Series" items={latestSeries} viewAll href="/tv" />
         <LatestEpisodesRow episodes={latestEpisodes} />
       </div>
     </main>

@@ -147,8 +147,8 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       : "";
 
   return (
-    <section ref={sectionRef} className="relative h-[86vh] min-h-[560px] w-full overflow-hidden bg-black">
-      {}
+    <section ref={sectionRef} className="relative h-[95vh] min-h-[560px] w-full overflow-hidden bg-black">
+      {/* Background Video */}
       {playVideo && current && (
         <div key={current.item.id} className="absolute inset-0 overflow-hidden">
           <iframe
@@ -235,9 +235,25 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   <p className="mb-6 max-w-lg text-xs leading-relaxed text-white/75 drop-shadow md:text-sm">{desc}</p>
                 )}
 
-                <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
-                  <PlayIcon className="text-black" /> {t("ui.watchNow")}
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
+                    <PlayIcon className="text-black" /> {t("ui.watchNow")}
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      if (s.item.trailer) {
+                        // Normally this would open a modal, but for now we just play/unmute
+                        setMuted(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-md bg-white/20 px-8 py-3 text-base font-semibold text-white backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Trailer
+                  </button>
+                </div>
               </div>
             );
           })}

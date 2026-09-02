@@ -34,9 +34,9 @@ export default function TrendingSection({
   );
 
   return (
-    <section className="mb-3">
-      <div className="mb-1 flex items-center justify-between px-[4%]">
-        <h2 className="text-xl font-bold">{displayTitle}</h2>
+    <section className="mb-6">
+      <div className="mb-3 flex items-center justify-between px-[4%]">
+        <h2 className="text-xl font-bold text-gray-100">{displayTitle}</h2>
         <div className="flex rounded-full bg-white/5 p-1">
           {TABS.map((tabItem) => (
             <button
