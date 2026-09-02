@@ -200,7 +200,7 @@ export async function getRecent(media: MediaType): Promise<TmdbItem[]> {
   return tag(withPoster(data.results), media);
 }
 
-export const MAJOR_PROVIDERS = "8|337|384|119|350"; // Netflix, Disney+, HBO Max, Prime Video, Apple TV
+export const MAJOR_PROVIDERS = "8|119|350|122|1899"; // Netflix, Prime Video, Apple TV, Disney+, HBO Max
 
 export async function discover(params: {
   media: MediaType;
