@@ -93,7 +93,7 @@ func parseBatchIDs(s string) []string {
 
 func SubmitBackgroundTask(taskType string, payload map[string]interface{}) error {
 	if messageQueue == nil || !messageQueue.enabled {
-		return nil
+		return fmt.Errorf("message queue disabled")
 	}
 	job := &Job{
 		Type:    taskType,
