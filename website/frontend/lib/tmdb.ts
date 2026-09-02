@@ -56,19 +56,19 @@ export async function getTrendingIndonesia(): Promise<TmdbItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   const [movies, tv, krTv, krMovie] = await Promise.all([
     api<TmdbListResponse>(
-      `/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`,
+      `/api/discover?media=movie&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}&lang=en`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}`,
+      `/api/discover?media=tv&sort_by=popularity.desc&provider=${MAJOR_PROVIDERS}&lang=en`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=tv&country=KR&sort_by=first_air_date.desc&released_before=${today}&without_genres=10764,10767,10763&provider=${MAJOR_PROVIDERS}`,
+      `/api/discover?media=tv&country=KR&sort_by=first_air_date.desc&released_before=${today}&without_genres=10764,10767,10763&provider=${MAJOR_PROVIDERS}&lang=en`,
       { page: 1, results: [] }
     ),
     api<TmdbListResponse>(
-      `/api/discover?media=movie&country=KR&sort_by=primary_release_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}`,
+      `/api/discover?media=movie&country=KR&sort_by=primary_release_date.desc&released_before=${today}&provider=${MAJOR_PROVIDERS}&lang=en`,
       { page: 1, results: [] }
     ),
   ]);

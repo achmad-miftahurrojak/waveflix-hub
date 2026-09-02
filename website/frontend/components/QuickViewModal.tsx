@@ -86,25 +86,21 @@ export default function QuickViewModal({
             ? d.genres.map((g: { name?: string }) => g?.name).filter(Boolean).slice(0, 2)
             : undefined,
         });
-      })
-      .catch(() => !cancelled && setOverview(""))
-      .finally(() => !cancelled && setLoadingOverview(false));
 
-    // Logo resmi judul (font asli film/series, baked into artwork).
-    // Sertakan bahasa asli judul agar logo non-EN (mis. ko) tetap ketemu.
-    const imgLang = item.original_language || "en";
-    fetch(`${BACKEND}/api/images?media=${media}&id=${item.id}&lang=${imgLang}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled) return;
-        const logos: TmdbLogo[] = d?.logos ?? [];
+        const logos: TmdbLogo[] = d?.images?.logos ?? [];
         const best =
           logos.find((l) => l.iso_639_1 === "en") ??
           logos.find((l) => l.iso_639_1 === null) ??
           logos[0];
         setLogoPath(best?.file_path ?? null);
       })
-      .catch(() => !cancelled && setLogoPath(null));
+      .catch(() => {
+        if (!cancelled) {
+          setOverview("");
+          setLogoPath(null);
+        }
+      })
+      .finally(() => !cancelled && setLoadingOverview(false));
 
     return () => {
       cancelled = true;
