@@ -4,10 +4,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -171,18 +173,28 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if collectionID != "" && media == "movie" {
-		targetUrl := tmdbBaseUrl + "/collection/" + collectionID + "?api_key=" + getTmdbApiKey() + "&language=" + getTmdbLang(q)
-		collData, fetchErr := fetchJSON(targetUrl, media)
-		if fetchErr != nil {
-			err = fetchErr
-		} else {
-			parts, _ := collData["parts"].([]interface{})
-			data = map[string]interface{}{
-				"page": 1,
-				"results": parts,
-				"total_pages": 1,
-				"total_results": len(parts),
+		ids := strings.Split(collectionID, ",")
+		var allParts []interface{}
+		
+		for _, cid := range ids {
+			targetUrl := tmdbBaseUrl + "/collection/" + cid + "?api_key=" + getTmdbApiKey() + "&language=" + getTmdbLang(q)
+			collData, fetchErr := fetchJSON(targetUrl, media)
+			if fetchErr == nil {
+				if parts, ok := collData["parts"].([]interface{}); ok {
+					allParts = append(allParts, parts...)
+				}
 			}
+		}
+
+		if len(allParts) > 0 {
+			data = map[string]interface{}{
+				"page":          1,
+				"results":       allParts,
+				"total_pages":   1,
+				"total_results": len(allParts),
+			}
+		} else {
+			err = fmt.Errorf("no collection parts found")
 		}
 	} else {
 		targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + p.Encode()
