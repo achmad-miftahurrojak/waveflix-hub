@@ -14,8 +14,8 @@ import {
 } from "@/lib/helpers";
 import { StarIcon, PlayIcon } from "./Icons";
 
-const IMAGE_MS = 5000; 
-const IMAGE_ONLY_MS = 10000;
+const IMAGE_MS = 10000; // wait 10 seconds before trailer plays
+const IMAGE_ONLY_MS = 10000; // switch slide after 10 seconds if no trailer
 
 function VolumeOn() {
   return (
@@ -212,10 +212,9 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 )}
 
                 {s.logo ? (
-
-                  <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-16 w-auto max-w-[220px] object-contain object-left drop-shadow-logo md:max-h-24 md:max-w-[280px]" />
+                  <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-24 w-auto max-w-[280px] object-contain object-left drop-shadow-logo md:max-h-36 md:max-w-[400px]" />
                 ) : (
-                  <h1 className="mb-4 max-w-xl text-3xl font-bold leading-tight drop-shadow-lg md:text-4xl">
+                  <h1 className="mb-4 max-w-xl text-4xl font-black leading-tight tracking-tight drop-shadow-lg md:text-5xl">
                     {itemTitle(s.item)}
                   </h1>
                 )}

@@ -287,7 +287,7 @@ export async function getHeroSlides(
   return Promise.all(
     picks.map(async (item) => {
       const media = mediaTypeOf(item);
-      const detail = await getDetail(media, String(item.id));
+      const detail = await getDetail(media, String(item.id), "en");
       const logos = detail?.images?.logos ?? [];
       const localizedLogo =
         logos.find((l) => l.iso_639_1 === lang) ??
@@ -333,9 +333,10 @@ export async function searchMulti(query: string): Promise<TmdbItem[]> {
   );
 }
 
-export async function getDetail(media: MediaType, id: string): Promise<TmdbDetail | null> {
+export async function getDetail(media: MediaType, id: string, lang?: string): Promise<TmdbDetail | null> {
+  const path = `/api/detail?media=${media}&id=${id}${lang ? `&lang=${lang}` : ''}`;
   const data = await api<TmdbDetail | { error: string }>(
-    `/api/detail?media=${media}&id=${id}`,
+    path,
     { error: "kosong" } as { error: string }
   );
   if ("error" in data) return null;
