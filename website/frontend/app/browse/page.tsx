@@ -1,10 +1,11 @@
 import type { MediaType } from "@/lib/types";
-import { discoverMany, MAJOR_PROVIDERS } from "@/lib/tmdb";
+import { discoverMany, MAJOR_PROVIDERS, getHeroSlides } from "@/lib/tmdb";
 import { fetchBrowsePage } from "./actions";
 import { MOVIE_GENRES, TV_GENRES, COUNTRIES } from "@/lib/catalog";
 import PosterGrid from "@/components/PosterGrid";
 import BrowseControls from "@/components/BrowseControls";
 import InfinitePosterGrid from "@/components/InfinitePosterGrid";
+import HeroCarousel from "@/components/HeroCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,8 @@ export default async function BrowsePage({
   const initialHasMore = initialData.hasMore;
 
   let heroSlides = [];
-  if (results && results.length > 0) {
+  if (isCategory && results && results.length > 0) {
     heroSlides = await getHeroSlides(results, 5);
-  } else {
-    const fallbackHero = await getTrendingGlobal();
-    heroSlides = await getHeroSlides(fallbackHero, 5);
   }
 
   const title = (() => {
@@ -51,7 +49,7 @@ export default async function BrowsePage({
 
   return (
     <main className="min-h-screen pb-16">
-
+      {heroSlides.length > 0 && <HeroCarousel slides={heroSlides} />}
 
       <div className={`px-[4%] ${heroSlides.length > 0 ? "pt-8" : "pt-28"}`}>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
