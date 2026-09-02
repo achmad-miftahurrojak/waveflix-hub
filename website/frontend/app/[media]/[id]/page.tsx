@@ -132,10 +132,6 @@ export default async function DetailPage({
             </p>
           )}
 
-          <p className="mb-6 max-w-2xl text-sm leading-relaxed text-white/90 drop-shadow md:text-base line-clamp-3 md:line-clamp-4">
-            {detail.overview || "No description available for this title."}
-          </p>
-
           {}
           <DetailActions item={detail} />
 
@@ -190,6 +186,10 @@ export default async function DetailPage({
               {detail.tagline}
             </p>
           )}
+
+          <p className="mb-6 max-w-2xl text-base leading-relaxed text-white/75">
+            {detail.overview || "No description available for this title."}
+          </p>
 
           {studios.length > 0 && (
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
