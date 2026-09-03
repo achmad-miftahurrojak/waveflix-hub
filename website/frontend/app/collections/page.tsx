@@ -3,7 +3,7 @@ import { COLLECTIONS } from "@/lib/catalog";
 import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { getCollectionMoviesWithLogos } from "@/lib/tmdb";
 import { IMG } from "@/lib/helpers";
-import CategoryTiles from "@/components/CategoryTiles";
+import { CollectionCards, CollectionCardItem } from "@/components/CollectionCards";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -23,17 +23,27 @@ export default async function CollectionsPage({
     );
   }
 
-  // If no specific collection is selected, show the grid of cards
+  // If no specific collection is selected, show the CollectionCards grid
   if (!sp.c) {
-    const tiles = COLLECTIONS.map((c) => ({
-      label: c.name,
-      href: `/collections?c=${c.id}`, // Link to this same page but with 'c' param
-    }));
+    const collectionsPreview = await Promise.all(
+      COLLECTIONS.map(async (c) => {
+        const movies = await getCollectionMoviesWithLogos(c.id, 1);
+        const m = movies[0];
+        return {
+          id: c.id,
+          name: c.name,
+          logoSrc: m?.logo_path ? `${IMG}/w500${m.logo_path}` : undefined,
+          backdropSrc: m?.backdrop_path ? `${IMG}/w780${m.backdrop_path}` : undefined,
+          href: `/collections?c=${c.id}`,
+        } as CollectionCardItem;
+      })
+    );
 
     return (
       <main className="min-h-screen pb-16">
-        <div className="pt-28">
-          <CategoryTiles title="Collections" tiles={tiles} disableWrapper={true} />
+        <div className="pt-28 px-[4%] max-w-[1600px] mx-auto">
+          <h1 className="text-3xl font-black mb-8 text-white">Collections</h1>
+          <CollectionCards items={collectionsPreview} />
         </div>
       </main>
     );
