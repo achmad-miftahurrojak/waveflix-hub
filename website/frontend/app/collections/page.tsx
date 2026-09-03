@@ -3,8 +3,9 @@ import { COLLECTIONS } from "@/lib/catalog";
 import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { getCollectionMoviesWithLogos } from "@/lib/tmdb";
 import { IMG } from "@/lib/helpers";
+import CategoryTiles from "@/components/CategoryTiles";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 
 export default async function CollectionsPage({
   searchParams,
@@ -22,7 +23,24 @@ export default async function CollectionsPage({
     );
   }
 
-  const currentCollectionId = sp.c || COLLECTIONS[0].id;
+  // If no specific collection is selected, show the grid of cards
+  if (!sp.c) {
+    const tiles = COLLECTIONS.map((c) => ({
+      label: c.name,
+      href: `/collections?c=${c.id}`, // Link to this same page but with 'c' param
+    }));
+
+    return (
+      <main className="min-h-screen pb-16">
+        <div className="pt-28">
+          <CategoryTiles title="Collections" tiles={tiles} disableWrapper={true} />
+        </div>
+      </main>
+    );
+  }
+
+  // A collection is selected, show the Coverflow Carousel
+  const currentCollectionId = sp.c;
   const currentCollection = COLLECTIONS.find((c) => c.id === currentCollectionId) || COLLECTIONS[0];
 
   const movies = await getCollectionMoviesWithLogos(currentCollection.id, 20);
@@ -37,29 +55,15 @@ export default async function CollectionsPage({
 
   return (
     <main className="min-h-screen pb-24 overflow-x-hidden pt-28">
-      {/* Collection Selector */}
-      <div className="mb-12 px-[4%]">
-        <h1 className="text-3xl font-black mb-6">Collections</h1>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {COLLECTIONS.map(c => (
-            <Link 
-              key={c.id} 
-              href={`/collections?c=${c.id}`} 
-              className={cn(
-                "px-5 py-2.5 rounded-full whitespace-nowrap text-sm font-bold transition",
-                currentCollectionId === c.id 
-                  ? "bg-accent text-black shadow-lg shadow-accent/20" 
-                  : "bg-white/10 text-white hover:bg-white/20"
-              )}
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
+      <div className="px-[4%] mb-10 flex items-center gap-4">
+        <Link href="/collections" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-white">
+          <ArrowLeft className="size-5" />
+        </Link>
+        <h1 className="text-3xl font-black">{currentCollection.name}</h1>
       </div>
 
       {slides.length > 0 && (
-        <div key={currentCollection.id} className="animate-in fade-in slide-in-from-bottom-10 duration-500">
+        <div key={currentCollection.id} className="animate-in fade-in zoom-in-95 duration-500">
           <CoverflowCarousel
             slides={slides}
             showCaption={true}
