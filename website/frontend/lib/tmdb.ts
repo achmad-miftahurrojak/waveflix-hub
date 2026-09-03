@@ -224,8 +224,7 @@ export async function discover(params: {
   if (params.country) qs.set("country", params.country);
   if (params.collection) qs.set("collection", params.collection);
   
-  // Default to major providers if no specific provider is selected
-  qs.set("provider", params.provider || MAJOR_PROVIDERS);
+  if (params.provider) qs.set("provider", params.provider);
   
   if (params.sort_by) qs.set("sort_by", params.sort_by);
   if (params.released_after) qs.set("released_after", params.released_after);

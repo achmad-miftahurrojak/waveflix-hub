@@ -23,7 +23,7 @@ export async function fetchBrowsePage(
       year: sp.year,
       country: sp.country,
       collection: sp.collection,
-      provider: isNetwork ? sp.provider : MAJOR_PROVIDERS,
+      provider: isNetwork ? sp.provider : undefined,
       released_after: noDate ? undefined : since5y,
       released_before: noDate ? undefined : today,
       without_genres,
