@@ -7,6 +7,7 @@ export interface TmdbItem {
   original_name?: string;
   overview?: string;
   poster_path?: string | null;
+  logo_path?: string | null;
   backdrop_path?: string | null;
   vote_average?: number;
   popularity?: number;

@@ -380,3 +380,39 @@ export async function getPerson(id: string): Promise<import('./types').TmdbPerso
   if ("error" in data) return null;
   return data as import('./types').TmdbPerson;
 }
+
+export async function getCollectionMoviesWithLogos(collectionId: string, limit: number = 15): Promise<TmdbItem[]> {
+  const data = await discover({ media: "movie", collection: collectionId, sort_by: "popularity.desc", page: 1 });
+  let movies = data.results || [];
+  if (movies.length > limit) {
+    movies = movies.slice(0, limit);
+  }
+  if (movies.length === 0) return [];
+
+  const ids = movies.map((m) => m.id).join(",");
+  try {
+    const batchData = await api<{ results: Record<string, TmdbDetail> }>(
+      "/api/batch?media=movie&ids=${ids}&lang=en",
+      { results: {} }
+    );
+    
+    if (batchData.results) {
+      movies = movies.map(m => {
+        const detail = batchData.results[m.id.toString()];
+        if (detail && detail.images && detail.images.logos) {
+          const enLogo = detail.images.logos.find(l => l.iso_639_1 === "en");
+          const anyLogo = detail.images.logos.length > 0 ? detail.images.logos[0] : null;
+          const logo = enLogo || anyLogo;
+          if (logo) {
+            return { ...m, logo_path: logo.file_path };
+          }
+        }
+        return m;
+      });
+    }
+  } catch (e) {
+    console.error("Failed to fetch batch logos for collection", collectionId, e);
+  }
+
+  return movies;
+}
