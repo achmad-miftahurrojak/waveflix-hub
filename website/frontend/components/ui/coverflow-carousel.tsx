@@ -61,6 +61,8 @@ export function CoverflowCarousel({
   cardClassName,
 }: CoverflowCarouselProps) {
   const count = slides.length;
+  // If count is small, looping creates visual glitches. Force loop=false if count <= 2.
+  const actualLoop = loop && count > 2;
 
   const frameRef = React.useRef<HTMLDivElement>(null);
   const cardRefs = React.useRef<(HTMLDivElement | null)[]>([]);
@@ -101,7 +103,7 @@ export function CoverflowCarousel({
       // Fold the distance into the shorter way round the ring. This is the
       // whole looping mechanism — no cloned nodes, no shuffling the DOM.
       let offset = index - pos;
-      if (loop) {
+      if (actualLoop) {
         offset = ((offset % count) + count) % count;
         if (offset > count / 2) offset -= count;
       }
@@ -120,11 +122,12 @@ export function CoverflowCarousel({
 
       // A card is teleported across the ring at exactly half a turn out, so it
       // has to be gone by then or the jump is visible.
-      const edge = loop ? Math.min(1, Math.max(0, count / 2 - distance)) : 1;
+      // We multiply by 2 so it only starts fading out in the last 0.5 distance.
+      const edge = actualLoop ? Math.min(1, Math.max(0, (count / 2 - distance) * 2)) : 1;
       card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
       card.style.zIndex = String(100 - Math.round(distance));
     });
-  }, [count, depth, fade, falloff, gap, loop, rotate]);
+  }, [count, depth, fade, falloff, gap, actualLoop, rotate]);
 
   const settle = React.useCallback(
     (target: number) => {
@@ -152,19 +155,19 @@ export function CoverflowCarousel({
   );
 
   const clamp = React.useCallback(
-    (pos: number) => (loop ? pos : Math.max(0, Math.min(count - 1, pos))),
-    [count, loop],
+    (pos: number) => (actualLoop ? pos : Math.max(0, Math.min(count - 1, pos))),
+    [count, actualLoop],
   );
 
   const goTo = React.useCallback(
     (index: number) => {
       // Take the shorter way round rather than unwinding the whole ring.
-      const target = loop
+      const target = actualLoop
         ? index + Math.round((targetRef.current - index) / count) * count
         : index;
       settle(clamp(target));
     },
-    [clamp, count, loop, settle],
+    [clamp, count, actualLoop, settle],
   );
 
   const nudge = React.useCallback(
