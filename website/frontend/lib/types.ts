@@ -17,6 +17,7 @@ export interface TmdbItem {
   genre_ids?: number[];
   original_language?: string;
   vidlink_available?: boolean;
+  number_of_seasons?: number;
 }
 
 export interface TmdbListResponse {

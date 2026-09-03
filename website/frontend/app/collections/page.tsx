@@ -1,7 +1,7 @@
 import type { MediaType, TmdbItem } from "@/lib/types";
 import { COLLECTIONS } from "@/lib/catalog";
 import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-carousel";
-import { getCollectionMoviesWithLogos, getTvShowSeasons, getItemsWithLogos, discover } from "@/lib/tmdb";
+import { getCollectionMoviesWithLogos, getTvShowSeasons, getItemsWithLogos, discoverMany } from "@/lib/tmdb";
 import { IMG } from "@/lib/helpers";
 import { CollectionCards, CollectionCardItem } from "@/components/CollectionCards";
 import CollectionFilters from "@/components/CollectionFilters";
@@ -56,8 +56,7 @@ export default async function CollectionsPage({
 
     // 2. Fetch Dynamic TV Shows (that act as collections of seasons)
     if (activeTypes.length === 0 || activeTypes.includes("tv") || activeTypes.includes("animation")) {
-      let tvShows = [];
-      const qs: any = { media: "tv", sort_by: "popularity.desc", page: 1 };
+      const qs: any = { media: "tv", sort_by: "popularity.desc" };
       
       if (activeCountries.length > 0) {
         qs.country = activeCountries.join("|"); 
@@ -67,12 +66,17 @@ export default async function CollectionsPage({
       }
 
       try {
-        const tvData = await discover(qs);
-        // Only fetch logos for the first 15 to be fast
-        const tvItems = (tvData.results || []).slice(0, 15);
-        const tvWithLogos = await getItemsWithLogos(tvItems, "tv");
+        // Fetch multiple pages so we have enough candidates after filtering out 1-season shows
+        const tvData = await discoverMany(qs, 3);
+        const tvItems = tvData.results || [];
         
-        const tvCollectionsPreview = tvWithLogos.map(m => ({
+        // We only fetch batch logos for the first 40 to avoid heavy load
+        const tvWithLogos = await getItemsWithLogos(tvItems.slice(0, 40), "tv");
+        
+        // Filter out TV shows that have 1 season or less
+        const filteredTv = tvWithLogos.filter(m => (m.number_of_seasons || 1) > 1).slice(0, 15);
+        
+        const tvCollectionsPreview = filteredTv.map(m => ({
           id: String(m.id),
           name: m.name || m.title || "",
           logoSrc: m.logo_path ? `${IMG}/w500${m.logo_path}` : undefined,

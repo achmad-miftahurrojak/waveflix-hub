@@ -394,13 +394,19 @@ export async function getItemsWithLogos(items: TmdbItem[], media: "movie" | "tv"
     if (batchData.results) {
       return items.map(m => {
         const detail = batchData.results[m.id.toString()];
-        if (detail && detail.images && detail.images.logos) {
-          const enLogo = detail.images.logos.find(l => l.iso_639_1 === "en");
-          const anyLogo = detail.images.logos.length > 0 ? detail.images.logos[0] : null;
-          const logo = enLogo || anyLogo;
-          if (logo) {
-            return { ...m, logo_path: logo.file_path };
+        if (detail) {
+          let logo_path = m.logo_path;
+          if (detail.images && detail.images.logos) {
+            const enLogo = detail.images.logos.find(l => l.iso_639_1 === "en");
+            const anyLogo = detail.images.logos.length > 0 ? detail.images.logos[0] : null;
+            const logo = enLogo || anyLogo;
+            if (logo) logo_path = logo.file_path;
           }
+          return { 
+            ...m, 
+            logo_path,
+            number_of_seasons: detail.number_of_seasons || (detail.seasons ? detail.seasons.length : undefined)
+          };
         }
         return m;
       });
