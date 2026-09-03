@@ -50,7 +50,7 @@ function CollectionCard3D({ item }: { item: CollectionCardItem }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ ...style, transformStyle: "preserve-3d" }}
-      className="group relative block aspect-[21/9] md:aspect-[16/7] w-full overflow-hidden rounded-xl bg-background shadow-md border border-white/5 hover:border-white/20"
+      className="group relative block aspect-[16/9] w-full overflow-hidden rounded-xl bg-background shadow-md border border-white/5 hover:border-white/20"
     >
       {/* Right side Backdrop - Full Width, fading out on left */}
       {item.backdropSrc && (
@@ -73,7 +73,7 @@ function CollectionCard3D({ item }: { item: CollectionCardItem }) {
 
       {/* Left side Logo / Title */}
       <div 
-        className="absolute inset-y-0 left-0 flex w-[65%] flex-col justify-center p-6 md:p-8 pointer-events-none"
+        className="absolute inset-y-0 left-0 flex w-[65%] flex-col justify-center p-4 pointer-events-none"
         style={{ transform: "translateZ(30px)" }}
       >
         {item.logoSrc ? (
@@ -81,10 +81,10 @@ function CollectionCard3D({ item }: { item: CollectionCardItem }) {
           <img
             src={item.logoSrc}
             alt={item.name}
-            className="max-h-[50px] md:max-h-[70px] w-auto max-w-[80%] object-contain object-left drop-shadow-2xl filter transition-transform duration-300"
+            className="max-h-[35px] lg:max-h-[45px] w-auto max-w-[80%] object-contain object-left drop-shadow-2xl filter transition-transform duration-300"
           />
         ) : (
-          <h3 className="text-xl md:text-3xl font-black uppercase tracking-tight text-white drop-shadow-lg" style={{ fontFamily: "var(--font-heading)" }}>
+          <h3 className="text-sm lg:text-lg font-black uppercase tracking-tight text-white drop-shadow-lg" style={{ fontFamily: "var(--font-heading)" }}>
             {item.name}
           </h3>
         )}
@@ -107,7 +107,7 @@ export function CollectionCards({
   className?: string;
 }) {
   return (
-    <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", className)} style={{ perspective: "1500px" }}>
+    <div className={cn("grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4", className)} style={{ perspective: "1500px" }}>
       {items.map((item) => (
         <CollectionCard3D key={item.id} item={item} />
       ))}
