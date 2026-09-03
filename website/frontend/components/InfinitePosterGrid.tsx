@@ -14,16 +14,65 @@ export default function InfinitePosterGrid({
   initialHasMore: boolean;
   sp: Record<string, string | undefined>;
 }) {
-  const [items, setItems] = useState<TmdbItem[]>(initialItems);
-  const [hasMore, setHasMore] = useState(initialHasMore);
-  const [page, setPage] = useState(1);
+  // Create a stable cache key based on URL search params
+  const cacheKey = typeof window !== "undefined" 
+    ? `waveflix:browse:${new URLSearchParams(sp as Record<string, string>).toString()}` 
+    : "";
+
+  const [items, setItems] = useState<TmdbItem[]>(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.items && parsed.items.length > 0) return parsed.items;
+        } catch (e) {}
+      }
+    }
+    return initialItems;
+  });
+
+  const [hasMore, setHasMore] = useState(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.hasMore !== undefined) return parsed.hasMore;
+        } catch (e) {}
+      }
+    }
+    return initialHasMore;
+  });
+
+  const [page, setPage] = useState(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.page) return parsed.page;
+        } catch (e) {}
+      }
+    }
+    return 1;
+  });
+
   const [loading, setLoading] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  // Save to sessionStorage whenever state changes
   useEffect(() => {
-    setItems(initialItems);
-    setHasMore(initialHasMore);
-    setPage(1);
+    if (cacheKey && items.length > 0) {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ items, hasMore, page }));
+    }
+  }, [items, hasMore, page, cacheKey]);
+
+  useEffect(() => {
+    if (page === 1 && items.length === initialItems.length) {
+      setItems(initialItems);
+      setHasMore(initialHasMore);
+    }
   }, [initialItems, initialHasMore]);
 
   const loadMore = useCallback(async () => {

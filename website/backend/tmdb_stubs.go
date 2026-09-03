@@ -1,8 +1,7 @@
-
-
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -55,6 +54,19 @@ func getImageLangs(q url.Values) string {
 }
 
 func fetchJSON(targetURL string, mediaType string) (map[string]interface{}, error) {
+	// Generate cache key
+	cacheKey := "tmdb:fetch:" + targetURL
+	
+	// Check cache
+	if cache != nil {
+		if cachedData := cache.Get(cacheKey); cachedData != nil {
+			var result map[string]interface{}
+			if err := json.Unmarshal(cachedData, &result); err == nil {
+				return result, nil
+			}
+		}
+	}
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(targetURL)
 	if err != nil {
@@ -69,6 +81,13 @@ func fetchJSON(targetURL string, mediaType string) (map[string]interface{}, erro
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("[tmdb] decode error (%s): %w", mediaType, err)
+	}
+
+	// Save to cache
+	if cache != nil {
+		if jsonData, err := json.Marshal(result); err == nil {
+			cache.Set(cacheKey, jsonData, 30*time.Minute)
+		}
 	}
 
 	return result, nil

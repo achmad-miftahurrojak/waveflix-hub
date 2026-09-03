@@ -14,17 +14,68 @@ export default function InfiniteCollectionGrid({
   initialHasMore: boolean;
   sp: Record<string, string | undefined>;
 }) {
-  const [items, setItems] = useState<CollectionCardItem[]>(initialItems);
-  const [hasMore, setHasMore] = useState(initialHasMore);
-  const [page, setPage] = useState(1);
+  // Create a stable cache key based on URL search params
+  const cacheKey = typeof window !== "undefined" 
+    ? `waveflix:collections:${new URLSearchParams(sp as Record<string, string>).toString()}` 
+    : "";
+
+  const [items, setItems] = useState<CollectionCardItem[]>(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.items && parsed.items.length > 0) return parsed.items;
+        } catch (e) {}
+      }
+    }
+    return initialItems;
+  });
+
+  const [hasMore, setHasMore] = useState(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.hasMore !== undefined) return parsed.hasMore;
+        } catch (e) {}
+      }
+    }
+    return initialHasMore;
+  });
+
+  const [page, setPage] = useState(() => {
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.page) return parsed.page;
+        } catch (e) {}
+      }
+    }
+    return 1;
+  });
+  
   const [loading, setLoading] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  // Save to sessionStorage whenever state changes
   useEffect(() => {
-    setItems(initialItems);
-    setHasMore(initialHasMore);
-    setPage(1);
-  }, [initialItems, initialHasMore, sp]);
+    if (cacheKey && items.length > 0) {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ items, hasMore, page }));
+    }
+  }, [items, hasMore, page, cacheKey]);
+
+  useEffect(() => {
+    // Only reset if we are not restoring from cache or if initialItems changed significantly 
+    // (though initialItems changing means the URL params probably changed, so cacheKey changed and state initialized correctly)
+    if (page === 1 && items.length === initialItems.length) {
+      setItems(initialItems);
+      setHasMore(initialHasMore);
+    }
+  }, [initialItems, initialHasMore]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
