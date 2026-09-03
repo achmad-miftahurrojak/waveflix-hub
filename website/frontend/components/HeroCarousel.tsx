@@ -234,11 +234,11 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 )}
 
                 <div className="flex flex-wrap items-stretch gap-3">
-                  <Link href={detailHref(s.item)} className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-2.5 text-sm font-semibold text-black transition hover:scale-105 hover:bg-accent-dark">
-                    <PlayIcon className="text-black size-4" /> {t("ui.watchNow")}
+                  <Link href={detailHref(s.item)} className="inline-flex items-center justify-center gap-2 rounded bg-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition hover:scale-105 hover:bg-accent-dark">
+                    <PlayIcon className="text-black size-3.5" /> {t("ui.watchNow")}
                   </Link>
                   {s.status && (
-                    <span className="inline-flex items-center justify-center rounded-md border border-white/20 bg-black/40 px-6 py-2.5 text-sm font-bold tracking-wider text-emerald-400 backdrop-blur uppercase">
+                    <span className="inline-flex items-center justify-center rounded border border-white/20 bg-black/40 px-4 py-2 text-xs font-bold tracking-wider text-emerald-400 backdrop-blur uppercase">
                       {s.status}
                     </span>
                   )}

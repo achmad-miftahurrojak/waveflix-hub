@@ -392,7 +392,7 @@ export async function getCollectionMoviesWithLogos(collectionId: string, limit: 
   const ids = movies.map((m) => m.id).join(",");
   try {
     const batchData = await api<{ results: Record<string, TmdbDetail> }>(
-      "/api/batch?media=movie&ids=${ids}&lang=en",
+      `/api/batch?media=movie&ids=${ids}&lang=en`,
       { results: {} }
     );
     
