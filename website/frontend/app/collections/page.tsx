@@ -4,6 +4,7 @@ import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-car
 import { getCollectionMoviesWithLogos, getTvShowSeasons, getItemsWithLogos, discoverMany } from "@/lib/tmdb";
 import { IMG } from "@/lib/helpers";
 import { CollectionCards, CollectionCardItem } from "@/components/CollectionCards";
+import InfiniteCollectionGrid from "@/components/InfiniteCollectionGrid";
 import CollectionFilters from "@/components/CollectionFilters";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -54,6 +55,8 @@ export default async function CollectionsPage({
       collectionsPreview = collectionsPreview.concat(movieCollectionsPreview);
     }
 
+    let hasMoreDynamic = false;
+
     // 2. Fetch Dynamic TV Shows (that act as collections of seasons)
     if (activeTypes.length === 0 || activeTypes.includes("tv") || activeTypes.includes("animation")) {
       const qs: any = { media: "tv", sort_by: "popularity.desc" };
@@ -68,6 +71,7 @@ export default async function CollectionsPage({
       try {
         // Fetch multiple pages so we have enough candidates after filtering out 1-season shows
         const tvData = await discoverMany(qs, 3);
+        hasMoreDynamic = (tvData.total_pages || 0) > 3;
         const tvItems = tvData.results || [];
         
         // We only fetch batch logos for the first 40 to avoid heavy load
@@ -100,7 +104,7 @@ export default async function CollectionsPage({
             <CollectionFilters />
           </div>
           {collectionsPreview.length > 0 ? (
-            <CollectionCards items={collectionsPreview} />
+            <InfiniteCollectionGrid initialItems={collectionsPreview} initialHasMore={hasMoreDynamic} sp={sp} />
           ) : (
             <div className="py-20 text-center text-white/50">
               Tidak ada koleksi yang cocok dengan filter ini.
