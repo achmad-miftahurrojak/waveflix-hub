@@ -59,7 +59,7 @@ function CollectionCard3D({ item }: { item: CollectionCardItem }) {
           <img
             src={item.backdropSrc}
             alt={item.name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
         </div>
