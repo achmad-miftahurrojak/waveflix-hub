@@ -381,23 +381,50 @@ export async function getPerson(id: string): Promise<import('./types').TmdbPerso
   return data as import('./types').TmdbPerson;
 }
 
-export async function getCollectionMoviesWithLogos(collectionId: string, limit: number = 15): Promise<TmdbItem[]> {
-  const data = await discover({ media: "movie", collection: collectionId, sort_by: "popularity.desc", page: 1 });
-  let movies = data.results || [];
-  if (movies.length > limit) {
-    movies = movies.slice(0, limit);
-  }
-  if (movies.length === 0) return [];
+export async function getCollectionMoviesWithLogos(
+  collectionId: string, 
+  limit: number = 15,
+  isCustomTv: boolean = false
+): Promise<TmdbItem[]> {
+  let items: TmdbItem[] = [];
 
-  const ids = movies.map((m) => m.id).join(",");
+  if (isCustomTv) {
+    // For custom TV collections, the ID is just a comma-separated list of TV show IDs
+    try {
+      const batchData = await api<{ results: Record<string, TmdbDetail> }>(
+        `/api/batch?media=tv&ids=${collectionId}&lang=en`,
+        { results: {} }
+      );
+      if (batchData.results) {
+        items = Object.values(batchData.results).map(d => ({ ...d, media_type: "tv" }));
+      }
+    } catch (e) {
+      console.error("Failed to fetch batch for custom TV collection", collectionId, e);
+    }
+  } else {
+    // Normal TMDB Movie Collection
+    const data = await discover({ media: "movie", collection: collectionId, sort_by: "popularity.desc", page: 1 });
+    items = data.results || [];
+  }
+
+  if (items.length > limit) {
+    items = items.slice(0, limit);
+  }
+  if (items.length === 0) return [];
+
+  // For TV, we might already have the logos from the batch request, but wait, the batch request returns `images`, let's check.
+  // Actually, our previous TV batch might have logos. Let's fetch logos via batch for movies, or extract from TV.
+  const ids = items.map((m) => m.id).join(",");
+  const mediaParam = isCustomTv ? "tv" : "movie";
+  
   try {
     const batchData = await api<{ results: Record<string, TmdbDetail> }>(
-      `/api/batch?media=movie&ids=${ids}&lang=en`,
+      `/api/batch?media=${mediaParam}&ids=${ids}&lang=en`,
       { results: {} }
     );
     
     if (batchData.results) {
-      movies = movies.map(m => {
+      items = items.map(m => {
         const detail = batchData.results[m.id.toString()];
         if (detail && detail.images && detail.images.logos) {
           const enLogo = detail.images.logos.find(l => l.iso_639_1 === "en");
@@ -414,5 +441,5 @@ export async function getCollectionMoviesWithLogos(collectionId: string, limit: 
     console.error("Failed to fetch batch logos for collection", collectionId, e);
   }
 
-  return movies;
+  return items;
 }

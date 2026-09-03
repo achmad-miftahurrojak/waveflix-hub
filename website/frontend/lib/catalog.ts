@@ -65,23 +65,38 @@ export const YEARS: string[] = Array.from({ length: 30 }, (_, i) =>
   String(new Date().getFullYear() - i)
 );
 
-export const COLLECTIONS: { id: string; name: string }[] = [
-  { id: "10194", name: "Toy Story Collection" },
-  { id: "86311,131292,131295,131296,284433,422834,618529,529892,582496", name: "Marvel Cinematic Universe" },
-  { id: "119,121938", name: "Middle-earth Collection" },
-  { id: "1241,435259", name: "Wizarding World Collection" },
-  { id: "10", name: "Star Wars Collection" },
-  { id: "9485", name: "Fast and Furious Collection" },
-  { id: "645", name: "James Bond Collection" },
-  { id: "263,120794,948485", name: "Batman Collection" },
-  { id: "1703,453993,448150", name: "X-Men Collection" },
-  { id: "230", name: "Star Trek Collection" },
-  { id: "328", name: "Jurassic Park Collection" },
-  { id: "115", name: "The Matrix Collection" },
-  { id: "556,125574,531241,573436", name: "Spider-Man Collection" },
-  { id: "8945", name: "Mad Max Collection" },
-  { id: "404609", name: "John Wick Collection" },
-  { id: "1575", name: "Rocky Collection" },
-  { id: "87359", name: "Mission: Impossible Collection" },
-  { id: "33514", name: "The Godfather Collection" },
+export type CollectionType = "movie" | "tv" | "animation";
+
+export interface CollectionData {
+  id: string;
+  name: string;
+  type: CollectionType[];
+  country: string[];
+  isCustomTv?: boolean;
+}
+
+export const COLLECTIONS: CollectionData[] = [
+  { id: "10194", name: "Toy Story Collection", type: ["movie", "animation"], country: ["US"] },
+  { id: "86311,131292,131295,131296,284433,422834,618529,529892,582496", name: "Marvel Cinematic Universe", type: ["movie"], country: ["US"] },
+  { id: "119,121938", name: "Middle-earth Collection", type: ["movie"], country: ["US", "GB"] },
+  { id: "1241,435259", name: "Wizarding World Collection", type: ["movie"], country: ["GB", "US"] },
+  { id: "10", name: "Star Wars Collection", type: ["movie"], country: ["US"] },
+  { id: "9485", name: "Fast and Furious Collection", type: ["movie"], country: ["US"] },
+  { id: "645", name: "James Bond Collection", type: ["movie"], country: ["GB"] },
+  { id: "263,120794,948485", name: "Batman Collection", type: ["movie"], country: ["US", "GB"] },
+  { id: "1703,453993,448150", name: "X-Men Collection", type: ["movie"], country: ["US"] },
+  { id: "230", name: "Star Trek Collection", type: ["movie"], country: ["US"] },
+  { id: "328", name: "Jurassic Park Collection", type: ["movie"], country: ["US"] },
+  { id: "115", name: "The Matrix Collection", type: ["movie"], country: ["US"] },
+  { id: "556,125574,531241,573436", name: "Spider-Man Collection", type: ["movie"], country: ["US"] },
+  { id: "8945", name: "Mad Max Collection", type: ["movie"], country: ["US"] },
+  { id: "404609", name: "John Wick Collection", type: ["movie"], country: ["US"] },
+  { id: "1575", name: "Rocky Collection", type: ["movie"], country: ["US"] },
+  { id: "87359", name: "Mission: Impossible Collection", type: ["movie"], country: ["US"] },
+  { id: "33514", name: "The Godfather Collection", type: ["movie"], country: ["US"] },
+  // Custom TV Series Collections to make filters useful
+  { id: "1396,60059", name: "Breaking Bad Universe", type: ["tv"], country: ["US"], isCustomTv: true },
+  { id: "1399,119051", name: "Game of Thrones Universe", type: ["tv"], country: ["US"], isCustomTv: true },
+  { id: "31911,46260,31910,285324", name: "Naruto Universe", type: ["tv", "animation"], country: ["JP"], isCustomTv: true },
+  { id: "93405,110316", name: "Squid Game & Alice", type: ["tv"], country: ["KR", "JP"], isCustomTv: true },
 ];

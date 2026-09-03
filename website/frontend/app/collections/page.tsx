@@ -4,6 +4,7 @@ import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-car
 import { getCollectionMoviesWithLogos } from "@/lib/tmdb";
 import { IMG } from "@/lib/helpers";
 import { CollectionCards, CollectionCardItem } from "@/components/CollectionCards";
+import CollectionFilters from "@/components/CollectionFilters";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -25,9 +26,26 @@ export default async function CollectionsPage({
 
   // If no specific collection is selected, show the CollectionCards grid
   if (!sp.c) {
+    const activeTypes = sp.type ? sp.type.split(",").filter(Boolean) : [];
+    const activeCountries = sp.country ? sp.country.split(",").filter(Boolean) : [];
+
+    const filteredCollections = COLLECTIONS.filter(c => {
+      let matchType = true;
+      let matchCountry = true;
+
+      if (activeTypes.length > 0) {
+        matchType = c.type.some(t => activeTypes.includes(t));
+      }
+      if (activeCountries.length > 0) {
+        matchCountry = c.country.some(co => activeCountries.includes(co));
+      }
+
+      return matchType && matchCountry;
+    });
+
     const collectionsPreview = await Promise.all(
-      COLLECTIONS.map(async (c) => {
-        const movies = await getCollectionMoviesWithLogos(c.id, 1);
+      filteredCollections.map(async (c) => {
+        const movies = await getCollectionMoviesWithLogos(c.id, 1, c.isCustomTv);
         const m = movies[0];
         return {
           id: c.id,
@@ -42,8 +60,17 @@ export default async function CollectionsPage({
     return (
       <main className="min-h-screen pb-16">
         <div className="pt-28 px-[4%] max-w-[1600px] mx-auto">
-          <h1 className="text-3xl font-black mb-8 text-white">Collections</h1>
-          <CollectionCards items={collectionsPreview} />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
+            <h1 className="text-3xl font-black text-white">Collections</h1>
+            <CollectionFilters />
+          </div>
+          {collectionsPreview.length > 0 ? (
+            <CollectionCards items={collectionsPreview} />
+          ) : (
+            <div className="py-20 text-center text-white/50">
+              Tidak ada koleksi yang cocok dengan filter ini.
+            </div>
+          )}
         </div>
       </main>
     );
@@ -53,7 +80,7 @@ export default async function CollectionsPage({
   const currentCollectionId = sp.c;
   const currentCollection = COLLECTIONS.find((c) => c.id === currentCollectionId) || COLLECTIONS[0];
 
-  const movies = await getCollectionMoviesWithLogos(currentCollection.id, 20);
+  const movies = await getCollectionMoviesWithLogos(currentCollection.id, 20, currentCollection.isCustomTv);
   
   const slides: CoverflowSlide[] = movies.map(m => ({
     src: m.poster_path ? `${IMG}/w500${m.poster_path}` : "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=500",
