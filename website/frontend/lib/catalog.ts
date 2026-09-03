@@ -72,7 +72,6 @@ export interface CollectionData {
   name: string;
   type: CollectionType[];
   country: string[];
-  isCustomTv?: boolean;
 }
 
 export const COLLECTIONS: CollectionData[] = [
@@ -94,9 +93,4 @@ export const COLLECTIONS: CollectionData[] = [
   { id: "1575", name: "Rocky Collection", type: ["movie"], country: ["US"] },
   { id: "87359", name: "Mission: Impossible Collection", type: ["movie"], country: ["US"] },
   { id: "33514", name: "The Godfather Collection", type: ["movie"], country: ["US"] },
-  // Custom TV Series Collections to make filters useful
-  { id: "1396,60059", name: "Breaking Bad Universe", type: ["tv"], country: ["US"], isCustomTv: true },
-  { id: "1399,119051", name: "Game of Thrones Universe", type: ["tv"], country: ["US"], isCustomTv: true },
-  { id: "31911,46260,31910,285324", name: "Naruto Universe", type: ["tv", "animation"], country: ["JP"], isCustomTv: true },
-  { id: "93405,110316", name: "Squid Game & Alice", type: ["tv"], country: ["KR", "JP"], isCustomTv: true },
 ];

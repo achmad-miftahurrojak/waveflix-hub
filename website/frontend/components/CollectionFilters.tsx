@@ -15,6 +15,7 @@ const FILTER_COUNTRIES = [
   { id: "GB", label: "UK" },
   { id: "JP", label: "Japan" },
   { id: "KR", label: "Korea" },
+  { id: "MY", label: "Malaysia" },
 ];
 
 export default function CollectionFilters() {
