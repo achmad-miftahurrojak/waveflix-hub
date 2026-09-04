@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
-import { EMBED_SERVERS } from "@/lib/embed-servers";
-import { Play, PlayCircle, StopCircle, RefreshCw, X, Fullscreen, Minimize } from "lucide-react";
 import { NativePlayer } from "./ui/NativePlayer";
-import { getAsianShowSlug } from "@/lib/verified-shows";
 import { useUI } from "./UIProvider";
 import { useAuth } from "./AuthProvider";
 import { MaximizeIcon, MinimizeIcon, CloseIcon } from "./Icons";
@@ -62,14 +59,12 @@ export default function InlineHeroVideo({
 
   useEffect(() => {
     if (!showTrailer || !trailer) return;
-    let player: any;
+    let ytPlayer: any;
     const attachAPI = () => {
       if (!trailerIframeRef.current || !(window as any).YT) return;
-      player = new (window as any).YT.Player(trailerIframeRef.current, {
+      ytPlayer = new (window as any).YT.Player(trailerIframeRef.current, {
         events: {
-          onReady: (e: any) => {
-            // Player is ready
-          },
+          onReady: () => {},
           onStateChange: (e: any) => {
             if (e.data === 1) {
               setTrailerPlaying(true);
@@ -105,18 +100,11 @@ export default function InlineHeroVideo({
       attachAPI();
     }
     return () => {
-      if (player && typeof player.destroy === "function") {
-        player.destroy();
+      if (ytPlayer && typeof ytPlayer.destroy === "function") {
+        ytPlayer.destroy();
       }
     };
   }, [showTrailer, trailer]);
-
-  const [serverIdx, setServerIdx] = useState(0);
-  const [status, setStatus] = useState<"loading" | "loaded" | "asian-loading" | "asian-failed">("loading");
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [asianEmbedUrl, setAsianEmbedUrl] = useState<string | null>(null);
-  const [serverLabel, setServerLabel] = useState("");
 
   useEffect(() => {
     const onFs = () => setIsFs(!!document.fullscreenElement);
@@ -185,85 +173,13 @@ export default function InlineHeroVideo({
     return () => window.removeEventListener('message', handleMessage);
   }, [active, player, recordHistory, savedProgressSeconds]);
 
-  const slug = active ? getAsianShowSlug(player!.item) : null;
-
-  useEffect(() => {
-    if (!active || !slug) return;
-
-    const ep = player!.episode ?? 1;
-    setStatus("asian-loading");
-    setAsianEmbedUrl(null);
-    setServerLabel("Dramacool");
-
-    let cancelled = false;
-
-    const fetchAsianEmbed = async () => {
-      try {
-        const res = await fetch(`/api/asian-embed?slug=${slug}&ep=${ep}`);
-        if (!res.ok) throw new Error("not found");
-        const data = await res.json();
-        if (!cancelled && data.url) {
-          setAsianEmbedUrl(data.url);
-          setStatus("loading"); 
-        } else {
-          throw new Error("empty url");
-        }
-      } catch {
-        if (!cancelled) {
-
-          setStatus("loading");
-          setServerIdx(0);
-        }
-      }
-    };
-
-    fetchAsianEmbed();
-    return () => { cancelled = true; };
-
-  }, [active, slug]);
-
   useEffect(() => {
     if (!active) {
       if (hideTimer.current) clearTimeout(hideTimer.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       return;
-    }
-    if (!slug) {
-
-      setServerIdx(0);
-      setStatus("loading");
-      setAsianEmbedUrl(null);
     }
     revealControls();
-
   }, [active]);
-
-  useEffect(() => {
-    if (!active || status === "loaded" || status === "asian-loading" || asianEmbedUrl) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      return;
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setServerIdx((prev) => (prev + 1) % EMBED_SERVERS.length);
-    }, 8000);
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [active, status, serverIdx, asianEmbedUrl]);
-
-  const switchServer = () => {
-
-    if (asianEmbedUrl) {
-      setAsianEmbedUrl(null);
-      setServerIdx(0);
-      setStatus("loading");
-      return;
-    }
-    setStatus("loading");
-    setServerIdx((prev) => (prev + 1) % EMBED_SERVERS.length);
-  };
 
   const toggleFullscreen = () => {
     const el = wrapRef.current;
@@ -271,21 +187,6 @@ export default function InlineHeroVideo({
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     else el.requestFullscreen().catch(() => {});
   };
-
-  const currentSrc = asianEmbedUrl
-    ? asianEmbedUrl
-    : (active ? EMBED_SERVERS[serverIdx].getUrl(player!.item, player!.season, player!.episode) : "");
-
-  let finalSrc = currentSrc;
-  if (finalSrc && savedProgressSeconds > 0) {
-      finalSrc += (finalSrc.includes("?") ? "&" : "?") + `t=${savedProgressSeconds}&time=${savedProgressSeconds}`;
-  }
-
-  const currentLabel = asianEmbedUrl
-    ? "Dramacool"
-    : (EMBED_SERVERS[serverIdx]?.name ?? "");
-
-  const isLoading = status === "loading" || status === "asian-loading";
 
   if (active) {
     return (
@@ -295,47 +196,20 @@ export default function InlineHeroVideo({
         onMouseLeave={() => setControlsVisible(false)}
         className={`relative w-full bg-black h-[70vh] md:h-[80vh]`}
       >
-        {isLoading && (
-          <div className="absolute inset-0 z-0 flex items-center justify-center bg-black">
-            <div className="flex flex-col items-center gap-4">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-accent" />
-              <p className="text-sm text-white/70">
-                {status === "asian-loading"
-                  ? "Mencari video di Dramacool..."
-                  : `Menghubungkan ke server ${currentLabel}...`}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {status !== "asian-loading" && (
-          <div className="absolute inset-0 z-10">
-            <NativePlayer
-              mediaType={player.item.media_type as "movie" | "tv"}
-              tmdbId={player.item.id.toString()}
-              season={player.season?.toString()}
-              episode={player.episode?.toString()}
-            />
-          </div>
-        )}
+        <div className="absolute inset-0 z-10">
+          <NativePlayer
+            mediaType={player.item.media_type as "movie" | "tv"}
+            tmdbId={player.item.id.toString()}
+            season={player.season?.toString()}
+            episode={player.episode?.toString()}
+          />
+        </div>
 
         <div
           className={`absolute right-5 top-24 z-30 flex items-center gap-3 transition-opacity duration-300 ${
             controlsVisible ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <button
-            onClick={switchServer}
-            title="Ganti Server (Failover)"
-            aria-label="Ganti Server"
-            className="flex h-9 items-center gap-2 rounded-full bg-black/60 px-3 text-xs font-semibold text-white/80 transition hover:text-accent"
-          >
-            <span className="text-lg leading-none">⟳</span>
-            <span className="hidden sm:inline">
-              {currentLabel}
-            </span>
-          </button>
-
           <button
             onClick={toggleFullscreen}
             aria-label="Toggle Fullscreen"

@@ -12,16 +12,24 @@ interface NativePlayerProps {
   episode?: string;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
+
+function proxyUrl(url: string): string {
+  const encoded = btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return `${BACKEND_URL}/api/media-proxy?url=${encoded}`;
+}
+
 export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [qualityLevels, setQualityLevels] = useState<any[]>([]);
-  const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 is Auto
+  const [qualityLevels, setQualityLevels] = useState<{file: string; type: string; label: string}[]>([]);
+  const [currentQuality, setCurrentQuality] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [captions, setCaptions] = useState<{id: string; language: string; url: string}[]>([]);
+  const [allSources, setAllSources] = useState<{file: string; type: string; label: string}[]>([]);
 
   const hlsRef = useRef<Hls | null>(null);
 
@@ -31,9 +39,7 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       query += `&s=${season}&e=${episode}`;
     }
 
-    // Call our local bridge API which fetches from the python decryptor
-    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
-    const bridgeUrl = `${baseUrl}/api/stream${query}`;
+    const bridgeUrl = `${BACKEND_URL}/api/stream${query}`;
 
     setIsLoading(true);
     setError(null);
@@ -46,33 +52,38 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         return res.json();
       })
       .then((data) => {
-        // New normalized format: { sources: [{file, type, label}], tracks: [{file, label, kind}] }
-        let streamUrl = "";
-        let streamType = "hls";
+        let sources: {file: string; type: string; label: string}[] = [];
 
         if (data?.sources?.length) {
-          // Prefer highest quality if multiple sources
-          const source = data.sources[0];
-          streamUrl = source.file;
-          streamType = source.type || "hls";
+          sources = data.sources;
         } else if (data?.stream?.qualities) {
-          // Legacy Vidlink format fallback
           const q = data.stream.qualities;
-          const url = q?.auto?.url || q?.["1080"]?.url || q?.["720"]?.url || q?.["480"]?.url || q?.["360"]?.url;
-          if (url) streamUrl = url;
-          streamType = "mp4";
+          const preferred = ["1080", "720", "480", "360"];
+          for (const p of preferred) {
+            if (q[p]?.url) {
+              sources.push({ file: q[p].url, type: "mp4", label: `${p}p` });
+            }
+          }
         }
 
         if (data?.tracks) {
-          setCaptions(data.tracks.map((t: any, i: number) => ({ id: String(i), language: t.label, url: t.file })));
+          setCaptions(data.tracks.map((t: any, i: number) => ({
+            id: String(i),
+            language: t.label,
+            url: proxyUrl(t.file)
+          })));
         } else if (data?.captions) {
           setCaptions(data.captions);
         }
 
-        if (!streamUrl) {
+        if (!sources.length) {
           throw new Error("Link stream tidak valid dari provider.");
         }
-        initializePlayer(streamUrl, streamType);
+
+        setAllSources(sources);
+        setQualityLevels(sources);
+        setCurrentQuality(0);
+        initializePlayer(sources[0].file, sources[0].type);
       })
       .catch((err) => {
         setError(err.message);
@@ -90,11 +101,21 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     const video = videoRef.current;
     if (!video) return;
 
-    // If it's a direct MP4, just set the src
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    const proxiedSrc = proxyUrl(src);
+
     if (type === "mp4" || (!src.includes(".m3u8") && !src.endsWith("/hls"))) {
-      video.src = src;
-      video.addEventListener("loadedmetadata", () => setIsLoading(false), { once: true });
-      video.addEventListener("error", () => setError("Gagal memutar video MP4."), { once: true });
+      video.src = proxiedSrc;
+      video.load();
+      video.addEventListener("loadedmetadata", () => {
+        setIsLoading(false);
+        video.play().catch(() => {});
+      }, { once: true });
+      video.addEventListener("error", () => setError("Gagal memutar video. Silakan coba kualitas lain."), { once: true });
       return;
     }
 
@@ -104,15 +125,15 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         maxMaxBufferLength: 60,
       });
 
-      hls.loadSource(src);
+      hls.loadSource(proxiedSrc);
       hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-        setQualityLevels(data.levels);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsLoading(false);
+        video.play().catch(() => {});
       });
 
-      hls.on(Hls.Events.ERROR, (event, data) => {
+      hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -131,10 +152,10 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
 
       hlsRef.current = hls;
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // For Safari which has native HLS support
-      video.src = src;
+      video.src = proxiedSrc;
       video.addEventListener("loadedmetadata", () => {
         setIsLoading(false);
+        video.play().catch(() => {});
       });
     }
   };
@@ -168,17 +189,32 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     }
   };
 
-  const changeQuality = (levelIndex: number) => {
-    if (hlsRef.current) {
-      hlsRef.current.currentLevel = levelIndex;
-      setCurrentQuality(levelIndex);
+  const changeQuality = (index: number) => {
+    if (allSources[index]) {
+      const currentTime = videoRef.current?.currentTime ?? 0;
+      const wasPlaying = isPlaying;
+      setCurrentQuality(index);
       setShowSettings(false);
+      setIsLoading(true);
+
+      const src = allSources[index];
+      initializePlayer(src.file, src.type);
+
+      const video = videoRef.current;
+      if (video) {
+        const onLoaded = () => {
+          video.currentTime = currentTime;
+          if (wasPlaying) video.play().catch(() => {});
+          video.removeEventListener("loadedmetadata", onLoaded);
+        };
+        video.addEventListener("loadedmetadata", onLoaded);
+      }
     }
   };
 
   if (error) {
     return (
-      <div className="w-full aspect-video bg-black/90 flex flex-col items-center justify-center rounded-xl border border-red-500/20 shadow-lg relative overflow-hidden">
+      <div className="w-full h-full bg-black/90 flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-red-500/5 backdrop-blur-3xl" />
         <div className="relative z-10 flex flex-col items-center p-8 text-center max-w-md">
           <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
@@ -195,10 +231,13 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
   }
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden group">
+    <div className="relative w-full h-full bg-black overflow-hidden group">
       {isLoading && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-white/60">Memuat video...</p>
+          </div>
         </div>
       )}
 
@@ -222,56 +261,47 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         ))}
       </video>
 
-      {/* Custom Controls Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
         <div className="flex items-center justify-between mt-4 gap-4">
           <div className="flex items-center gap-4">
-            <button onClick={togglePlay} className="text-white hover:text-red-500 transition">
+            <button onClick={togglePlay} className="text-white hover:text-accent transition">
               {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </button>
-            <button onClick={toggleMute} className="text-white hover:text-red-500 transition">
+            <button onClick={toggleMute} className="text-white hover:text-accent transition">
               {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
           </div>
 
           <div className="flex items-center gap-4 relative">
-            {qualityLevels.length > 0 && (
+            {qualityLevels.length > 1 && (
               <div className="relative">
                 <button
                   onClick={() => setShowSettings(!showSettings)}
-                  className="text-white hover:text-red-500 transition"
+                  className="text-white hover:text-accent transition flex items-center gap-1"
                 >
                   <Settings size={20} />
+                  <span className="text-xs font-medium">{qualityLevels[currentQuality]?.label}</span>
                 </button>
                 
                 {showSettings && (
                   <div className="absolute bottom-full right-0 mb-4 bg-zinc-900 border border-zinc-800 rounded-lg p-2 min-w-[120px] shadow-xl">
-                    <button
-                      onClick={() => changeQuality(-1)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-zinc-800 transition",
-                        currentQuality === -1 ? "text-red-500 font-semibold" : "text-gray-300"
-                      )}
-                    >
-                      Auto
-                    </button>
                     {qualityLevels.map((level, index) => (
                       <button
                         key={index}
                         onClick={() => changeQuality(index)}
                         className={cn(
                           "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-zinc-800 transition",
-                          currentQuality === index ? "text-red-500 font-semibold" : "text-gray-300"
+                          currentQuality === index ? "text-accent font-semibold" : "text-gray-300"
                         )}
                       >
-                        {level.height}p
+                        {level.label}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
             )}
-            <button onClick={toggleFullscreen} className="text-white hover:text-red-500 transition">
+            <button onClick={toggleFullscreen} className="text-white hover:text-accent transition">
               <Maximize size={20} />
             </button>
           </div>

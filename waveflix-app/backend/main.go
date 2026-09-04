@@ -98,6 +98,7 @@ func setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/discover", handleDiscoverParallel)
 	mux.HandleFunc("/api/batch", handleDetailBatchParallel)
 	mux.HandleFunc("/api/stream", HandleStreamAPI)
+	mux.HandleFunc("/api/media-proxy", HandleMediaProxy)
 
 	mux.HandleFunc("/uploads/", handleUploadsWithOptimization)
 	mux.HandleFunc("/api/images/", handleCachedImages)

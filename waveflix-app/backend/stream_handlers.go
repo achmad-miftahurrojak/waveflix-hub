@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 
 // HandleStreamAPI acts as a bridge to the external Python Decryptor microservice.
 func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
-	// Enable CORS if needed (already handled by global middleware if any, but let's be safe)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -36,7 +36,6 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(pythonServiceURL)
 	if err != nil {
-		// Python service is down or unreachable
 		http.Error(w, `{"error": "Streaming service is currently unavailable. Please ensure the Python decryptor is running on port 8000."}`, http.StatusServiceUnavailable)
 		return
 	}
@@ -46,7 +45,74 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(resp.StatusCode)
 	}
 
-	// Proxy the response directly to the frontend
+	io.Copy(w, resp.Body)
+}
+
+// HandleMediaProxy proxies media content (MP4/HLS) with proper Referer headers
+// so browsers can play protected CDN streams natively.
+func HandleMediaProxy(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Range")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	encoded := r.URL.Query().Get("url")
+	if encoded == "" {
+		http.Error(w, `{"error": "Missing url parameter"}`, http.StatusBadRequest)
+		return
+	}
+
+	targetURL, err := base64.URLEncoding.DecodeString(encoded)
+	if err != nil {
+		// Try with padding
+		for len(encoded)%4 != 0 {
+			encoded += "="
+		}
+		targetURL, err = base64.URLEncoding.DecodeString(encoded)
+		if err != nil {
+			http.Error(w, `{"error": "Invalid url encoding"}`, http.StatusBadRequest)
+			return
+		}
+	}
+
+	req, err := http.NewRequest("GET", string(targetURL), nil)
+	if err != nil {
+		http.Error(w, `{"error": "Invalid target URL"}`, http.StatusBadRequest)
+		return
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
+	req.Header.Set("Referer", "https://vidlink.pro/")
+	req.Header.Set("Origin", "https://vidlink.pro")
+
+	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
+		req.Header.Set("Range", rangeHeader)
+	}
+
+	client := &http.Client{Timeout: 120 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to fetch media"}`, http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	for _, key := range []string{"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"} {
+		if val := resp.Header.Get(key); val != "" {
+			w.Header().Set(key, val)
+		}
+	}
+
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "video/mp4")
+	}
+
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
