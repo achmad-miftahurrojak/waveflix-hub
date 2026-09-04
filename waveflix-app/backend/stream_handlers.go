@@ -53,50 +53,6 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 // CheckEpisodeAvailability is a helper function to verify if an episode exists
 // in the streaming provider before sending it to the frontend.
 func (tc *TMDBClient) CheckEpisodeAvailability(media, id, season, episode string) bool {
-	cacheKey := fmt.Sprintf("stream_avail:%s:%s:%s:%s", media, id, season, episode)
-	var available bool
-	if tc.cache.GetJSON(cacheKey, &available) {
-		return available
-	}
-
-	var pythonServiceURL string
-	if media == "movie" {
-		pythonServiceURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
-	} else if media == "tv" {
-		pythonServiceURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
-	}
-
-	client := &http.Client{Timeout: 15 * time.Second}
-	
-	maxRetries := 3
-	for i := 0; i < maxRetries; i++ {
-		resp, err := client.Get(pythonServiceURL)
-		if err != nil {
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
-		
-		status := resp.StatusCode
-		resp.Body.Close()
-		
-		if status == http.StatusOK {
-			tc.cache.SetJSON(cacheKey, true, 24*time.Hour)
-			return true
-		} else if status == 404 {
-			tc.cache.SetJSON(cacheKey, false, 24*time.Hour)
-			return false
-		} else if status == 429 || status == 500 {
-			// Rate limited or Python error, wait and retry with jitter
-			jitter := time.Duration(100 + (time.Now().UnixNano() % 500)) * time.Millisecond
-			time.Sleep(time.Duration(1+i) * time.Second + jitter)
-			continue
-		}
-		
-		tc.cache.SetJSON(cacheKey, false, 2*time.Hour)
-		return false
-	}
-
-	// If all retries failed, default to false
-	tc.cache.SetJSON(cacheKey, false, 2*time.Hour)
-	return false
+	// Bypass decryptor check for episodes because checking sequentially is too slow (user: "loading episodes mulu")
+	return true
 }

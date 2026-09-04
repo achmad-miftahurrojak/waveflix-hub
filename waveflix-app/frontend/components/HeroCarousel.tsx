@@ -67,20 +67,16 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     let player: any;
     let timer: NodeJS.Timeout;
     let skipped = false;
+    let playerReady = false;
 
     const attachAPI = () => {
       if (!iframeRef.current || !(window as any).YT) return;
       player = new (window as any).YT.Player(iframeRef.current, {
         events: {
           onReady: (e: any) => {
-            if (typeof e.target.setPlaybackQuality === 'function') {
-              e.target.setPlaybackQuality('hd1080');
-            }
+            playerReady = true;
           },
           onStateChange: (e: any) => {
-            if (e.data === 1 && typeof e.target.setPlaybackQuality === 'function') {
-              e.target.setPlaybackQuality('hd1080');
-            }
             if (e.data === 0 && !skipped) {
               skipped = true;
               setRevealed(false);
@@ -93,7 +89,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       });
 
       timer = setInterval(() => {
-        if (skipped || !player || typeof player.getCurrentTime !== "function") return;
+        if (skipped || !playerReady || !player || typeof player.getCurrentTime !== "function") return;
         try {
           const current = player.getCurrentTime();
           const duration = player.getDuration();

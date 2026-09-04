@@ -68,15 +68,10 @@ export default function InlineHeroVideo({
       player = new (window as any).YT.Player(trailerIframeRef.current, {
         events: {
           onReady: (e: any) => {
-            if (typeof e.target.setPlaybackQuality === 'function') {
-              e.target.setPlaybackQuality('hd1080');
-            }
+            // Player is ready
           },
           onStateChange: (e: any) => {
             if (e.data === 1) {
-              if (typeof e.target.setPlaybackQuality === 'function') {
-                e.target.setPlaybackQuality('hd1080');
-              }
               setTrailerPlaying(true);
             }
             if (e.data === 0) {
