@@ -32,7 +32,8 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     }
 
     // Call our local bridge API which fetches from the python decryptor
-    const bridgeUrl = `http://localhost:8080/api/stream${query}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
+    const bridgeUrl = `${baseUrl}/api/stream${query}`;
 
     setIsLoading(true);
     setError(null);
