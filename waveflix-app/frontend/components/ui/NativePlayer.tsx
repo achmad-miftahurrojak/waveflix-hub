@@ -45,30 +45,33 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         return res.json();
       })
       .then((data) => {
+        // New normalized format: { sources: [{file, type, label}], tracks: [{file, label, kind}] }
         let streamUrl = "";
-        if (data?.stream?.qualities) {
-          if (data.stream.qualities.auto) {
-            streamUrl = data.stream.qualities.auto.url;
-          } else if (data.stream.qualities["1080"]) {
-            streamUrl = data.stream.qualities["1080"].url;
-          } else if (data.stream.qualities["720"]) {
-            streamUrl = data.stream.qualities["720"].url;
-          } else if (data.stream.qualities["480"]) {
-            streamUrl = data.stream.qualities["480"].url;
-          } else {
-            const firstKey = Object.keys(data.stream.qualities)[0];
-            streamUrl = data.stream.qualities[firstKey]?.url || "";
-          }
+        let streamType = "hls";
+
+        if (data?.sources?.length) {
+          // Prefer highest quality if multiple sources
+          const source = data.sources[0];
+          streamUrl = source.file;
+          streamType = source.type || "hls";
+        } else if (data?.stream?.qualities) {
+          // Legacy Vidlink format fallback
+          const q = data.stream.qualities;
+          const url = q?.auto?.url || q?.["1080"]?.url || q?.["720"]?.url || q?.["480"]?.url || q?.["360"]?.url;
+          if (url) streamUrl = url;
+          streamType = "mp4";
         }
 
-        if (data?.captions) {
+        if (data?.tracks) {
+          setCaptions(data.tracks.map((t: any, i: number) => ({ id: String(i), language: t.label, url: t.file })));
+        } else if (data?.captions) {
           setCaptions(data.captions);
         }
 
         if (!streamUrl) {
           throw new Error("Link stream tidak valid dari provider.");
         }
-        initializePlayer(streamUrl);
+        initializePlayer(streamUrl, streamType);
       })
       .catch((err) => {
         setError(err.message);
@@ -82,9 +85,17 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     };
   }, [mediaType, tmdbId, season, episode]);
 
-  const initializePlayer = (src: string) => {
+  const initializePlayer = (src: string, type: string = "hls") => {
     const video = videoRef.current;
     if (!video) return;
+
+    // If it's a direct MP4, just set the src
+    if (type === "mp4" || (!src.includes(".m3u8") && !src.endsWith("/hls"))) {
+      video.src = src;
+      video.addEventListener("loadedmetadata", () => setIsLoading(false), { once: true });
+      video.addEventListener("error", () => setError("Gagal memutar video MP4."), { once: true });
+      return;
+    }
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -126,6 +137,7 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       });
     }
   };
+
 
   const togglePlay = () => {
     if (videoRef.current) {
