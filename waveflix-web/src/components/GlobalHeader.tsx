@@ -5,7 +5,7 @@ export default function GlobalHeader() {
     <header className="bg-black text-white h-[72px] flex items-center justify-between px-6 sticky top-0 z-50">
       <div className="flex items-center gap-6">
         <Link href="/" className="flex items-center">
-          <img src="/1.png" alt="WAVEFLIX" className="h-8 w-auto object-contain" />
+          <img src="/1.png" alt="WAVEFLIX" className="h-10 w-auto object-contain" />
         </Link>
         <span className="w-px h-8 bg-gray-600 hidden sm:block"></span>
         <span className="font-semibold text-lg hidden sm:block">Pusat Bantuan</span>

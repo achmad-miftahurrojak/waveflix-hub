@@ -127,7 +127,7 @@ export default function Navbar() {
           >
           <div className="flex items-center gap-6">
             <Link href={user ? "/home" : "/"}>
-              <img src="/1.png" alt="Waveflix" className="h-8 w-auto object-contain" />
+              <img src="/1.png" alt="Waveflix" className="h-12 w-auto object-contain" />
             </Link>
             {}
             {user && (
