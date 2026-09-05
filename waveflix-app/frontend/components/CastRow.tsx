@@ -3,7 +3,15 @@ import type { CastMember } from "@/lib/types";
 import { profileUrl } from "@/lib/helpers";
 
 export default function CastRow({ cast }: { cast: CastMember[] }) {
-  const list = cast.filter((c) => c.profile_path).slice(0, 12);
+  const seenIds = new Set<number>();
+  const list = cast
+    .filter((c) => c.profile_path)
+    .filter((c) => {
+      if (seenIds.has(c.id)) return false;
+      seenIds.add(c.id);
+      return true;
+    })
+    .slice(0, 12);
   if (list.length === 0) return null;
 
   return (
