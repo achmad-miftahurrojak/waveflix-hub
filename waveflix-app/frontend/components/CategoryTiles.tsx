@@ -35,7 +35,7 @@ export default function CategoryTiles({
             className="group flex items-center justify-between rounded-xl bg-white/[0.04] px-5 py-6 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-accent/40"
           >
             {t.logo ? (
-              <img src={t.logo} alt={t.label} className="h-10 object-contain grayscale transition group-hover:grayscale-0 brightness-200 group-hover:brightness-100" />
+              <img src={t.logo} alt={t.label} className="h-14 object-contain grayscale transition group-hover:grayscale-0 brightness-200 group-hover:brightness-100" />
             ) : (
               <span className="font-semibold text-white/90 group-hover:text-white">
                 {t.label}
