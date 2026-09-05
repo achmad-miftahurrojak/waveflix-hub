@@ -34,7 +34,7 @@ export default function CategoryTiles({
         {tiles.map((t) => (
           <motion.div
             key={t.href}
-            whileHover={{ y: -5, scale: 1.02 }}
+            whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
             <Link
