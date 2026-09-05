@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@consumet/extensions": "^1.8.8",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "vidsrc-utils": "github:heyitswit/vidsrc-bypass"
