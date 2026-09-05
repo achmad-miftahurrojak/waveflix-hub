@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HeroSlide } from "@/lib/tmdb";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/lib/i18n";
 import {
   backdropUrl,
@@ -170,24 +171,24 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           />
         </div>
       )}
-
-      {}
-      {slides.map((s, i) => (
-        <div
-          key={s.item.id}
-          className="absolute inset-0 bg-cover bg-top transition-opacity duration-[1200ms]"
+      {/* Carousel Slides */}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={active}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: revealed && playVideo ? 0 : 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+          className="absolute inset-0 bg-cover bg-top"
           style={{
-            backgroundImage: `url('${backdropUrl(s.item)}')`,
-            opacity: i === active ? (revealed && playVideo ? 0 : 1) : 0,
+            backgroundImage: `url('${backdropUrl(current?.item)}')`,
           }}
         />
-      ))}
+      </AnimatePresence>
 
-      {}
       <div className="pointer-events-none absolute inset-0 bg-black/35" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-bg to-transparent" />
 
-      {}
       {revealed && playVideo && (
         <button
           onClick={toggleMute}
@@ -198,50 +199,69 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         </button>
       )}
 
-      {}
+      {/* Content Section */}
       <div className="relative z-[2] flex h-full items-end">
         <div className="w-full max-w-2xl px-[4%] pb-[10vh]">
-          {slides.map((s, i) => {
-            const tv = isTv(s.item);
-            return (
-              <div key={s.item.id} className={i === active ? "block animate-[fadeIn_.5s_ease]" : "hidden"}>
-                <span className="mb-3 inline-block rounded bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-black shadow">
-                  {tv ? t("ui.tvSeries") : t("ui.movie")}
-                </span>
+          <AnimatePresence mode="wait">
+            {current && (
+              <motion.div
+                key={active}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={{
+                  hidden: { opacity: 0, y: 30 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      staggerChildren: 0.1,
+                      delayChildren: 0.2,
+                    },
+                  },
+                }}
+              >
+                <motion.span variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mb-3 inline-block rounded bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-black shadow">
+                  {isTv(current.item) ? t("ui.tvSeries") : t("ui.movie")}
+                </motion.span>
 
-                {s.logo ? (
-                  <img src={s.logo} alt={itemTitle(s.item)} className="mb-4 max-h-24 w-auto max-w-[280px] object-contain object-left drop-shadow-logo md:max-h-36 md:max-w-[400px]" />
-                ) : (
-                  <h1 className="mb-4 max-w-xl text-4xl font-black leading-tight tracking-tight drop-shadow-lg md:text-5xl">
-                    {itemTitle(s.item)}
-                  </h1>
-                )}
+                <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                  {current.logo ? (
+                    <img src={current.logo} alt={itemTitle(current.item)} className="mb-4 max-h-24 w-auto max-w-[280px] object-contain object-left drop-shadow-logo md:max-h-36 md:max-w-[400px]" />
+                  ) : (
+                    <h1 className="mb-4 max-w-xl text-4xl font-black leading-tight tracking-tight drop-shadow-lg md:text-5xl">
+                      {itemTitle(current.item)}
+                    </h1>
+                  )}
+                </motion.div>
 
-                <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 drop-shadow-meta">
-                  <span className="flex items-center gap-1 font-semibold text-[#f5c518]"><StarIcon /> {ratingText(s.item)}</span>
+                <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 drop-shadow-meta">
+                  <span className="flex items-center gap-1 font-semibold text-[#f5c518]"><StarIcon /> {ratingText(current.item)}</span>
                   <span className="text-white/40">&bull;</span>
-                  <span>{itemYear(s.item)}</span>
-                  {s.duration && (<><span className="text-white/40">&bull;</span><span>{s.duration}</span></>)}
-                  {s.genres.length > 0 && (<><span className="text-white/40">&bull;</span><span>{s.genres.join(", ")}</span></>)}
-                </div>
+                  <span>{itemYear(current.item)}</span>
+                  {current.duration && (<><span className="text-white/40">&bull;</span><span>{current.duration}</span></>)}
+                  {current.genres.length > 0 && (<><span className="text-white/40">&bull;</span><span>{current.genres.join(", ")}</span></>)}
+                </motion.div>
 
-                {s.tagline && (
-                  <p className="mb-6 max-w-lg text-sm leading-relaxed text-white/90 drop-shadow md:text-base italic font-medium">{s.tagline}</p>
+                {current.tagline && (
+                  <motion.p variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mb-6 max-w-lg text-sm leading-relaxed text-white/90 drop-shadow md:text-base italic font-medium">
+                    {current.tagline}
+                  </motion.p>
                 )}
 
-                <div className="flex flex-wrap items-stretch gap-3">
-                  <Link href={detailHref(s.item)} className="inline-flex items-center justify-center gap-2 rounded bg-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition hover:scale-105 hover:bg-accent-dark">
+                <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-wrap items-stretch gap-3">
+                  <Link href={detailHref(current.item)} className="inline-flex items-center justify-center gap-2 rounded bg-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition hover:scale-105 hover:bg-accent-dark">
                     <PlayIcon className="text-black size-3.5" /> {t("ui.watchNow")}
                   </Link>
-                  {s.status && (
+                  {current.status && (
                     <span className="inline-flex items-center justify-center rounded border border-white/20 bg-black/40 px-4 py-2 text-xs font-bold tracking-wider text-emerald-400 backdrop-blur uppercase">
-                      {s.status}
+                      {current.status}
                     </span>
                   )}
-                </div>
-              </div>
-            );
-          })}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {total > 1 && (
             <div className="mt-8 flex items-center gap-2">

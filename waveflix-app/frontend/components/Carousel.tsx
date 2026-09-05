@@ -6,6 +6,7 @@ import MovieCard from "./MovieCard";
 import QuickViewModal from "./QuickViewModal";
 import { itemTitle, posterUrl } from "@/lib/helpers";
 import { ChevronLeft, ChevronRight } from "./Icons";
+import { motion } from "framer-motion";
 
 interface Props {
   items: TmdbItem[];
@@ -83,14 +84,23 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
 
         {arrows("left")}
 
-        <div
+        <motion.div
           ref={ref}
           onScroll={updateScrollButtons}
           className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto py-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.05 } }
+          }}
         >
           {items.map((m, i) => (
-            <div
+            <motion.div
               key={`${m.id}-${i}`}
+              variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+              whileHover={{ scale: 1.05 }}
               className="w-[170px] shrink-0 snap-start"
             >
               {quickView ? (
@@ -112,9 +122,9 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
               ) : (
                 <MovieCard item={m} />
               )}
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {arrows("right")}
       </div>
@@ -133,17 +143,29 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
         </button>
       )}
 
-      <div
+      <motion.div
         ref={ref}
         onScroll={updateScrollButtons}
         className={`no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto py-2 ${noPadding ? "" : "scroll-pl-[4%] px-[4%]"}`}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.05 } }
+        }}
       >
         {items.map((m, i) => (
-          <div key={`${m.id}-${i}`} className="w-[185px] shrink-0 snap-start">
+          <motion.div 
+            key={`${m.id}-${i}`} 
+            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+            whileHover={{ scale: 1.05 }}
+            className="w-[185px] shrink-0 snap-start"
+          >
             <MovieCard item={m} />
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {canScrollRight && (
         <button
