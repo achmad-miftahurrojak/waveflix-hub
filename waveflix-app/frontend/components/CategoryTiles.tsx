@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight } from "./Icons";
 import { motion } from "framer-motion";
