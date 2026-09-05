@@ -27,19 +27,19 @@ import RouteGuard from "@/components/RouteGuard";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "Waveflix | Stream Without Limits",
+    default: "WAVEFLIX",
     template: "%s",
   },
   description: "Watch your favorite movies and TV series without limits.",
   openGraph: {
-    title: "Waveflix | Stream Without Limits",
+    title: "WAVEFLIX",
     description: "Watch your favorite movies and TV series without limits.",
     type: "website",
     siteName: "Waveflix",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Waveflix | Stream Without Limits",
+    title: "WAVEFLIX",
     description: "Watch your favorite movies and TV series without limits.",
   },
 };
