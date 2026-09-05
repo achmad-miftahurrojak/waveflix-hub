@@ -126,12 +126,8 @@ export default function Navbar() {
             }`}
           >
           <div className="flex items-center gap-6">
-            <Link
-              href={user ? "/home" : "/"}
-              className="text-4xl uppercase leading-none tracking-[-0.03em] text-accent"
-              style={{ fontFamily: "var(--font-logo)" }}
-            >
-              Waveflix
+            <Link href={user ? "/home" : "/"}>
+              <img src="/1.png" alt="Waveflix" className="h-8" />
             </Link>
             {}
             {user && (

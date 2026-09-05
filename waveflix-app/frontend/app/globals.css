@@ -10,8 +10,8 @@
   --color-surface: 31 40 51; /* #1f2833 */
   --color-surface-raised: 24 24 24; /* #181818 */
   --color-surface-overlay: 13 15 20; /* #0d0f14 */
-  --color-accent: 101 167 211; /* #65A7D3 */
-  --color-accent-dark: 80 140 180;
+  --color-accent: 92 225 230; /* #5CE1E6 */
+  --color-accent-dark: 70 200 205;
 }
 
 html,
