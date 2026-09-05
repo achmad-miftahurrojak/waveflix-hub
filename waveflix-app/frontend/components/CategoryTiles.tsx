@@ -4,6 +4,7 @@ import { ChevronRight } from "./Icons";
 interface Tile {
   label: string;
   href: string;
+  logo?: string;
 }
 
 export default function CategoryTiles({
@@ -33,9 +34,13 @@ export default function CategoryTiles({
             href={t.href}
             className="group flex items-center justify-between rounded-xl bg-white/[0.04] px-5 py-6 ring-1 ring-white/10 transition hover:bg-white/[0.08] hover:ring-accent/40"
           >
-            <span className="font-semibold text-white/90 group-hover:text-white">
-              {t.label}
-            </span>
+            {t.logo ? (
+              <img src={t.logo} alt={t.label} className="h-7 object-contain grayscale transition group-hover:grayscale-0 brightness-200 group-hover:brightness-100" />
+            ) : (
+              <span className="font-semibold text-white/90 group-hover:text-white">
+                {t.label}
+              </span>
+            )}
             <ChevronRight className="text-white/30 transition group-hover:text-accent" />
           </Link>
         ))}

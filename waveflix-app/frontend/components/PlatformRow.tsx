@@ -17,12 +17,12 @@ interface PlatformOption {
   sources: Source[];
 }
 
-const PLATFORMS: PlatformOption[] = [
-  { label: "Netflix", sources: [{ media: "movie", params: "provider=8&sort_by=popularity.desc" }, { media: "tv", params: "provider=8&sort_by=popularity.desc" }] },
-  { label: "Disney+ Originals", sources: [{ media: "movie", params: "provider=122&sort_by=popularity.desc" }, { media: "tv", params: "provider=122&sort_by=popularity.desc" }] },
-  { label: "HBO MAX", sources: [{ media: "movie", params: "provider=384&sort_by=popularity.desc" }, { media: "tv", params: "provider=384&sort_by=popularity.desc" }] },
-  { label: "Prime Video", sources: [{ media: "movie", params: "provider=119&sort_by=popularity.desc" }, { media: "tv", params: "provider=119&sort_by=popularity.desc" }] },
-  { label: "Apple TV", sources: [{ media: "movie", params: "provider=350&sort_by=popularity.desc" }, { media: "tv", params: "provider=350&sort_by=popularity.desc" }] },
+const PLATFORMS: (PlatformOption & { logo?: string })[] = [
+  { label: "Netflix", logo: "/networks/netflix.png", sources: [{ media: "movie", params: "provider=8&sort_by=popularity.desc" }, { media: "tv", params: "provider=8&sort_by=popularity.desc" }] },
+  { label: "Disney+ Originals", logo: "/networks/disney.png", sources: [{ media: "movie", params: "provider=122&sort_by=popularity.desc" }, { media: "tv", params: "provider=122&sort_by=popularity.desc" }] },
+  { label: "HBO MAX", logo: "/networks/hbo.png", sources: [{ media: "movie", params: "provider=384&sort_by=popularity.desc" }, { media: "tv", params: "provider=384&sort_by=popularity.desc" }] },
+  { label: "Prime Video", logo: "/networks/prime.png", sources: [{ media: "movie", params: "provider=119&sort_by=popularity.desc" }, { media: "tv", params: "provider=119&sort_by=popularity.desc" }] },
+  { label: "Apple TV", logo: "/networks/apple.png", sources: [{ media: "movie", params: "provider=350&sort_by=popularity.desc" }, { media: "tv", params: "provider=350&sort_by=popularity.desc" }] },
 ];
 
 export default function PlatformRow() {
@@ -70,7 +70,11 @@ export default function PlatformRow() {
             onMouseEnter={() => setOpen(true)}
             className="flex items-center gap-2 text-xl font-bold"
           >
-            {t(PLATFORMS[active].label)}
+            {PLATFORMS[active].logo ? (
+              <img src={PLATFORMS[active].logo} alt={t(PLATFORMS[active].label)} className="h-6 object-contain" />
+            ) : (
+              t(PLATFORMS[active].label)
+            )}
             <ChevronRight className={`h-5 w-5 transition ${open ? "rotate-90" : ""}`} />
           </button>
           {open && (
@@ -86,7 +90,11 @@ export default function PlatformRow() {
                         : "text-white/75 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    {t(g.label)}
+                    {g.logo ? (
+                      <img src={g.logo} alt={t(g.label)} className="h-5 object-contain inline-block" />
+                    ) : (
+                      t(g.label)
+                    )}
                   </button>
                 ))}
               </div>

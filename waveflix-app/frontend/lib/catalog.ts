@@ -46,12 +46,12 @@ export const COUNTRIES: { code: string; name: string }[] = [
   { code: "TH", name: "Thailand" },
 ];
 
-export const PROVIDERS: { id: number; name: string }[] = [
-  { id: 8, name: "Netflix" },
-  { id: 122, name: "Disney+" },
-  { id: 384, name: "HBO Max" },
-  { id: 350, name: "Apple TV+" },
-  { id: 119, name: "Prime Video" },
+export const PROVIDERS: { id: number; name: string; logo?: string }[] = [
+  { id: 8, name: "Netflix", logo: "/networks/netflix.png" },
+  { id: 122, name: "Disney+", logo: "/networks/disney.png" },
+  { id: 384, name: "HBO Max", logo: "/networks/hbo.png" },
+  { id: 350, name: "Apple TV+", logo: "/networks/apple.png" },
+  { id: 119, name: "Prime Video", logo: "/networks/prime.png" },
   { id: 158, name: "Viu" },
 ];
 

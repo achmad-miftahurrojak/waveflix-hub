@@ -12,19 +12,14 @@ export default async function NetworksPage({
   const tiles = PROVIDERS.map((p) => ({
     label: p.name,
     href: `/browse?media=${media}&provider=${p.id}`,
+    logo: p.logo,
   }));
-
-
 
   return (
     <main className="min-h-screen pb-16">
-
       <div className="pt-28">
         <CategoryTiles title="Networks" tiles={tiles} disableWrapper={true} />
       </div>
     </main>
   );
 }
-
-
-
