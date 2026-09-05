@@ -99,8 +99,7 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
           {items.map((m, i) => (
             <motion.div
               key={`${m.id}-${i}`}
-              variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-              whileHover={{ scale: 1.05 }}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
               className="w-[170px] shrink-0 snap-start"
             >
               {quickView ? (
@@ -158,8 +157,7 @@ export default function Carousel({ items, noPadding, small, quickView, isLanding
         {items.map((m, i) => (
           <motion.div 
             key={`${m.id}-${i}`} 
-            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-            whileHover={{ scale: 1.05 }}
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
             className="w-[185px] shrink-0 snap-start"
           >
             <MovieCard item={m} />

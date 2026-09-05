@@ -41,8 +41,7 @@ export default function EpisodeRow({
           return (
             <motion.div
               key={`${e.show.id}-${e.season}-${e.episode}`}
-              variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-              whileHover={{ scale: 1.05 }}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
               className="w-[280px] shrink-0 snap-start"
             >
               <Link
