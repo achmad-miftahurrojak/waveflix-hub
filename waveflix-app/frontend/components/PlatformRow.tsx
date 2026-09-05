@@ -79,7 +79,7 @@ export default function PlatformRow() {
           </button>
           {open && (
             <div className="absolute left-0 top-full z-30 pt-4">
-              <div className="w-56 rounded-xl border border-white/10 bg-surface-overlay/90 p-2 shadow-glass backdrop-blur-2xl">
+              <div className="w-56 rounded-xl border border-white/20 bg-white/5 p-2 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)]">
                 {PLATFORMS.map((g, i) => (
                   <button
                     key={g.label}
