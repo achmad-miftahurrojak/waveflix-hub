@@ -71,7 +71,7 @@ export default function PlatformRow() {
             className="flex items-center gap-2 text-xl font-bold"
           >
             {PLATFORMS[active].logo ? (
-              <img src={PLATFORMS[active].logo} alt={t(PLATFORMS[active].label)} className="h-6 object-contain" />
+              <img src={PLATFORMS[active].logo} alt={t(PLATFORMS[active].label)} className="h-8 object-contain" />
             ) : (
               t(PLATFORMS[active].label)
             )}
@@ -91,7 +91,7 @@ export default function PlatformRow() {
                     }`}
                   >
                     {g.logo ? (
-                      <img src={g.logo} alt={t(g.label)} className="h-5 object-contain inline-block" />
+                      <img src={g.logo} alt={t(g.label)} className="h-6 object-contain inline-block" />
                     ) : (
                       t(g.label)
                     )}
