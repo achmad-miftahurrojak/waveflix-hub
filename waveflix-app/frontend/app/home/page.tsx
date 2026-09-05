@@ -37,12 +37,12 @@ export default async function Home() {
       <HeroCarousel slides={heroSlides} />
 
       <div className="relative z-[2] pt-4">
-        <MovieRow title="Trending Now" items={trendingGlobal} href="/trending" />
-        <MovieRow title="Trending in Indonesia" items={combinedTrending} href="/trending" />
+        <MovieRow title="Trending Now" items={trendingGlobal} href="/browse?sort_by=terpopuler" />
+        <MovieRow title="Trending in Indonesia" items={combinedTrending} href="/browse?country=ID&sort_by=terpopuler" />
         <PlatformRow />
         <AsianDramaRow />
-        <MovieRow title="Latest Movies" items={latestMovies} href="/movies" />
-        <MovieRow title="Latest Series" items={latestSeries} href="/tv" />
+        <MovieRow title="Latest Movies" items={latestMovies} href="/browse?media=movie&sort_by=terbaru" />
+        <MovieRow title="Latest Series" items={latestSeries} href="/browse?media=tv&sort_by=terbaru" />
         <EpisodeRow episodes={latestEpisodes} />
       </div>
     </main>
