@@ -67,10 +67,10 @@ export default function EpisodesSection({
           <select
             value={season}
             onChange={(e) => setSeason(Number(e.target.value))}
-            className="rounded-md border border-white/20 bg-surface px-4 py-2 text-sm font-semibold outline-none focus:border-accent"
+            className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold outline-none focus:border-accent backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)] text-white"
           >
             {valid.map((s) => (
-              <option key={s.season_number} value={s.season_number}>
+              <option key={s.season_number} value={s.season_number} className="bg-[#111] text-white">
                 {s.name || `${t("ui.season")} ${s.season_number}`}
               </option>
             ))}
