@@ -21,9 +21,10 @@ export default function MovieRow({ title, items, href, noPadding }: Props) {
         <h2 className="text-xl font-bold text-gray-100">{t(title)}</h2>
         <Link
           href={href || "#"}
-          className="rounded bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+          className="group flex items-center text-sm font-semibold text-gray-400 transition-colors hover:text-white"
         >
-          {t("ui.viewAll")} &rsaquo;
+          <span className="hidden sm:inline-block mr-1">{t("ui.viewAll")}</span>
+          <span className="text-xl leading-none transition-transform group-hover:translate-x-1 text-[var(--color-accent)]">&rsaquo;</span>
         </Link>
       </div>
       <Carousel items={items} noPadding={noPadding} />
