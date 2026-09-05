@@ -62,8 +62,8 @@ export default function PlatformRow() {
   const items = cache[active] ?? [];
 
   return (
-    <section className="mb-3">
-      <div className="mb-1 px-[4%]">
+    <section className="mb-8">
+      <div className="mb-3 px-[4%]">
         <div className="relative inline-block" onMouseLeave={() => setOpen(false)}>
           <button
             onClick={() => setOpen((o) => !o)}

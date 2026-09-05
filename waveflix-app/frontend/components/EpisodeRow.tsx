@@ -16,7 +16,7 @@ export default function EpisodeRow({
   const { t } = useTranslation();
   if (episodes.length === 0) return null;
   return (
-    <section className="mb-6">
+    <section className="mb-8">
       <div className="mb-3 px-[4%]">
         <h2 className="text-xl font-bold text-gray-100">Recently Added Episodes</h2>
       </div>

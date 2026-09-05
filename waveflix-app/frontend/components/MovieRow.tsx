@@ -16,7 +16,7 @@ export default function MovieRow({ title, items, href, noPadding }: Props) {
   const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
-    <section className="mb-6">
+    <section className="mb-8">
       <div className={`mb-3 flex items-center justify-between ${noPadding ? '' : 'px-[4%]'}`}>
         <h2 className="text-xl font-bold text-gray-100">{t(title)}</h2>
         <Link
