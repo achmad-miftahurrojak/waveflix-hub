@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { TmdbItem, SeasonSummary, Episode } from "@/lib/types";
 import { stillUrl, runtimeText, BACKEND } from "@/lib/helpers";
-import { PlayIcon } from "./Icons";
+import { PlayIcon, ChevronRight } from "./Icons";
 import { useTranslation } from "@/lib/i18n";
 
 function formatAirDate(iso: string): string {
@@ -36,6 +36,7 @@ export default function EpisodesSection({
   );
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -64,17 +65,33 @@ export default function EpisodesSection({
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-xl font-bold">{t("ui.episodes")}</h3>
         {valid.length > 1 && (
-          <select
-            value={season}
-            onChange={(e) => setSeason(Number(e.target.value))}
-            className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold outline-none focus:border-accent backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)] text-white"
-          >
-            {valid.map((s) => (
-              <option key={s.season_number} value={s.season_number} className="bg-[#111] text-white">
-                {s.name || `${t("ui.season")} ${s.season_number}`}
-              </option>
-            ))}
-          </select>
+          <div className="relative" onMouseLeave={() => setDropdownOpen(false)}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold outline-none backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)] text-white"
+            >
+              {valid.find(s => s.season_number === season)?.name || `${t("ui.season")} ${season}`}
+              <ChevronRight className={`h-4 w-4 transition ${dropdownOpen ? "rotate-90" : ""}`} />
+            </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 top-full z-30 pt-2">
+                <div className="w-48 rounded-xl border border-white/20 bg-white/5 p-2 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)] flex flex-col max-h-60 overflow-y-auto no-scrollbar">
+                  {valid.map((s) => (
+                    <button
+                      key={s.season_number}
+                      onClick={() => {
+                        setSeason(s.season_number);
+                        setDropdownOpen(false);
+                      }}
+                      className={`text-left px-3 py-2 text-sm rounded-md transition ${season === s.season_number ? "bg-white/10 text-accent" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+                    >
+                      {s.name || `${t("ui.season")} ${s.season_number}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
