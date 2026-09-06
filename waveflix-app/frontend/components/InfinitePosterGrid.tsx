@@ -68,12 +68,26 @@ export default function InfinitePosterGrid({
     }
   }, [items, hasMore, page, cacheKey]);
 
+  // Reset state when cacheKey changes
   useEffect(() => {
-    if (page === 1 && items.length === initialItems.length) {
-      setItems(initialItems);
-      setHasMore(initialHasMore);
+    if (typeof window !== "undefined" && cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.items && parsed.items.length > 0) {
+            setItems(parsed.items);
+            setHasMore(parsed.hasMore ?? initialHasMore);
+            setPage(parsed.page ?? 1);
+            return;
+          }
+        } catch (e) {}
+      }
     }
-  }, [initialItems, initialHasMore]);
+    setItems(initialItems);
+    setHasMore(initialHasMore);
+    setPage(1);
+  }, [cacheKey, initialItems, initialHasMore]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;

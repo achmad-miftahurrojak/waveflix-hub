@@ -56,7 +56,6 @@ export async function fetchBrowsePage(
       sort_by: sortUi,
       without_genres,
       page,
-      ...(sortUi.includes("popularity") ? {} : { released_after: since }),
     };
     const data = await discover(params);
     return {
