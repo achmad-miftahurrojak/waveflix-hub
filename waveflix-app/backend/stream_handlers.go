@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 type cachedStream struct {
@@ -18,6 +20,7 @@ type cachedStream struct {
 var (
 	streamCache   = make(map[string]*cachedStream)
 	streamCacheMu sync.RWMutex
+	requestGroup  singleflight.Group
 )
 
 func getCachedStream(key string) ([]byte, bool) {
@@ -58,44 +61,59 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var extractorURL string
-	if media == "movie" {
-		extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
-	} else if media == "tv" {
-		extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
-	} else {
-		http.Error(w, `{"error": "Invalid media type"}`, http.StatusBadRequest)
-		return
-	}
+	// Use singleflight to prevent duplicate simultaneous extractions
+	v, err, _ := requestGroup.Do(cacheKey, func() (interface{}, error) {
+		// Check cache again just in case it was populated while waiting
+		if cached, ok := getCachedStream(cacheKey); ok {
+			return cached, nil
+		}
 
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Get(extractorURL)
-	if err != nil {
-		http.Error(w, `{"error": "Streaming service unavailable."}`, http.StatusServiceUnavailable)
-		return
-	}
-	defer resp.Body.Close()
+		var extractorURL string
+		if media == "movie" {
+			extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
+		} else if media == "tv" {
+			extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, `{"error": "Failed to read stream response"}`, http.StatusInternalServerError)
-		return
-	}
+		client := &http.Client{Timeout: 60 * time.Second}
+		resp, err := client.Get(extractorURL)
+		if err != nil {
+			return nil, fmt.Errorf(`{"error": "Streaming service unavailable."}`)
+		}
+		defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		var parsed map[string]interface{}
-		if json.Unmarshal(body, &parsed) == nil {
-			if sources, ok := parsed["sources"]; ok {
-				if arr, ok := sources.([]interface{}); ok && len(arr) > 0 {
-					setCachedStream(cacheKey, body, 3*time.Hour)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf(`{"error": "Failed to read stream response"}`)
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			var parsed map[string]interface{}
+			if json.Unmarshal(body, &parsed) == nil {
+				if sources, ok := parsed["sources"]; ok {
+					if arr, ok := sources.([]interface{}); ok && len(arr) > 0 {
+						setCachedStream(cacheKey, body, 3*time.Hour)
+					}
 				}
 			}
+			return body, nil
 		}
-	} else {
-		w.WriteHeader(resp.StatusCode)
+		
+		return body, fmt.Errorf("%s", string(body))
+	})
+
+	if err != nil {
+		errStr := err.Error()
+		if len(errStr) > 0 && errStr[0] == '{' {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(errStr))
+		} else {
+			http.Error(w, errStr, http.StatusServiceUnavailable)
+		}
+		return
 	}
 
-	w.Write(body)
+	w.Write(v.([]byte))
 }
 
 // HandleMediaProxy proxies media content (MP4/HLS) with proper Referer headers.
