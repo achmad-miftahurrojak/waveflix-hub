@@ -137,16 +137,25 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       const hls = new Hls({
         maxBufferLength: 30,
         maxMaxBufferLength: 60,
-        xhrSetup: (xhr, url) => {
-          // Pass through without modification — token is IP-bound
+        xhrSetup: (xhr) => {
           xhr.withCredentials = false;
         },
       });
+
+      let networkRetries = 0;
+
+      // 30s timeout failsafe
+      const loadTimeout = setTimeout(() => {
+        setError("Stream timeout. Silakan reload.");
+        setIsLoading(false);
+        hls.destroy();
+      }, 30000);
 
       hls.loadSource(finalSrc);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        clearTimeout(loadTimeout);
         setIsLoading(false);
         video.play().catch(() => {});
       });
@@ -155,13 +164,23 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
+              networkRetries++;
+              if (networkRetries <= 3) {
+                hls.startLoad();
+              } else {
+                clearTimeout(loadTimeout);
+                setError("Gagal memuat stream. Silakan reload.");
+                setIsLoading(false);
+                hls.destroy();
+              }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               hls.recoverMediaError();
               break;
             default:
+              clearTimeout(loadTimeout);
               setError("Terjadi kesalahan fatal saat memutar video.");
+              setIsLoading(false);
               hls.destroy();
               break;
           }
