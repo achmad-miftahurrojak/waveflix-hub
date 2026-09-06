@@ -15,7 +15,10 @@ interface NativePlayerProps {
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
 
 function proxyUrl(url: string): string {
-  if (url.includes("localhost:8000")) return url; // Direct stream for Torrents
+  // HLS M3U8 streams have IP-bound tokens — load directly without proxy
+  if (url.includes(".m3u8")) return url;
+  // Direct stream for Torrents
+  if (url.includes("localhost:8000")) return url;
   const encoded = btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${BACKEND_URL}/api/media-proxy?url=${encoded}`;
 }
@@ -107,10 +110,11 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       hlsRef.current = null;
     }
 
-    const proxiedSrc = proxyUrl(src);
+    const isHls = src.includes(".m3u8") || type === "hls";
+    const finalSrc = isHls ? src : proxyUrl(src);
 
-    if (type === "mp4" || (!src.includes(".m3u8") && !src.endsWith("/hls"))) {
-      video.src = proxiedSrc;
+    if (!isHls) {
+      video.src = finalSrc;
       video.load();
       video.addEventListener("loadedmetadata", () => {
         setIsLoading(false);
@@ -124,9 +128,13 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       const hls = new Hls({
         maxBufferLength: 30,
         maxMaxBufferLength: 60,
+        xhrSetup: (xhr, url) => {
+          // Pass through without modification — token is IP-bound
+          xhr.withCredentials = false;
+        },
       });
 
-      hls.loadSource(proxiedSrc);
+      hls.loadSource(finalSrc);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -153,11 +161,14 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
 
       hlsRef.current = hls;
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = proxiedSrc;
+      // Safari native HLS
+      video.src = finalSrc;
       video.addEventListener("loadedmetadata", () => {
         setIsLoading(false);
         video.play().catch(() => {});
       });
+    } else {
+      setError("Browser tidak mendukung pemutaran HLS.");
     }
   };
 
