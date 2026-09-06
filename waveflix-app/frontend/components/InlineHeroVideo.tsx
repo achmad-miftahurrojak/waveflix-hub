@@ -190,40 +190,42 @@ export default function InlineHeroVideo({
 
   if (active) {
     return (
-      <div
-        ref={wrapRef}
-        onMouseMove={revealControls}
-        onMouseLeave={() => setControlsVisible(false)}
-        className={`relative w-full bg-black h-[70vh] md:h-[80vh]`}
-      >
-        <div className="absolute inset-0 z-10">
-          <NativePlayer
-            mediaType={player.item.media_type as "movie" | "tv"}
-            tmdbId={player.item.id.toString()}
-            season={player.season?.toString()}
-            episode={player.episode?.toString()}
-          />
-        </div>
-
+      <div className="w-full bg-background pt-24 pb-12 px-[4%]">
         <div
-          className={`absolute right-5 top-24 z-30 flex items-center gap-3 transition-opacity duration-300 ${
-            controlsVisible ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+          ref={wrapRef}
+          onMouseMove={revealControls}
+          onMouseLeave={() => setControlsVisible(false)}
+          className={`relative w-full max-w-[1200px] mx-auto bg-black aspect-video rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10`}
         >
-          <button
-            onClick={toggleFullscreen}
-            aria-label="Toggle Fullscreen"
-            className="grid h-9 w-9 place-items-center rounded-full bg-black/60 text-white/80 transition hover:text-accent"
+          <div className="absolute inset-0 z-10">
+            <NativePlayer
+              mediaType={player.item.media_type as "movie" | "tv"}
+              tmdbId={player.item.id.toString()}
+              season={player.season?.toString()}
+              episode={player.episode?.toString()}
+            />
+          </div>
+
+          <div
+            className={`absolute right-4 top-4 z-30 flex items-center gap-3 transition-opacity duration-300 ${
+              controlsVisible ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
           >
-            {isFs ? <MinimizeIcon /> : <MaximizeIcon />}
-          </button>
-          <button
-            onClick={stop}
-            aria-label="Close player"
-            className="grid h-9 w-9 place-items-center rounded-full bg-black/60 text-white/80 transition hover:text-accent"
-          >
-            <CloseIcon />
-          </button>
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Toggle Fullscreen"
+              className="grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white/80 transition hover:bg-accent hover:text-black border border-white/20"
+            >
+              {isFs ? <MinimizeIcon /> : <MaximizeIcon />}
+            </button>
+            <button
+              onClick={stop}
+              aria-label="Close player"
+              className="grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white/80 transition hover:bg-accent hover:text-black border border-white/20"
+            >
+              <CloseIcon />
+            </button>
+          </div>
         </div>
       </div>
     );
