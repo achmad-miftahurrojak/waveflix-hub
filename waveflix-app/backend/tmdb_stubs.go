@@ -99,14 +99,21 @@ func sanitizeTMDBData(data map[string]interface{}, mediaType string) {
 }
 
 func checkVidlinkAvailability(media, id string) bool {
-	url := fmt.Sprintf("https://vidlink.pro/api/b/%s/%s", media, id)
-	client := &http.Client{Timeout: 5 * time.Second}
+	var url string
+	if media == "movie" {
+		url = fmt.Sprintf("https://vidlink.pro/movie/%s", id)
+	} else {
+		url = fmt.Sprintf("https://vidlink.pro/tv/%s/1/1", id)
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Head(url)
 	if err != nil {
-		return false
+		return true // Default to true if network error so we don't break the site
 	}
 	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+	// 200 OK means it exists. 429 means we are rate limited (assume it exists to avoid empty catalog).
+	// If it's a 404 or 500, it actually doesn't exist.
+	return resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusTooManyRequests
 }
 
 func checkMajorProvider(media, id string) bool {
