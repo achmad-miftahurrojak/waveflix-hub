@@ -40,6 +40,17 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
             resolveStream(streamUrl);
         }
       }
+    // Auto-close any new popup tabs immediately
+    browser.on('targetcreated', async (target) => {
+        if (target.type() === 'page') {
+            try {
+                const newPage = await target.page();
+                if (newPage && newPage !== page) {
+                    console.log('[puppeteer] Auto-closing popup ad...');
+                    await newPage.close();
+                }
+            } catch (e) {}
+        }
     });
 
     console.log('[puppeteer] Navigating to', url);
@@ -53,23 +64,13 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
             
             try { await page.mouse.click(640, 360); } catch(e) {}
             
-            // Wait 2 seconds to see if stream appears or popup opens
-            const raceResult = await Promise.race([
+            // Wait 2 seconds to see if stream appears
+            await Promise.race([
                 streamPromise,
                 new Promise(r => setTimeout(() => r('wait'), 2000))
             ]);
             
             if (streamUrl) break;
-            
-            // Check for popups and close them
-            const currentPages = await browser.pages();
-            // keep the first two pages (blank page + our main page)
-            for (let p = 2; p < currentPages.length; p++) {
-                try {
-                    console.log(`[puppeteer] Closing popup page ${p}...`);
-                    await currentPages[p].close();
-                } catch(e) {}
-            }
             await page.bringToFront();
         }
     }
