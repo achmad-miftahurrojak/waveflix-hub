@@ -22,7 +22,7 @@ export default function LatestEpisodesRow({
           <Link
             key={`${e.show.id}-${e.season}-${e.episode}`}
             href={`/tv/${e.show.id}/season/${e.season}/episode/${e.episode}`}
-            className="group w-[280px] shrink-0 snap-start text-left"
+            className="group w-[280px] shrink-0 snap-start text-left transition-transform duration-300 hover:scale-105"
           >
             <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface shadow-lg">
               {e.still ? (
@@ -31,7 +31,7 @@ export default function LatestEpisodesRow({
                   src={stillUrl(e.still)}
                   alt={e.name}
                   loading="lazy"
-                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  className="h-full w-full object-cover"
                 />
               ) : null}
               <span className="absolute left-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-bold tracking-wide">

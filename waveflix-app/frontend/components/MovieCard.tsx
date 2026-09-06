@@ -29,7 +29,7 @@ export default function MovieCard({ item, disableLink }: Props) {
         src={posterUrl(item)}
         alt={itemTitle(item)}
         loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        className="absolute inset-0 h-full w-full object-cover"
       />
       
       {/* Subtle shadow overlay that reacts to the hover */}
@@ -45,7 +45,7 @@ export default function MovieCard({ item, disableLink }: Props) {
 
   if (disableLink) {
     return (
-      <div ref={containerRef} className="group block w-full text-left" aria-label={itemTitle(item)}>
+      <div ref={containerRef} className="group block w-full text-left transition-transform duration-300 hover:scale-105" aria-label={itemTitle(item)}>
         {content}
       </div>
     );
@@ -55,7 +55,7 @@ export default function MovieCard({ item, disableLink }: Props) {
     <Link
       ref={containerRef as any}
       href={detailHref(item)}
-      className="group block w-full text-left"
+      className="group block w-full text-left transition-transform duration-300 hover:scale-105"
       aria-label={itemTitle(item)}
     >
       {content}

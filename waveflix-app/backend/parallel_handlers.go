@@ -215,16 +215,20 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 
 
 	if results, ok := data["results"].([]interface{}); ok {
-		enhanceResultsParallel(results, media)
+		filtered := enhanceResultsParallel(results, media)
+		data["results"] = filtered
+		data["total_results"] = len(filtered)
 	}
 
 	responseJSON, _ := json.Marshal(data)
 	writeJSON(w, string(responseJSON))
 }
 
-func enhanceResultsParallel(results []interface{}, media string) {
+func enhanceResultsParallel(results []interface{}, media string) []interface{} {
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 5) 
+	semaphore := make(chan struct{}, 10) 
+	
+	keep := make([]bool, len(results))
 
 	for i, result := range results {
 		if item, ok := result.(map[string]interface{}); ok {
@@ -235,34 +239,40 @@ func enhanceResultsParallel(results []interface{}, media string) {
 				semaphore <- struct{}{}
 				defer func() { <-semaphore }()
 
+				if id, ok := data["id"].(float64); ok {
+					idStr := strconv.Itoa(int(id))
+					available := checkVidlinkAvailability(media, idStr)
+					if !available {
+						keep[index] = false
+						return
+					}
+				}
+				keep[index] = true
+
 				err := SubmitBackgroundTask(TaskTypeDataProcess, map[string]interface{}{
 					"type":   "enhance_result",
 					"data":   data,
 					"media":  media,
 					"index":  index,
 				})
-
 				if err != nil {
-
 					enhanceResultItem(data, media)
 				}
 			}(i, item)
+		} else {
+			keep[i] = true
 		}
 	}
 
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
+	wg.Wait()
 
-	select {
-	case <-done:
-
-	case <-time.After(5 * time.Second):
-
-		log.Printf("[parallel] Result enhancement timeout")
+	var filtered []interface{}
+	for i, k := range keep {
+		if k {
+			filtered = append(filtered, results[i])
+		}
 	}
+	return filtered
 }
 
 func enhanceResultItem(item map[string]interface{}, media string) {

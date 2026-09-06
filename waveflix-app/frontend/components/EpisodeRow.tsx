@@ -46,7 +46,7 @@ export default function EpisodeRow({
             >
               <Link
                 href={`/tv/${e.show.id}/season/${e.season}/episode/${e.episode}`}
-                className="group text-left flex flex-col gap-2 block w-full focus:outline-none"
+                className="group text-left flex flex-col gap-2 block w-full focus:outline-none transition-transform duration-300 hover:scale-105"
                 aria-label={`${showName} - ${epStr}`}
               >
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface shadow-md">
@@ -55,7 +55,7 @@ export default function EpisodeRow({
                       src={stillUrl(e.still)}
                       alt={e.name}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-400">

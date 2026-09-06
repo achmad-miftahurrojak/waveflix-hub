@@ -105,7 +105,7 @@ export default function EpisodesSection({
             <Link
               key={ep.episode_number}
               href={`/tv/${show.id}/season/${season}/episode/${ep.episode_number}`}
-              className="group text-left"
+              className="group flex flex-col focus:outline-none transition-transform duration-300 hover:scale-105"
             >
               <div
                 className={`relative aspect-video w-full overflow-hidden rounded-lg bg-surface transition-all duration-300 ${
@@ -120,7 +120,7 @@ export default function EpisodesSection({
                     src={stillUrl(ep.still_path)}
                     alt={ep.name}
                     loading="lazy"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    className="h-full w-full object-cover"
                   />
                 ) : null}
                 <span className="absolute left-2 top-2 rounded bg-black/80 px-2 py-0.5 text-xs font-bold tracking-wider text-white">
