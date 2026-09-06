@@ -48,6 +48,7 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
   const [showSubSettings, setShowSubSettings] = useState(false);
   const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1);
   const [allSources, setAllSources] = useState<{file: string; type: string; label: string}[]>([]);
+  const [iframeFallbackUrl, setIframeFallbackUrl] = useState<string | null>(null);
   
   // Seekbar state
   const [currentTime, setCurrentTime] = useState(0);
@@ -117,11 +118,13 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
         initializePlayer(sources[0].file, sources[0].type);
       } catch (err: any) {
         if (cancelled) return;
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 3000));
-          if (!cancelled) return fetchStream(attempt + 1);
-        }
-        setError(err.message);
+        
+        // Backend retries failed, fallback to iframe provider
+        const embedUrl = mediaType === "tv" 
+          ? `https://2embed.cc/embed/tv/${tmdbId}&s=${season}&e=${episode}`
+          : `https://2embed.cc/embed/${tmdbId}`;
+          
+        setIframeFallbackUrl(embedUrl);
         setIsLoading(false);
       }
     };
@@ -362,67 +365,62 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
     }
   };
 
-  if (error) {
-    return (
-      <div className="w-full h-full bg-black/90 flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-red-500/5 backdrop-blur-3xl" />
-        <div className="relative z-10 flex flex-col items-center p-8 text-center max-w-md">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-            <span className="text-red-500 text-3xl">!</span>
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">Konten Tidak Tersedia</h3>
-          <p className="text-gray-400 text-sm">
-            {error} <br />
-            Silakan coba lagi nanti atau pilih resolusi lain.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden group">
-      {isLoading && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-white/60">Memuat video...</p>
+    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden group shadow-2xl">
+      {/* ERROR OVERLAY */}
+      {error && !iframeFallbackUrl && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+            <span className="text-red-500 text-2xl font-bold">!</span>
           </div>
+          <h3 className="text-white text-xl font-bold mb-2">Konten Tidak Tersedia</h3>
+          <p className="text-gray-400 text-sm">{error}</p>
+          <p className="text-gray-500 text-xs mt-1">Silakan coba lagi nanti atau pilih resolusi lain.</p>
         </div>
       )}
 
-      {/* Top Banner (NOW PLAYING) */}
-      <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-        {title && (
-          <div className="text-white">
-            <p className="text-xs text-accent font-semibold tracking-wider uppercase mb-1">Now Playing</p>
-            <h2 className="text-xl font-bold truncate">{title}</h2>
-          </div>
-        )}
-      </div>
+      {/* LOADING OVERLAY */}
+      {isLoading && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="w-12 h-12 border-4 border-zinc-700 border-t-accent rounded-full animate-spin mb-4" />
+          <p className="text-zinc-400 font-medium animate-pulse">Menghubungkan ke stream terbaik...</p>
+        </div>
+      )}
 
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain"
-        onClick={togglePlay}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        crossOrigin="anonymous"
-      >
-        {captions.map((cap) => (
-          <track
-            key={cap.id}
-            kind="captions"
-            label={cap.language}
-            srcLang={cap.language.substring(0, 2).toLowerCase()}
-            src={cap.url}
-            default={cap.language.toLowerCase() === "indonesian" || cap.language.toLowerCase() === "indonesia"}
-          />
-        ))}
-      </video>
+      {/* VIDEO / IFRAME */}
+      {iframeFallbackUrl ? (
+        <iframe
+          src={iframeFallbackUrl}
+          className="w-full h-full object-cover"
+          allowFullScreen
+          frameBorder="0"
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-contain"
+          onClick={togglePlay}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          crossOrigin="anonymous"
+        >
+          {captions.map((cap) => (
+            <track
+              key={cap.id}
+              kind="captions"
+              label={cap.language}
+              srcLang={cap.language.substring(0, 2).toLowerCase()}
+              src={cap.url}
+              default={cap.language.toLowerCase() === "indonesian" || cap.language.toLowerCase() === "indonesia"}
+            />
+          ))}
+        </video>
+      )}
 
+      {/* CONTROLS (Only show if not using iframe fallback) */}
+      {!iframeFallbackUrl && (
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
         
         {/* Seekbar */}
@@ -582,7 +580,7 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
             </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

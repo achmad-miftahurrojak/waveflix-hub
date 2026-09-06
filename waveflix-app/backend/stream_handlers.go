@@ -75,31 +75,48 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 			extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
 		}
 
-		client := &http.Client{Timeout: 60 * time.Second}
-		resp, err := client.Get(extractorURL)
-		if err != nil {
-			return nil, fmt.Errorf(`{"error": "Streaming service unavailable."}`)
-		}
-		defer resp.Body.Close()
+		var lastErr error
+		var lastBody []byte
+		
+		for attempt := 1; attempt <= 3; attempt++ {
+			client := &http.Client{Timeout: 60 * time.Second}
+			resp, err := client.Get(extractorURL)
+			if err != nil {
+				lastErr = fmt.Errorf(`{"error": "Streaming service unavailable."}`)
+				time.Sleep(2 * time.Second)
+				continue
+			}
 
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf(`{"error": "Failed to read stream response"}`)
-		}
+			body, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				lastErr = fmt.Errorf(`{"error": "Failed to read stream response"}`)
+				time.Sleep(2 * time.Second)
+				continue
+			}
 
-		if resp.StatusCode == http.StatusOK {
-			var parsed map[string]interface{}
-			if json.Unmarshal(body, &parsed) == nil {
-				if sources, ok := parsed["sources"]; ok {
-					if arr, ok := sources.([]interface{}); ok && len(arr) > 0 {
-						setCachedStream(cacheKey, body, 3*time.Hour)
+			if resp.StatusCode == http.StatusOK {
+				var parsed map[string]interface{}
+				if json.Unmarshal(body, &parsed) == nil {
+					if sources, ok := parsed["sources"]; ok {
+						if arr, ok := sources.([]interface{}); ok && len(arr) > 0 {
+							setCachedStream(cacheKey, body, 3*time.Hour)
+							return body, nil
+						}
 					}
 				}
 			}
-			return body, nil
+			
+			lastBody = body
+			lastErr = fmt.Errorf("%s", string(body))
+			// If we got a 404 or something permanent, we can break early, but for now we'll just retry
+			time.Sleep(2 * time.Second)
 		}
-		
-		return body, fmt.Errorf("%s", string(body))
+
+		if lastBody != nil {
+			return lastBody, lastErr
+		}
+		return nil, lastErr
 	})
 
 	if err != nil {
