@@ -45,32 +45,32 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
     console.log('[puppeteer] Navigating to', url);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     
-    // Wait for stream to be caught or timeout
-    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 5000, 'timeout'));
-    let result = await Promise.race([streamPromise, timeoutPromise]);
-    
-    if (result === 'timeout' && !streamUrl) {
-        console.log('[puppeteer] Clicking center to trigger play...');
-        await new Promise(r => setTimeout(r, 3000));
-        try { await page.mouse.click(640, 360); } catch(e) {}
-        
-        result = await Promise.race([
-            streamPromise, 
-            new Promise(resolve => setTimeout(resolve, 8000, 'timeout2'))
-        ]);
-        
-        if (result === 'timeout2' && !streamUrl) {
-            console.log('[puppeteer] Second click attempt (closing popups)...');
-            const pages = await browser.pages();
-            if (pages.length > 2) {
-               try { await pages[2].close(); } catch(e) {}
+    // Aggressive click loop to bypass invisible overlay ads
+    if (!streamUrl) {
+        console.log('[puppeteer] Starting aggressive click loop...');
+        for (let i = 0; i < 5; i++) {
+            if (streamUrl) break;
+            
+            try { await page.mouse.click(640, 360); } catch(e) {}
+            
+            // Wait 2 seconds to see if stream appears or popup opens
+            const raceResult = await Promise.race([
+                streamPromise,
+                new Promise(r => setTimeout(() => r('wait'), 2000))
+            ]);
+            
+            if (streamUrl) break;
+            
+            // Check for popups and close them
+            const currentPages = await browser.pages();
+            // keep the first two pages (blank page + our main page)
+            for (let p = 2; p < currentPages.length; p++) {
+                try {
+                    console.log(`[puppeteer] Closing popup page ${p}...`);
+                    await currentPages[p].close();
+                } catch(e) {}
             }
             await page.bringToFront();
-            try { await page.mouse.click(640, 360); } catch(e) {}
-            await Promise.race([
-                streamPromise, 
-                new Promise(resolve => setTimeout(resolve, 5000, 'timeout3'))
-            ]);
         }
     }
     
