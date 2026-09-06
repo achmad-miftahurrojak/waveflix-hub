@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+const { execSync } = require('child_process');
 
 const ports = [3000, 3001, 8000, 8081];
 
@@ -13,9 +13,9 @@ for (const port of ports) {
         try {
           execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
           console.log(`Killed PID ${pid} on port ${port}`);
-        } catch {}
+        } catch (_) {}
       }
     }
-  } catch {}
+  } catch (_) {}
 }
 console.log('Ports cleared.');

@@ -2,7 +2,6 @@
   "name": "waveflix-hub",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "predev": "node scripts/kill-ports.js",
     "dev": "concurrently -c \"cyan,magenta,green,blue\" -n \"EXTRACTOR,GO,APP,WEB\" \"npm run dev:extractor\" \"npm run dev:backend\" \"npm run dev:app\" \"npm run dev:web\"",
