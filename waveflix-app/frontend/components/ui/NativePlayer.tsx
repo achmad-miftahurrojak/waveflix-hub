@@ -15,6 +15,7 @@ interface NativePlayerProps {
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
 
 function proxyUrl(url: string): string {
+  if (url.includes("localhost:8000")) return url; // Direct stream for Torrents
   const encoded = btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${BACKEND_URL}/api/media-proxy?url=${encoded}`;
 }

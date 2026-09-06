@@ -1,9 +1,7 @@
 import express from "express";
 import cors from "cors";
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-
-puppeteer.use(StealthPlugin());
+import puppeteer from 'puppeteer';
+import { getTorrentInfo, activeEngines } from './torrent_engine.js';
 
 const app = express();
 app.use(cors());
@@ -18,13 +16,14 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
     
   console.log('[puppeteer] Launching browser for', url);
   const browser = await puppeteer.launch({ 
-    headless: 'new',
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--window-size=1280,720'],
     channel: 'chrome'
   });
   
   try {
-    const page = await browser.newPage();
+    const pages = await browser.pages();
+    const page = pages.length > 0 ? pages[0] : await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
     
     let streamUrl = null;
@@ -40,38 +39,38 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
             resolveStream(streamUrl);
         }
       }
-    // Auto-close any new popup tabs immediately
-    browser.on('targetcreated', async (target) => {
-        if (target.type() === 'page') {
-            try {
-                const newPage = await target.page();
-                if (newPage && newPage !== page) {
-                    console.log('[puppeteer] Auto-closing popup ad...');
-                    await newPage.close();
-                }
-            } catch (e) {}
-        }
     });
 
+    // Auto-close any new popup tabs immediately
     console.log('[puppeteer] Navigating to', url);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
     
     // Aggressive click loop to bypass invisible overlay ads
     if (!streamUrl) {
         console.log('[puppeteer] Starting aggressive click loop...');
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
             if (streamUrl) break;
             
-            try { await page.mouse.click(640, 360); } catch(e) {}
+            const x = 640 + Math.random() * 10;
+            const y = 360 + Math.random() * 10;
+            try { await page.mouse.click(x, y, {delay: 50}); } catch(e) {}
             
-            // Wait 2 seconds to see if stream appears
+            // Wait to see if stream appears
             await Promise.race([
                 streamPromise,
-                new Promise(r => setTimeout(() => r('wait'), 2000))
+                new Promise(r => setTimeout(() => r('wait'), 1500))
             ]);
             
             if (streamUrl) break;
-            await page.bringToFront();
+            
+            // close any new tabs
+            try {
+                const currentPages = await browser.pages();
+                for (let j = 1; j < currentPages.length; j++) {
+                    await currentPages[j].close();
+                }
+                await page.bringToFront();
+            } catch (e) {}
         }
     }
     
@@ -111,7 +110,22 @@ app.get("/stream", async (req, res) => {
 
   console.log(`[extractor] Extracting ${media.toUpperCase()} id=${id}`);
 
-  const result = await extractStreamWithPuppeteer(id, media, season, episode);
+  let result = null;
+
+  if (media === 'movie') {
+    console.log(`[extractor] Using Torrent for Movie id=${id}`);
+    const hostUrl = `${req.protocol}://${req.get('host')}`;
+    result = await getTorrentInfo(id, hostUrl);
+    
+    // Fallback to Puppeteer if torrent fails
+    if (!result) {
+        console.log(`[extractor] WebTorrent failed, falling back to Puppeteer...`);
+        result = await extractStreamWithPuppeteer(id, media, season, episode);
+    }
+  } else {
+    // TV Shows default to Puppeteer
+    result = await extractStreamWithPuppeteer(id, media, season, episode);
+  }
 
   if (!result) {
     console.warn(`[extractor] Failed to extract stream for ${media} id=${id}`);
@@ -120,6 +134,43 @@ app.get("/stream", async (req, res) => {
 
   console.log(`[extractor] ✓ Got stream successfully`);
   return res.json(result);
+});
+
+// GET /stream-video/:tmdbId
+// Handles HTTP Range requests to stream the video file
+app.get("/stream-video/:tmdbId", (req, res) => {
+    const tmdbId = req.params.tmdbId;
+    if (!activeEngines.has(tmdbId)) {
+        return res.status(404).send('Torrent not found or expired');
+    }
+    
+    const { file } = activeEngines.get(tmdbId);
+    
+    const range = req.headers.range;
+    if (!range) {
+        // Fallback for no-range request
+        res.writeHead(200, {
+            'Content-Length': file.length,
+            'Content-Type': 'video/mp4'
+        });
+        file.createReadStream().pipe(res);
+        return;
+    }
+    
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : file.length - 1;
+    const chunksize = (end - start) + 1;
+    
+    res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${file.length}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': 'video/mp4'
+    });
+    
+    const stream = file.createReadStream({ start, end });
+    stream.pipe(res);
 });
 
 app.listen(PORT, () => {
