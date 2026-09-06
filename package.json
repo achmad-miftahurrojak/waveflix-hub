@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -c \"cyan,magenta,green,blue\" -n \"PYTHON,GO,APP,WEB\" \"npm run dev:python\" \"npm run dev:backend\" \"npm run dev:app\" \"npm run dev:web\"",
-    "dev:python": "cd Vidlink.pro-Decryptor && python main.py",
+    "dev": "concurrently -c \"cyan,magenta,green,blue\" -n \"EXTRACTOR,GO,APP,WEB\" \"npm run dev:extractor\" \"npm run dev:backend\" \"npm run dev:app\" \"npm run dev:web\"",
+    "dev:extractor": "cd waveflix-extractor && node server.js",
     "dev:backend": "cd waveflix-app/backend && go run .",
     "dev:app": "cd waveflix-app/frontend && npm run dev -- -p 3000",
     "dev:web": "cd waveflix-web && npm run dev -- -p 3001"

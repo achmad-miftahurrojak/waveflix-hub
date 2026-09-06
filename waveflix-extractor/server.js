@@ -52,7 +52,7 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
     if (result === 'timeout' && !streamUrl) {
         console.log('[puppeteer] Clicking center to trigger play...');
         await new Promise(r => setTimeout(r, 3000));
-        await page.mouse.click(640, 360);
+        try { await page.mouse.click(640, 360); } catch(e) {}
         
         result = await Promise.race([
             streamPromise, 
@@ -63,10 +63,10 @@ async function extractStreamWithPuppeteer(id, mediaType, season, episode) {
             console.log('[puppeteer] Second click attempt (closing popups)...');
             const pages = await browser.pages();
             if (pages.length > 2) {
-               await pages[2].close();
+               try { await pages[2].close(); } catch(e) {}
             }
             await page.bringToFront();
-            await page.mouse.click(640, 360);
+            try { await page.mouse.click(640, 360); } catch(e) {}
             await Promise.race([
                 streamPromise, 
                 new Promise(resolve => setTimeout(resolve, 5000, 'timeout3'))
