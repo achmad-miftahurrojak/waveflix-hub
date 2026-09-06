@@ -2,13 +2,42 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
-// HandleStreamAPI acts as a bridge to the external Python Decryptor microservice.
+type cachedStream struct {
+	body      []byte
+	expiresAt time.Time
+}
+
+var (
+	streamCache   = make(map[string]*cachedStream)
+	streamCacheMu sync.RWMutex
+)
+
+func getCachedStream(key string) ([]byte, bool) {
+	streamCacheMu.RLock()
+	defer streamCacheMu.RUnlock()
+	c, ok := streamCache[key]
+	if !ok || time.Now().After(c.expiresAt) {
+		return nil, false
+	}
+	return c.body, true
+}
+
+func setCachedStream(key string, body []byte, ttl time.Duration) {
+	streamCacheMu.Lock()
+	defer streamCacheMu.Unlock()
+	streamCache[key] = &cachedStream{body: body, expiresAt: time.Now().Add(ttl)}
+}
+
+// HandleStreamAPI acts as a bridge to the external extractor microservice.
+// Caches successful stream responses for 3 hours (token validity ~4h).
 func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
@@ -23,33 +52,53 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var pythonServiceURL string
+	cacheKey := fmt.Sprintf("%s:%s:%s:%s", media, id, season, episode)
+	if cached, ok := getCachedStream(cacheKey); ok {
+		w.Write(cached)
+		return
+	}
+
+	var extractorURL string
 	if media == "movie" {
-		pythonServiceURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
+		extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
 	} else if media == "tv" {
-		pythonServiceURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
+		extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
 	} else {
 		http.Error(w, `{"error": "Invalid media type"}`, http.StatusBadRequest)
 		return
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(pythonServiceURL)
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Get(extractorURL)
 	if err != nil {
-		http.Error(w, `{"error": "Streaming service is currently unavailable. Please ensure the Python decryptor is running on port 8000."}`, http.StatusServiceUnavailable)
+		http.Error(w, `{"error": "Streaming service unavailable."}`, http.StatusServiceUnavailable)
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to read stream response"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		var parsed map[string]interface{}
+		if json.Unmarshal(body, &parsed) == nil {
+			if sources, ok := parsed["sources"]; ok {
+				if arr, ok := sources.([]interface{}); ok && len(arr) > 0 {
+					setCachedStream(cacheKey, body, 3*time.Hour)
+				}
+			}
+		}
+	} else {
 		w.WriteHeader(resp.StatusCode)
 	}
 
-	io.Copy(w, resp.Body)
+	w.Write(body)
 }
 
-// HandleMediaProxy proxies media content (MP4/HLS) with proper Referer headers
-// so browsers can play protected CDN streams natively.
+// HandleMediaProxy proxies media content (MP4/HLS) with proper Referer headers.
 func HandleMediaProxy(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -69,7 +118,6 @@ func HandleMediaProxy(w http.ResponseWriter, r *http.Request) {
 
 	targetURL, err := base64.URLEncoding.DecodeString(encoded)
 	if err != nil {
-		// Try with padding
 		for len(encoded)%4 != 0 {
 			encoded += "="
 		}
@@ -87,8 +135,8 @@ func HandleMediaProxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
-	req.Header.Set("Referer", "https://vidlink.pro/")
-	req.Header.Set("Origin", "https://vidlink.pro")
+	req.Header.Set("Referer", "https://vidsrc.in/")
+	req.Header.Set("Origin", "https://vidsrc.in")
 
 	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
 		req.Header.Set("Range", rangeHeader)
@@ -116,9 +164,6 @@ func HandleMediaProxy(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, resp.Body)
 }
 
-// CheckEpisodeAvailability is a helper function to verify if an episode exists
-// in the streaming provider before sending it to the frontend.
 func (tc *TMDBClient) CheckEpisodeAvailability(media, id, season, episode string) bool {
-	// Bypass decryptor check for episodes because checking sequentially is too slow (user: "loading episodes mulu")
 	return true
 }
