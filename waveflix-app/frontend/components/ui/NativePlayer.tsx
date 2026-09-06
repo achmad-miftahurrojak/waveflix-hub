@@ -121,8 +121,8 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
         
         // Backend retries failed, fallback to iframe provider
         const embedUrl = mediaType === "tv" 
-          ? `https://2embed.cc/embed/tv/${tmdbId}&s=${season}&e=${episode}`
-          : `https://2embed.cc/embed/${tmdbId}`;
+          ? `https://vidsrc.in/embed/tv/${tmdbId}/${season}/${episode}`
+          : `https://vidsrc.in/embed/movie/${tmdbId}`;
           
         setIframeFallbackUrl(embedUrl);
         setIsLoading(false);
@@ -386,6 +386,16 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
           <p className="text-zinc-400 font-medium animate-pulse">Menghubungkan ke stream terbaik...</p>
         </div>
       )}
+
+      {/* Top Banner (NOW PLAYING) */}
+      <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+        {title && (
+          <div className="text-white">
+            <p className="text-xs text-accent font-semibold tracking-wider uppercase mb-1">Now Playing</p>
+            <h2 className="text-xl font-bold truncate">{title}</h2>
+          </div>
+        )}
+      </div>
 
       {/* VIDEO / IFRAME */}
       {iframeFallbackUrl ? (
