@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Play, Pause, Volume2, VolumeX, Maximize, Settings } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Settings, RotateCcw, RotateCw, Subtitles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NativePlayerProps {
@@ -10,6 +10,7 @@ interface NativePlayerProps {
   tmdbId: string;
   season?: string;
   episode?: string;
+  title?: string;
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
@@ -23,17 +24,35 @@ function proxyUrl(url: string): string {
   return `${BACKEND_URL}/api/media-proxy?url=${encoded}`;
 }
 
-export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlayerProps) {
+function formatTime(seconds: number): string {
+  if (!seconds || isNaN(seconds)) return "00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+export function NativePlayer({ mediaType, tmdbId, season, episode, title }: NativePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [qualityLevels, setQualityLevels] = useState<{file: string; type: string; label: string}[]>([]);
+  const [qualityLevels, setQualityLevels] = useState<{file?: string; type: string; label: string; index?: number}[]>([]);
   const [currentQuality, setCurrentQuality] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [captions, setCaptions] = useState<{id: string; language: string; url: string}[]>([]);
+  const [showSubSettings, setShowSubSettings] = useState(false);
+  const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1);
   const [allSources, setAllSources] = useState<{file: string; type: string; label: string}[]>([]);
+  
+  // Seekbar state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const hlsRef = useRef<Hls | null>(null);
 
@@ -74,19 +93,26 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         }
 
         if (data?.tracks) {
-          setCaptions(data.tracks.map((t: any, i: number) => ({
+          const fetchedCaps = data.tracks.map((t: any, i: number) => ({
             id: String(i),
             language: t.label,
             url: proxyUrl(t.file)
-          })));
+          }));
+          setCaptions(fetchedCaps);
+          const defaultIdx = fetchedCaps.findIndex((c: any) => c.language.toLowerCase().includes("indonesia"));
+          setCurrentSubtitle(defaultIdx >= 0 ? defaultIdx : -1);
         } else if (data?.captions) {
           setCaptions(data.captions);
+          const defaultIdx = data.captions.findIndex((c: any) => c.language.toLowerCase().includes("indonesia"));
+          setCurrentSubtitle(defaultIdx >= 0 ? defaultIdx : -1);
         }
 
         if (!sources.length) throw new Error("Link stream tidak valid dari provider.");
 
         setAllSources(sources);
-        setQualityLevels(sources);
+        if (!sources[0].file.includes(".m3u8")) {
+          setQualityLevels(sources);
+        }
         setCurrentQuality(0);
         initializePlayer(sources[0].file, sources[0].type);
       } catch (err: any) {
@@ -154,8 +180,22 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       hls.loadSource(finalSrc);
       hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
         clearTimeout(loadTimeout);
+        
+        if (data.levels && data.levels.length > 0) {
+          const levels = data.levels.map((l: any, i: number) => ({
+            type: "hls",
+            label: l.height ? `${l.height}p` : `Level ${i}`,
+            index: i
+          })).sort((a, b) => parseInt(b.label) - parseInt(a.label));
+          
+          levels.unshift({ type: "hls", label: "Auto", index: -1 });
+          setQualityLevels(levels);
+          setCurrentQuality(0);
+          hls.currentLevel = -1;
+        }
+        
         setIsLoading(false);
         video.play().catch(() => {});
       });
@@ -212,10 +252,42 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     }
   };
 
+  const skipBackward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime -= 10;
+    }
+  };
+
+  const skipForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime += 10;
+    }
+  };
+
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (!isDragging && videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = parseFloat(e.target.value);
+    setCurrentTime(newTime);
+    if (videoRef.current) {
+      videoRef.current.currentTime = newTime;
     }
   };
 
@@ -229,15 +301,53 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     }
   };
 
-  const changeQuality = (index: number) => {
-    if (allSources[index]) {
+  const changeSubtitle = (index: number) => {
+    if (videoRef.current) {
+      const tracks = videoRef.current.textTracks;
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = i === index ? "showing" : "disabled";
+      }
+    }
+    setCurrentSubtitle(index);
+    setShowSubSettings(false);
+  };
+
+  const handleSubtitleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const newIndex = captions.length;
+      setCaptions(prev => [...prev, {
+        id: `custom-${Date.now()}`,
+        language: `Custom: ${file.name}`,
+        url: url
+      }]);
+      // Wait for state to update and track to mount, then select it
+      setTimeout(() => {
+        changeSubtitle(newIndex);
+        setShowSubSettings(true); // Keep open to show it's selected
+      }, 100);
+    }
+  };
+
+  const changeQuality = (idx: number) => {
+    const q = qualityLevels[idx];
+    if (!q) return;
+
+    setCurrentQuality(idx);
+    setShowSettings(false);
+
+    if (hlsRef.current && q.index !== undefined) {
+      hlsRef.current.currentLevel = q.index;
+      return;
+    }
+
+    if (q.file && allSources[idx]) {
       const currentTime = videoRef.current?.currentTime ?? 0;
       const wasPlaying = isPlaying;
-      setCurrentQuality(index);
-      setShowSettings(false);
       setIsLoading(true);
 
-      const src = allSources[index];
+      const src = allSources[idx];
       initializePlayer(src.file, src.type);
 
       const video = videoRef.current;
@@ -281,12 +391,24 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
         </div>
       )}
 
+      {/* Top Banner (NOW PLAYING) */}
+      <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+        {title && (
+          <div className="text-white">
+            <p className="text-xs text-accent font-semibold tracking-wider uppercase mb-1">Now Playing</p>
+            <h2 className="text-xl font-bold truncate">{title}</h2>
+          </div>
+        )}
+      </div>
+
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
         onClick={togglePlay}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
         crossOrigin="anonymous"
       >
         {captions.map((cap) => (
@@ -302,21 +424,135 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
       </video>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-        <div className="flex items-center justify-between mt-4 gap-4">
-          <div className="flex items-center gap-4">
+        
+        {/* Seekbar */}
+        <div className="flex items-center gap-3 w-full px-2 mb-2">
+          <span className="text-xs text-white/80 font-medium font-mono min-w-[40px] text-right">
+            {formatTime(currentTime)}
+          </span>
+          <div className="relative flex-1 group/seek h-5 flex items-center cursor-pointer">
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={currentTime}
+              onMouseDown={() => setIsDragging(true)}
+              onMouseUp={() => setIsDragging(false)}
+              onChange={handleSeek}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+            />
+            {/* Custom track */}
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden relative z-10 group-hover/seek:h-1.5 transition-all">
+              <div 
+                className="h-full bg-accent relative"
+                style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+              >
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover/seek:opacity-100 transition-opacity transform translate-x-1/2" />
+              </div>
+            </div>
+          </div>
+          <span className="text-xs text-white/80 font-medium font-mono min-w-[40px]">
+            {formatTime(duration)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between mt-2 gap-4">
+          <div className="flex items-center gap-5">
             <button onClick={togglePlay} className="text-white hover:text-accent transition">
               {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </button>
-            <button onClick={toggleMute} className="text-white hover:text-accent transition">
-              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            <button onClick={skipBackward} className="text-white/80 hover:text-white transition" title="Mundur 10 detik">
+              <RotateCcw size={20} />
             </button>
+            <button onClick={skipForward} className="text-white/80 hover:text-white transition" title="Maju 10 detik">
+              <RotateCw size={20} />
+            </button>
+            
+            <div className="flex items-center gap-2 group/volume">
+              <button onClick={toggleMute} className="text-white/80 hover:text-white transition">
+                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+              <input 
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05" 
+                defaultValue="1"
+                onChange={(e) => {
+                  if (videoRef.current) {
+                    videoRef.current.volume = parseFloat(e.target.value);
+                    setIsMuted(e.target.value === "0");
+                  }
+                }}
+                className="w-0 opacity-0 origin-left group-hover/volume:w-20 group-hover/volume:opacity-100 transition-all duration-300 accent-accent cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-4 relative">
+            {captions.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowSubSettings(!showSubSettings);
+                    setShowSettings(false);
+                  }}
+                  className={cn(
+                    "text-white hover:text-accent transition flex items-center gap-1",
+                    currentSubtitle !== -1 && "text-accent"
+                  )}
+                  title="Subtitles"
+                >
+                  <Subtitles size={20} />
+                </button>
+                
+                {showSubSettings && (
+                  <div className="absolute bottom-full right-0 mb-4 bg-zinc-900 border border-zinc-800 rounded-lg p-2 min-w-[120px] shadow-xl max-h-48 overflow-y-auto">
+                    <button
+                      onClick={() => changeSubtitle(-1)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-zinc-800 transition",
+                        currentSubtitle === -1 ? "text-accent font-semibold" : "text-gray-300"
+                      )}
+                    >
+                      Off
+                    </button>
+                    {captions.map((cap, index) => (
+                      <button
+                        key={cap.id}
+                        onClick={() => changeSubtitle(index)}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-zinc-800 transition",
+                          currentSubtitle === index ? "text-accent font-semibold" : "text-gray-300"
+                        )}
+                      >
+                        {cap.language}
+                      </button>
+                    ))}
+                    
+                    <div className="mt-2 pt-2 border-t border-zinc-800">
+                      <label className="w-full block text-center px-3 py-2 text-xs rounded-md bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer transition">
+                        Upload Subtitle
+                        <input 
+                          type="file" 
+                          accept=".srt,.vtt" 
+                          className="hidden" 
+                          onChange={handleSubtitleUpload}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {qualityLevels.length > 1 && (
               <div className="relative">
                 <button
-                  onClick={() => setShowSettings(!showSettings)}
+                  onClick={() => {
+                    setShowSettings(!showSettings);
+                    setShowSubSettings(false);
+                  }}
                   className="text-white hover:text-accent transition flex items-center gap-1"
                 >
                   <Settings size={20} />
