@@ -2,12 +2,15 @@
   "name": "waveflix-hub",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
+    "predev": "node scripts/kill-ports.js",
     "dev": "concurrently -c \"cyan,magenta,green,blue\" -n \"EXTRACTOR,GO,APP,WEB\" \"npm run dev:extractor\" \"npm run dev:backend\" \"npm run dev:app\" \"npm run dev:web\"",
     "dev:extractor": "cd waveflix-extractor && node server.js",
     "dev:backend": "cd waveflix-app/backend && go run .",
     "dev:app": "cd waveflix-app/frontend && npm run dev -- -p 3000",
-    "dev:web": "cd waveflix-web && npm run dev -- -p 3001"
+    "dev:web": "cd waveflix-web && npm run dev -- -p 3001",
+    "killports": "node scripts/kill-ports.js"
   },
   "dependencies": {
     "framer-motion": "^13.2.0"
