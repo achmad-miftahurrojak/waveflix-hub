@@ -46,7 +46,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="flex items-center gap-2 rounded-md border border-white/15 bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/10"
+          className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white shadow-lg backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/10"
         >
           <span>{current.label}</span>
           <svg
@@ -68,7 +68,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
         {open && (
           <ul
             role="listbox"
-            className="absolute right-0 top-full mt-1.5 z-50 min-w-[140px] overflow-hidden rounded-md border border-white/10 bg-surface-overlay/90 py-1 shadow-2xl backdrop-blur-md"
+            className="absolute right-0 top-full mt-2 z-50 min-w-[150px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.37)] backdrop-blur-xl"
           >
             {OPTIONS.map((opt) => {
               const isActive = opt.value === current.value;
@@ -80,7 +80,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
                   onClick={() => handleSelect(opt.value)}
                   className={`flex cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${
                     isActive
-                      ? "text-white"
+                      ? "text-white bg-white/[0.06]"
                       : "text-white/60 hover:bg-white/[0.08] hover:text-white"
                   }`}
                 >
