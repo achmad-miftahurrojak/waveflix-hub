@@ -70,10 +70,10 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
       setIsLoading(true);
       setError(null);
 
-      // FORCE IFRAME IMMEDIATELY
+      // FORCE IFRAME IMMEDIATELY (Using Vidlink which allows localhost iframe embedding)
       const embedUrl = mediaType === "tv" 
-        ? `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`
-        : `https://vidsrc.net/embed/movie?tmdb=${tmdbId}`;
+        ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}`
+        : `https://vidlink.pro/movie/${tmdbId}`;
         
       setIframeFallbackUrl(embedUrl);
       setIsLoading(false);
