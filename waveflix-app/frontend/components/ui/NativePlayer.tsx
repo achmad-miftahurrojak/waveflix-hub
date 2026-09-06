@@ -580,6 +580,7 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
             </button>
           </div>
         </div>
+      </div>
       )}
     </div>
   );
