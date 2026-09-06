@@ -58,7 +58,7 @@ export default function EpisodesSection({
   const now = Date.now();
   const aired = episodes.filter(
     (ep) => ep.air_date && new Date(ep.air_date).getTime() <= now
-  );
+  ).sort((a, b) => a.episode_number - b.episode_number);
 
   return (
     <section className="mt-10">
@@ -108,10 +108,10 @@ export default function EpisodesSection({
               className="group text-left"
             >
               <div
-                className={`relative aspect-video w-full overflow-hidden rounded-lg bg-surface ${
+                className={`relative aspect-video w-full overflow-hidden rounded-lg bg-surface transition-all duration-300 ${
                   currentEpisode === ep.episode_number
-                    ? "ring-2 ring-accent"
-                    : ""
+                    ? "ring-2 ring-inset ring-accent"
+                    : "ring-2 ring-inset ring-transparent hover:ring-white/30"
                 }`}
               >
                 {ep.still_path ? (
@@ -123,17 +123,16 @@ export default function EpisodesSection({
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
                 ) : null}
-                <span className="absolute left-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-bold tracking-wide">
-                  S{String(season).padStart(2, "0")}E
-                  {String(ep.episode_number).padStart(2, "0")}
+                <span className="absolute left-2 top-2 rounded bg-black/80 px-2 py-0.5 text-xs font-bold tracking-wider text-white">
+                  S{String(season).padStart(2, "0")}E{String(ep.episode_number).padStart(2, "0")}
                 </span>
                 {ep.air_date && (
-                  <span className="absolute right-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white/80">
+                  <span className="absolute right-2 top-2 rounded bg-black/80 px-2 py-0.5 text-xs font-bold text-white/90">
                     {formatAirDate(ep.air_date)}
                   </span>
                 )}
                 {ep.runtime ? (
-                  <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white/80">
+                  <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-0.5 text-xs font-bold text-white/90">
                     {runtimeText(ep.runtime)}
                   </span>
                 ) : null}
@@ -143,7 +142,7 @@ export default function EpisodesSection({
                   </span>
                 </span>
               </div>
-              <h4 className="mt-2 truncate font-semibold">
+              <h4 className="mt-2 truncate font-bold text-white text-base">
                 {t("ui.episode")} {ep.episode_number}
               </h4>
               {ep.overview && (
