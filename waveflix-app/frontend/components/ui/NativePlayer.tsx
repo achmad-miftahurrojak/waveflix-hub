@@ -44,18 +44,21 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
     }
 
     const bridgeUrl = `${BACKEND_URL}/api/stream${query}`;
+    let cancelled = false;
 
-    setIsLoading(true);
-    setError(null);
+    const fetchStream = async (attempt = 1): Promise<void> => {
+      setIsLoading(true);
+      setError(null);
 
-    fetch(bridgeUrl)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Video belum tersedia atau provider offline.");
-        }
-        return res.json();
-      })
-      .then((data) => {
+      try {
+        const res = await fetch(bridgeUrl);
+        if (cancelled) return;
+
+        if (!res.ok) throw new Error("Video belum tersedia atau provider offline.");
+
+        const data = await res.json();
+        if (cancelled) return;
+
         let sources: {file: string; type: string; label: string}[] = [];
 
         if (data?.sources?.length) {
@@ -80,21 +83,27 @@ export function NativePlayer({ mediaType, tmdbId, season, episode }: NativePlaye
           setCaptions(data.captions);
         }
 
-        if (!sources.length) {
-          throw new Error("Link stream tidak valid dari provider.");
-        }
+        if (!sources.length) throw new Error("Link stream tidak valid dari provider.");
 
         setAllSources(sources);
         setQualityLevels(sources);
         setCurrentQuality(0);
         initializePlayer(sources[0].file, sources[0].type);
-      })
-      .catch((err) => {
+      } catch (err: any) {
+        if (cancelled) return;
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 3000));
+          if (!cancelled) return fetchStream(attempt + 1);
+        }
         setError(err.message);
         setIsLoading(false);
-      });
+      }
+    };
+
+    fetchStream();
 
     return () => {
+      cancelled = true;
       if (hlsRef.current) {
         hlsRef.current.destroy();
       }
