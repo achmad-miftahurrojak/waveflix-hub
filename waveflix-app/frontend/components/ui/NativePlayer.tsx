@@ -66,67 +66,17 @@ export function NativePlayer({ mediaType, tmdbId, season, episode, title }: Nati
     const bridgeUrl = `${BACKEND_URL}/api/stream${query}`;
     let cancelled = false;
 
-    const fetchStream = async (attempt = 1): Promise<void> => {
+    const fetchStream = async (): Promise<void> => {
       setIsLoading(true);
       setError(null);
 
-      try {
-        const res = await fetch(bridgeUrl);
-        if (cancelled) return;
-
-        if (!res.ok) throw new Error("Video belum tersedia atau provider offline.");
-
-        const data = await res.json();
-        if (cancelled) return;
-
-        let sources: {file: string; type: string; label: string}[] = [];
-
-        if (data?.sources?.length) {
-          sources = data.sources;
-        } else if (data?.stream?.qualities) {
-          const q = data.stream.qualities;
-          const preferred = ["1080", "720", "480", "360"];
-          for (const p of preferred) {
-            if (q[p]?.url) {
-              sources.push({ file: q[p].url, type: "mp4", label: `${p}p` });
-            }
-          }
-        }
-
-        if (data?.tracks) {
-          const fetchedCaps = data.tracks.map((t: any, i: number) => ({
-            id: String(i),
-            language: t.label,
-            url: proxyUrl(t.file)
-          }));
-          setCaptions(fetchedCaps);
-          const defaultIdx = fetchedCaps.findIndex((c: any) => c.language.toLowerCase().includes("indonesia"));
-          setCurrentSubtitle(defaultIdx >= 0 ? defaultIdx : -1);
-        } else if (data?.captions) {
-          setCaptions(data.captions);
-          const defaultIdx = data.captions.findIndex((c: any) => c.language.toLowerCase().includes("indonesia"));
-          setCurrentSubtitle(defaultIdx >= 0 ? defaultIdx : -1);
-        }
-
-        if (!sources.length) throw new Error("Link stream tidak valid dari provider.");
-
-        setAllSources(sources);
-        if (!sources[0].file.includes(".m3u8")) {
-          setQualityLevels(sources);
-        }
-        setCurrentQuality(0);
-        initializePlayer(sources[0].file, sources[0].type);
-      } catch (err: any) {
-        if (cancelled) return;
+      // FORCE IFRAME IMMEDIATELY
+      const embedUrl = mediaType === "tv" 
+        ? `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`
+        : `https://vidsrc.net/embed/movie?tmdb=${tmdbId}`;
         
-        // Backend retries failed, fallback to iframe provider
-        const embedUrl = mediaType === "tv" 
-          ? `https://vidsrc.in/embed/tv/${tmdbId}/${season}/${episode}`
-          : `https://vidsrc.in/embed/movie/${tmdbId}`;
-          
-        setIframeFallbackUrl(embedUrl);
-        setIsLoading(false);
-      }
+      setIframeFallbackUrl(embedUrl);
+      setIsLoading(false);
     };
 
     fetchStream();
