@@ -122,12 +122,23 @@ export default function InfinitePosterGrid({
       { rootMargin: "400px" } 
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
     return () => observer.disconnect();
   }, [loadMore]);
+
+  // If we finished loading and the observer is still on screen (because items were too few to push it down), we should fetch again.
+  useEffect(() => {
+    if (!loading && hasMore && observerTarget.current) {
+      const rect = observerTarget.current.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 400) {
+        loadMore();
+      }
+    }
+  }, [loading, hasMore, items, loadMore]);
 
   if (!items || items.length === 0) {
     return (
