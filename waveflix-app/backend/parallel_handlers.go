@@ -161,6 +161,8 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 				} else {
 					p.Set("first_air_date.lte", val)
 				}
+			case "sort_by":
+				p.Set(key, val)
 			default:
 				p.Set(key, val)
 			}
