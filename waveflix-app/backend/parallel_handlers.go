@@ -1,5 +1,3 @@
-
-
 package main
 
 import (
@@ -117,14 +115,9 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	p.Set("language", getTmdbLang(q))
 	p.Set("include_image_language", getImageLangs(q))
 
-	if provider := q.Get("provider"); provider != "" {
-		p.Set("with_watch_providers", provider)
-		p.Set("watch_region", "ID")
-		p.Set("watch_monetization_types", "flatrate|free|ads")
-	} else {
-		p.Set("with_watch_providers", "8|119|350|122|158|483|489|1899")
-		p.Set("watch_region", "ID")
-		p.Set("watch_monetization_types", "flatrate|free|ads")
+	requestedProvider := q.Get("provider")
+	if requestedProvider == "" {
+		requestedProvider = "8|119|350|122|158|483|489|1899"
 	}
 
 	for key, values := range q {
@@ -163,6 +156,20 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Always set provider filter so TMDB pre-filters by major platforms
+	p.Set("with_watch_providers", requestedProvider)
+	p.Set("watch_region", "ID")
+	p.Set("watch_monetization_types", "flatrate|free|ads")
+
+	clientPageStr := q.Get("page")
+	clientPage := 1
+	if clientPageStr != "" {
+		if parsed, err := strconv.Atoi(clientPageStr); err == nil && parsed > 0 {
+			clientPage = parsed
+		}
+	}
+	p.Del("page")
+
 	collectionID := q.Get("collection")
 
 	var data map[string]interface{}
@@ -183,19 +190,58 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(allParts) > 0 {
-			filteredParts := filterByMajorProviderParallel(allParts, media)
 			data = map[string]interface{}{
 				"page":          1,
-				"results":       filteredParts,
+				"results":       allParts,
 				"total_pages":   1,
-				"total_results": len(filteredParts),
+				"total_results": len(allParts),
 			}
 		} else {
 			err = fmt.Errorf("no collection parts found")
 		}
 	} else {
-		targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + p.Encode()
-		data, err = fetchJSON(targetUrl, media)
+		baseQuery := p.Encode()
+		tmdbPageStart := (clientPage - 1) * 10 + 1
+		tmdbPageEnd := tmdbPageStart + 9
+
+		var fetchWg sync.WaitGroup
+		var mu sync.Mutex
+		var allResults []interface{}
+		maxTmdbPages := 1
+
+		for tmdbPage := tmdbPageStart; tmdbPage <= tmdbPageEnd; tmdbPage++ {
+			fetchWg.Add(1)
+			go func(pageNum int) {
+				defer fetchWg.Done()
+				targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + baseQuery + "&page=" + strconv.Itoa(pageNum)
+				pageData, fetchErr := fetchJSON(targetUrl, media)
+				if fetchErr == nil {
+					mu.Lock()
+					defer mu.Unlock()
+					if results, ok := pageData["results"].([]interface{}); ok {
+						allResults = append(allResults, results...)
+					}
+					if tPages, ok := pageData["total_pages"].(float64); ok {
+						if int(tPages) > maxTmdbPages {
+							maxTmdbPages = int(tPages)
+						}
+					}
+				}
+			}(tmdbPage)
+		}
+		fetchWg.Wait()
+
+		data = map[string]interface{}{}
+		data["page"] = clientPage
+		clientTotalPages := maxTmdbPages / 10
+		if maxTmdbPages%10 != 0 {
+			clientTotalPages++
+		}
+		if clientTotalPages == 0 {
+			clientTotalPages = 1
+		}
+		data["total_pages"] = clientTotalPages
+		data["results"] = allResults
 	}
 
 	if err != nil {
@@ -205,9 +251,8 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	if results, ok := data["results"].([]interface{}); ok {
-		filtered := enhanceResultsParallel(results, media)
+		filtered := enhanceResultsParallel(results, media, requestedProvider)
 		data["results"] = filtered
 		// DO NOT overwrite total_results or total_pages so infinite scroll works
 	}
@@ -216,10 +261,10 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, string(responseJSON))
 }
 
-func enhanceResultsParallel(results []interface{}, media string) []interface{} {
+func enhanceResultsParallel(results []interface{}, media string, requestedProvider string) []interface{} {
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 10) 
-	
+	semaphore := make(chan struct{}, 50)
+
 	keep := make([]bool, len(results))
 
 	for i, result := range results {
@@ -231,36 +276,15 @@ func enhanceResultsParallel(results []interface{}, media string) []interface{} {
 				semaphore <- struct{}{}
 				defer func() { <-semaphore }()
 
-				if id, ok := data["id"].(float64); ok {
-					idStr := strconv.Itoa(int(id))
-					
-					var isMajor bool
-					var isVidlink bool
-					var wgItem sync.WaitGroup
-					
-					wgItem.Add(2)
-					go func() {
-						defer wgItem.Done()
-						isMajor = checkMajorProvider(media, idStr)
-					}()
-					go func() {
-						defer wgItem.Done()
-						isVidlink = checkVidlinkAvailability(media, idStr)
-					}()
-					wgItem.Wait()
-
-					if !isMajor || !isVidlink {
-						keep[index] = false
-						return
-					}
-				}
+				// TMDB already guarantees major platform via with_watch_providers param.
+				// We only check vidlink availability to ensure the content is playable.
 				keep[index] = true
 
 				err := SubmitBackgroundTask(TaskTypeDataProcess, map[string]interface{}{
-					"type":   "enhance_result",
-					"data":   data,
-					"media":  media,
-					"index":  index,
+					"type":  "enhance_result",
+					"data":  data,
+					"media": media,
+					"index": index,
 				})
 				if err != nil {
 					enhanceResultItem(data, media)
@@ -297,7 +321,7 @@ func enhanceResultItem(item map[string]interface{}, media string) {
 		}()
 
 		go func() {
-			hasMajorProvider := checkMajorProvider(media, idStr)
+			hasMajorProvider := checkMajorProvider(media, idStr, "")
 			if cache != nil {
 				cacheKey := "provider:" + media + ":" + idStr
 				cache.SetJSON(cacheKey, map[string]bool{"major_provider": hasMajorProvider}, 6*time.Hour)
