@@ -202,7 +202,22 @@ func filterByMajorProviderParallel(results []interface{}, defaultMedia string) [
 				return
 			}
 
-			if checkMajorProvider(media, idStr) {
+			var isMajor bool
+			var isVidlink bool
+			var wgItem sync.WaitGroup
+			
+			wgItem.Add(2)
+			go func() {
+				defer wgItem.Done()
+				isMajor = checkMajorProvider(media, idStr)
+			}()
+			go func() {
+				defer wgItem.Done()
+				isVidlink = checkVidlinkAvailability(media, idStr)
+			}()
+			wgItem.Wait()
+
+			if isMajor && isVidlink {
 				mu.Lock()
 				filtered = append(filtered, item)
 				mu.Unlock()
