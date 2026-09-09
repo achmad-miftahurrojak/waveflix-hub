@@ -19,7 +19,7 @@ import {
 import { cookies } from "next/headers";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8081";
-const REVALIDATE = 60 * 15; 
+const REVALIDATE = 0; // Temporarily disable cache to force backend hit
 
 async function api<T>(path: string, fallback: T, revalidate = REVALIDATE): Promise<T> {
   let lang = "id";

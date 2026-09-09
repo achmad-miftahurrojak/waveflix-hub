@@ -16,7 +16,7 @@ export default function InfinitePosterGrid({
 }) {
   // Create a stable cache key based on URL search params
   const cacheKey = typeof window !== "undefined" 
-    ? `waveflix:browse:${new URLSearchParams(sp as Record<string, string>).toString()}` 
+    ? `waveflix:browse:v2:${new URLSearchParams(sp as Record<string, string>).toString()}` 
     : "";
 
   const [items, setItems] = useState<TmdbItem[]>(() => {
