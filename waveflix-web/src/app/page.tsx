@@ -19,11 +19,11 @@ export default function HelpCenter() {
     <div className="max-w-[1140px] mx-auto w-full px-6 md:px-12 bg-white">
       {/* Breadcrumb Row */}
       <div className="py-5 flex justify-between items-center border-b border-netflix-divider">
-        <Link href="http://localhost:3001" className="flex items-center gap-2 text-sm font-semibold hover:underline">
+        <Link href="http://localhost:3000" className="flex items-center gap-2 text-sm font-semibold hover:underline">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Kembali Ke Beranda Bantuan
+          Kembali Ke Beranda Waveflix
         </Link>
       </div>
 
