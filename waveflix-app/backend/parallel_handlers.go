@@ -117,17 +117,11 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	p.Set("language", getTmdbLang(q))
 	p.Set("include_image_language", getImageLangs(q))
 
-	hasCountry := q.Get("country") != ""
-
-	if !hasCountry {
-		p.Set("watch_region", "ID")
-	}
-
 	if provider := q.Get("provider"); provider != "" {
 		p.Set("with_watch_providers", provider)
 		p.Set("watch_region", "ID")
 		p.Set("watch_monetization_types", "flatrate|free|ads")
-	} else if !hasCountry {
+	} else {
 		p.Set("with_watch_providers", "8|119|350|122|158|483|489|1899")
 		p.Set("watch_region", "ID")
 		p.Set("watch_monetization_types", "flatrate|free|ads")
@@ -215,7 +209,7 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	if results, ok := data["results"].([]interface{}); ok {
 		filtered := enhanceResultsParallel(results, media)
 		data["results"] = filtered
-		data["total_results"] = len(filtered)
+		// DO NOT overwrite total_results or total_pages so infinite scroll works
 	}
 
 	responseJSON, _ := json.Marshal(data)
@@ -239,8 +233,23 @@ func enhanceResultsParallel(results []interface{}, media string) []interface{} {
 
 				if id, ok := data["id"].(float64); ok {
 					idStr := strconv.Itoa(int(id))
-					available := checkVidlinkAvailability(media, idStr)
-					if !available {
+					
+					var isMajor bool
+					var isVidlink bool
+					var wgItem sync.WaitGroup
+					
+					wgItem.Add(2)
+					go func() {
+						defer wgItem.Done()
+						isMajor = checkMajorProvider(media, idStr)
+					}()
+					go func() {
+						defer wgItem.Done()
+						isVidlink = checkVidlinkAvailability(media, idStr)
+					}()
+					wgItem.Wait()
+
+					if !isMajor || !isVidlink {
 						keep[index] = false
 						return
 					}
