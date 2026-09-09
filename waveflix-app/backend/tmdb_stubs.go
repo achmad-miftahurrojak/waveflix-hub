@@ -146,7 +146,7 @@ func checkMajorProvider(media, id string) bool {
 		1899: true, // HBO Max
 	}
 
-	checkList := []string{"flatrate", "rent", "buy"}
+	checkList := []string{"flatrate", "rent", "buy", "free", "ads"}
 	for _, t := range checkList {
 		if list, ok := idRegion[t].([]interface{}); ok {
 			for _, item := range list {
