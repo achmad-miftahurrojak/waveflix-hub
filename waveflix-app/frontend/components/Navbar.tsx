@@ -92,7 +92,7 @@ export default function Navbar() {
     if (hrefMedia) {
 
       if (onCategory) return false;
-      return (searchParams.get("media") ?? "movie") === hrefMedia;
+      return searchParams.get("media") === hrefMedia;
     }
     return true;
   };

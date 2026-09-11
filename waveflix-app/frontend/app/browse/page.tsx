@@ -28,8 +28,12 @@ export default async function BrowsePage({
   const results = initialData.results;
   const initialHasMore = initialData.hasMore;
 
-  // Hero section is always locked to the top popular content — ignores sort & media filter.
-  const heroSp = { ...sp, sort_by: "terpopuler", media: undefined };
+  // Hero section: always popularity.desc, but respect media context.
+  // On category filter pages (country/genre), use media=all for wider content.
+  // On dedicated movie/tv pages, respect that media type.
+  const heroSp = isCategory
+    ? { ...sp, sort_by: "terpopuler", media: undefined }  // all types for filter pages
+    : { ...sp, sort_by: "terpopuler" };                   // respect movie/tv for nav pages
   const heroData = await fetchBrowsePage(heroSp, 1);
   const heroSlides = heroData.results && heroData.results.length > 0
     ? await getHeroSlides(heroData.results, 5)

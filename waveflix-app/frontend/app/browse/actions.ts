@@ -79,26 +79,22 @@ export async function fetchBrowsePage(
       };
     }
   } else {
-    let sortUi = sp.sort_by ?? "popularity.desc";
-    if (sortUi === "terbaru") sortUi = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
-    if (sortUi === "terlama") sortUi = media === "tv" ? "first_air_date.asc" : "primary_release_date.asc";
-    if (sortUi === "terpopuler") sortUi = "popularity.desc";
+    const sortUi = sp.sort_by ?? "terpopuler";
+    const movieSortKey = sortUi === "terbaru" ? "primary_release_date.desc" : sortUi === "terlama" ? "primary_release_date.asc" : "popularity.desc";
+    const tvSortKey = sortUi === "terbaru" ? "first_air_date.desc" : sortUi === "terlama" ? "first_air_date.asc" : "popularity.desc";
 
     const params = {
-      media,
       provider: MAJOR_PROVIDERS,
-      sort_by: sortUi,
       without_genres,
       popularity_gte: "15",
       page,
     };
     if (media === "all") {
       const [movieData, tvData] = await Promise.all([
-        discover({ ...params, media: "movie", sort_by: sortUi === "terbaru" ? "primary_release_date.desc" : sortUi === "terlama" ? "primary_release_date.asc" : "popularity.desc" }),
-        discover({ ...params, media: "tv", sort_by: sortUi === "terbaru" ? "first_air_date.desc" : sortUi === "terlama" ? "first_air_date.asc" : "popularity.desc" })
+        discover({ ...params, media: "movie", sort_by: movieSortKey }),
+        discover({ ...params, media: "tv", sort_by: tvSortKey }),
       ]);
       const combined = [...(movieData.results || []), ...(tvData.results || [])];
-      
       if (sortUi === "terbaru") {
         combined.sort((a, b) => new Date((b.release_date || b.first_air_date) ?? 0).getTime() - new Date((a.release_date || a.first_air_date) ?? 0).getTime());
       } else if (sortUi === "terlama") {
@@ -108,7 +104,8 @@ export async function fetchBrowsePage(
       }
       return { results: combined, hasMore: ((movieData.total_pages || 0) > page) || ((tvData.total_pages || 0) > page) };
     } else {
-      const data = await discover(params);
+      const sortKey = media === "tv" ? tvSortKey : movieSortKey;
+      const data = await discover({ ...params, media, sort_by: sortKey });
       return { results: data.results || [], hasMore: (data.total_pages || 0) > page };
     }
   }
