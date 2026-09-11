@@ -219,12 +219,13 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 
 		var fetchWg sync.WaitGroup
 		var mu sync.Mutex
-		var allResults []interface{}
+		pageResults := make([][]interface{}, 10)
 		maxTmdbPages := 1
 
-		for tmdbPage := tmdbPageStart; tmdbPage <= tmdbPageEnd; tmdbPage++ {
+		for i := 0; i < 10; i++ {
+			tmdbPage := tmdbPageStart + i
 			fetchWg.Add(1)
-			go func(pageNum int) {
+			go func(pageNum int, index int) {
 				defer fetchWg.Done()
 				targetUrl := tmdbBaseUrl + "/discover/" + media + "?" + baseQuery + "&page=" + strconv.Itoa(pageNum)
 				pageData, fetchErr := fetchJSON(targetUrl, media)
@@ -232,7 +233,7 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 					mu.Lock()
 					defer mu.Unlock()
 					if results, ok := pageData["results"].([]interface{}); ok {
-						allResults = append(allResults, results...)
+						pageResults[index] = results
 					}
 					if tPages, ok := pageData["total_pages"].(float64); ok {
 						if int(tPages) > maxTmdbPages {
@@ -240,9 +241,16 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
-			}(tmdbPage)
+			}(tmdbPage, i)
 		}
 		fetchWg.Wait()
+
+		var allResults []interface{}
+		for i := 0; i < 10; i++ {
+			if pageResults[i] != nil {
+				allResults = append(allResults, pageResults[i]...)
+			}
+		}
 
 		data = map[string]interface{}{}
 		data["page"] = clientPage

@@ -215,6 +215,7 @@ export async function discover(params: {
   without_genres?: string;
   page?: number;
   collection?: string;
+  popularity_gte?: string;
 }): Promise<TmdbListResponse> {
   const qs = new URLSearchParams({
     media: params.media,
@@ -231,6 +232,7 @@ export async function discover(params: {
   if (params.released_after) qs.set("released_after", params.released_after);
   if (params.released_before) qs.set("released_before", params.released_before);
   if (params.without_genres) qs.set("without_genres", params.without_genres);
+  if (params.popularity_gte) qs.set("popularity.gte", params.popularity_gte);
   if (params.page) qs.set("page", String(params.page));
   
   const data = await api<TmdbListResponse>(`/api/discover?${qs}`, {

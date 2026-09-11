@@ -24,7 +24,7 @@ export async function fetchBrowsePage(
       collection: sp.collection,
       provider: isNetwork ? sp.provider : MAJOR_PROVIDERS,
       without_genres,
-      "popularity.gte": "15",
+      popularity_gte: "15",
       page,
     };
 
@@ -54,7 +54,7 @@ export async function fetchBrowsePage(
       provider: MAJOR_PROVIDERS,
       sort_by: sortUi,
       without_genres,
-      "popularity.gte": "15",
+      popularity_gte: "15",
       page,
     };
     const data = await discover(params);
