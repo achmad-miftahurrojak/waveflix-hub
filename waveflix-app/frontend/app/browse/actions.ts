@@ -11,7 +11,6 @@ export async function fetchBrowsePage(
   const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider || sp.collection);
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
-  const since5y = `${new Date().getFullYear() - 5}-01-01`;
 
   const without_genres = (sp.genre === "16" || sp.genre === "10764" || sp.genre === "99") ? undefined : "16,10764,99,10767,10763,10402";
 
@@ -24,8 +23,6 @@ export async function fetchBrowsePage(
       country: sp.country,
       collection: sp.collection,
       provider: isNetwork ? sp.provider : MAJOR_PROVIDERS,
-      released_after: noDate ? undefined : since5y,
-      released_before: noDate ? undefined : today,
       without_genres,
       page,
     };
