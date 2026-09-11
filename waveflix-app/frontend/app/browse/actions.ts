@@ -111,9 +111,5 @@ export async function fetchBrowsePage(
       const data = await discover(params);
       return { results: data.results || [], hasMore: (data.total_pages || 0) > page };
     }
-    return {
-      results: data.results || [],
-      hasMore: (data.total_pages || 0) > page
-    };
   }
 }
