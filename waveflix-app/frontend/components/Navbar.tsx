@@ -132,17 +132,16 @@ export default function Navbar() {
             {}
             {user && (
               <ul className="flex items-center gap-0 md:gap-1">
-                {NAV.map(({ label, href, icon: Icon }) => (
+                {NAV.map(({ label, href }) => (
                   <li key={label}>
                     <Link
                       href={href}
                       title={label}
-                      className={`relative flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+                      className={`relative flex items-center px-2 md:px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
                         isActive(href) ? "text-accent" : "text-white/70 hover:text-white"
                       }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span className="hidden md:inline">{label}</span>
+                      <span>{label}</span>
                       {isActive(href) && (
                         <motion.span
                           layoutId="navUnderline"
@@ -172,8 +171,7 @@ export default function Navbar() {
                         className="absolute inset-x-1 bottom-0 h-0.5 rounded bg-accent"
                       />
                     )}
-                    <MoreIcon />
-                    <span className="hidden md:inline">{t("nav.more")}</span>
+                    <span>{t("nav.more")}</span>
                     <ChevronRight className={`transition ${openMore ? "rotate-90" : ""}`} />
                   </button>
                   {openMore && (
