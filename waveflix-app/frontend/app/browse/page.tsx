@@ -29,7 +29,12 @@ export default async function BrowsePage({
   const initialHasMore = initialData.hasMore;
 
   let heroSlides: any[] = [];
-  if (results && results.length > 0) {
+  if (sp.sort_by && sp.sort_by !== "terpopuler") {
+    const popularData = await fetchBrowsePage({ ...sp, sort_by: "terpopuler" }, 1);
+    if (popularData.results && popularData.results.length > 0) {
+      heroSlides = await getHeroSlides(popularData.results, 5);
+    }
+  } else if (results && results.length > 0) {
     heroSlides = await getHeroSlides(results, 5);
   }
 
