@@ -215,7 +215,6 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 	} else {
 		baseQuery := p.Encode()
 		tmdbPageStart := (clientPage - 1) * 10 + 1
-		tmdbPageEnd := tmdbPageStart + 9
 
 		var fetchWg sync.WaitGroup
 		var mu sync.Mutex
