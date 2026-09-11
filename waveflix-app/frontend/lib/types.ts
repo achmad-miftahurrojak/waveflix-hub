@@ -1,4 +1,4 @@
-export type MediaType = "movie" | "tv";
+export type MediaType = "movie" | "tv" | "all";
 
 export interface TmdbItem {
   id: number;

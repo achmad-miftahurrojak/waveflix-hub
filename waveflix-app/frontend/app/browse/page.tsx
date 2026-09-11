@@ -15,8 +15,8 @@ export default async function BrowsePage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const media: MediaType = sp.media === "tv" ? "tv" : "movie";
-  const label = media === "tv" ? "Series" : "Movies";
+  const media: MediaType = (sp.media === "tv" || sp.media === "all") ? (sp.media as MediaType) : "movie";
+  const label = media === "tv" ? "Series" : media === "all" ? "Movies & Series" : "Movies";
 
   const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider);
 

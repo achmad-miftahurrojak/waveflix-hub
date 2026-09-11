@@ -7,7 +7,7 @@ export async function fetchBrowsePage(
   sp: Record<string, string | undefined>,
   page: number
 ): Promise<{ results: TmdbItem[]; hasMore: boolean }> {
-  const media: MediaType = sp.media === "tv" ? "tv" : "movie";
+  const media: MediaType = (sp.media === "tv" || sp.media === "all") ? (sp.media as MediaType) : "movie";
   const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider || sp.collection);
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
@@ -37,12 +37,47 @@ export async function fetchBrowsePage(
       sortKey = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
     }
 
-    const data = await discover({ ...base, media, sort_by: sortKey });
-    console.log(`[actions] fetchBrowsePage returned ${data.results?.length} items for page ${page}`);
-    return { 
-      results: data.results || [], 
-      hasMore: (data.total_pages || 0) > page 
-    };
+    if (media === "all") {
+      // Fetch both and merge
+      const movieSortKey = sortUi === "terlama" ? "primary_release_date.asc" : sortUi === "terbaru" ? "primary_release_date.desc" : "popularity.desc";
+      const tvSortKey = sortUi === "terlama" ? "first_air_date.asc" : sortUi === "terbaru" ? "first_air_date.desc" : "popularity.desc";
+      
+      const [movieData, tvData] = await Promise.all([
+        discover({ ...base, media: "movie", sort_by: movieSortKey }),
+        discover({ ...base, media: "tv", sort_by: tvSortKey })
+      ]);
+      
+      const combined = [...(movieData.results || []), ...(tvData.results || [])];
+      
+      if (sortUi === "terbaru") {
+        combined.sort((a, b) => {
+          const dA = new Date((a.release_date || a.first_air_date) ?? 0).getTime();
+          const dB = new Date((b.release_date || b.first_air_date) ?? 0).getTime();
+          return dB - dA;
+        });
+      } else if (sortUi === "terlama") {
+        combined.sort((a, b) => {
+          const dA = new Date((a.release_date || a.first_air_date) ?? 9999999999999).getTime();
+          const dB = new Date((b.release_date || b.first_air_date) ?? 9999999999999).getTime();
+          return dA - dB;
+        });
+      } else {
+        combined.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+      }
+      
+      console.log(`[actions] fetchBrowsePage returned ${combined.length} combined items for page ${page}`);
+      return {
+        results: combined,
+        hasMore: ((movieData.total_pages || 0) > page) || ((tvData.total_pages || 0) > page)
+      };
+    } else {
+      const data = await discover({ ...base, media, sort_by: sortKey });
+      console.log(`[actions] fetchBrowsePage returned ${data.results?.length} items for page ${page}`);
+      return { 
+        results: data.results || [], 
+        hasMore: (data.total_pages || 0) > page 
+      };
+    }
   } else {
     let sortUi = sp.sort_by ?? "popularity.desc";
     if (sortUi === "terbaru") sortUi = media === "tv" ? "first_air_date.desc" : "primary_release_date.desc";
@@ -57,7 +92,25 @@ export async function fetchBrowsePage(
       popularity_gte: "15",
       page,
     };
-    const data = await discover(params);
+    if (media === "all") {
+      const [movieData, tvData] = await Promise.all([
+        discover({ ...params, media: "movie", sort_by: sortUi === "terbaru" ? "primary_release_date.desc" : sortUi === "terlama" ? "primary_release_date.asc" : "popularity.desc" }),
+        discover({ ...params, media: "tv", sort_by: sortUi === "terbaru" ? "first_air_date.desc" : sortUi === "terlama" ? "first_air_date.asc" : "popularity.desc" })
+      ]);
+      const combined = [...(movieData.results || []), ...(tvData.results || [])];
+      
+      if (sortUi === "terbaru") {
+        combined.sort((a, b) => new Date((b.release_date || b.first_air_date) ?? 0).getTime() - new Date((a.release_date || a.first_air_date) ?? 0).getTime());
+      } else if (sortUi === "terlama") {
+        combined.sort((a, b) => new Date((a.release_date || a.first_air_date) ?? 9999999999999).getTime() - new Date((b.release_date || b.first_air_date) ?? 9999999999999).getTime());
+      } else {
+        combined.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+      }
+      return { results: combined, hasMore: ((movieData.total_pages || 0) > page) || ((tvData.total_pages || 0) > page) };
+    } else {
+      const data = await discover(params);
+      return { results: data.results || [], hasMore: (data.total_pages || 0) > page };
+    }
     return {
       results: data.results || [],
       hasMore: (data.total_pages || 0) > page

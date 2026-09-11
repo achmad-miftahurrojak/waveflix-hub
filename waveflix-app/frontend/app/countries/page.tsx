@@ -8,7 +8,7 @@ export default async function CountriesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const media: MediaType = sp.media === "tv" ? "tv" : "movie";
+  const media: MediaType = (sp.media === "tv" || sp.media === "all") ? (sp.media as MediaType) : "movie";
   const tiles = COUNTRIES.map((c) => ({
     label: c.name,
     href: `/browse?media=${media}&country=${c.code}`,

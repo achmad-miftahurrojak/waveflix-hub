@@ -32,6 +32,10 @@ export const TV_GENRES: { id: number; name: string }[] = [
 ];
 
 export function genresFor(media: MediaType) {
+  if (media === "all") {
+    const all = [...MOVIE_GENRES, ...TV_GENRES];
+    return all.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i).sort((a,b)=>a.name.localeCompare(b.name));
+  }
   return media === "tv" ? TV_GENRES : MOVIE_GENRES;
 }
 

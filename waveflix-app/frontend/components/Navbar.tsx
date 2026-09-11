@@ -59,7 +59,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const activeMedia = searchParams.get("media") === "tv" ? "tv" : "movie";
+  const activeMedia = searchParams.get("media") === "tv" ? "tv" : searchParams.get("media") === "movie" ? "movie" : "all";
 
   const onCategory =
     pathname === "/genres" ||
@@ -78,8 +78,8 @@ export default function Navbar() {
     { label: t("nav.network"), href: `/networks?media=${activeMedia}`, icon: NetworkIcon },
   ];
 
-  if (activeMedia === "movie") {
-    moreMenu.push({ label: t("nav.collection"), href: `/collections?media=${activeMedia}`, icon: FolderIcon });
+  if (activeMedia === "movie" || activeMedia === "all") {
+    moreMenu.push({ label: t("nav.collection"), href: `/collections?media=movie`, icon: FolderIcon });
   }
 
 

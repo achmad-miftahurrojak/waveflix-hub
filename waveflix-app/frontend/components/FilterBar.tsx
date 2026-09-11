@@ -11,7 +11,7 @@ export default function FilterBar() {
   const sp = useSearchParams();
   const { t } = useTranslation();
 
-  const media = (sp.get("media") as MediaType) === "tv" ? "tv" : "movie";
+  const media = (sp.get("media") as MediaType) || "all";
   const genre = sp.get("genre") ?? "";
   const year = sp.get("year") ?? "";
   const country = sp.get("country") ?? "";
@@ -34,14 +34,14 @@ export default function FilterBar() {
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="flex gap-2">
-        {(["movie", "tv"] as const).map((m) => (
+        {(["all", "movie", "tv"] as const).map((m) => (
           <GlassButton
             key={m}
             size="sm"
             active={media === m}
             onClick={() => update("media", m)}
           >
-            {m === "movie" ? t("filter.movies") : t("filter.series")}
+            {m === "movie" ? t("filter.movies") : m === "tv" ? t("filter.series") : "Semua"}
           </GlassButton>
         ))}
       </div>
@@ -73,7 +73,7 @@ export default function FilterBar() {
         ))}
       </select>
 
-      {media === "movie" && (
+      {media !== "tv" && (
         <select value={collection} onChange={(e) => update("collection", e.target.value)} className={selectCls}>
           <option value="">All Collections</option>
           {COLLECTIONS.map((c) => (
