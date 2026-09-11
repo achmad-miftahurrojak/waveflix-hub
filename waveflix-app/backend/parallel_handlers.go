@@ -134,6 +134,19 @@ func handleDiscoverParallel(w http.ResponseWriter, r *http.Request) {
 				}
 			case "country":
 				p.Set("with_origin_country", val)
+				// TMDB sometimes mixes foreign co-productions. Enforce language for strict country filtering.
+				switch val {
+				case "ID":
+					p.Set("with_original_language", "id")
+				case "KR":
+					p.Set("with_original_language", "ko")
+				case "JP":
+					p.Set("with_original_language", "ja")
+				case "CN":
+					p.Set("with_original_language", "zh")
+				case "TH":
+					p.Set("with_original_language", "th")
+				}
 			case "network":
 				p.Set("with_networks", val)
 			case "released_after":
