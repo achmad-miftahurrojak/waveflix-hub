@@ -13,7 +13,7 @@ export async function fetchBrowsePage(
   const since = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
   const since5y = `${new Date().getFullYear() - 5}-01-01`;
 
-  const without_genres = (sp.genre === "16" || sp.genre === "10764" || sp.genre === "99") ? undefined : "16,10764,99,10767,10763";
+  const without_genres = (sp.genre === "16" || sp.genre === "10764" || sp.genre === "99") ? undefined : "16,10764,99,10767,10763,10402";
 
   if (isCategory) {
     const isNetwork = Boolean(sp.provider);
@@ -27,7 +27,6 @@ export async function fetchBrowsePage(
       released_after: noDate ? undefined : since5y,
       released_before: noDate ? undefined : today,
       without_genres,
-      "vote_count.gte": "5",
       page,
     };
 
@@ -41,6 +40,7 @@ export async function fetchBrowsePage(
     }
 
     const data = await discover({ ...base, media, sort_by: sortKey });
+    console.log(`[actions] fetchBrowsePage returned ${data.results?.length} items for page ${page}`);
     return { 
       results: data.results || [], 
       hasMore: (data.total_pages || 0) > page 
@@ -56,7 +56,6 @@ export async function fetchBrowsePage(
       provider: MAJOR_PROVIDERS,
       sort_by: sortUi,
       without_genres,
-      "vote_count.gte": "5",
       page,
     };
     const data = await discover(params);

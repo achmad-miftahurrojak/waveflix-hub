@@ -14,7 +14,7 @@
 
 ## Commands
 
-- Backend test: `cd website/backend && go test ./...`
-- Frontend dev: `cd website/frontend && npm run dev`
-- Frontend build: `cd website/frontend && npm run build`
-- Frontend E2E: `cd website/frontend && npm run test:e2e`
+- Backend test: `cd waveflix-app/backend && go test ./...`
+- Frontend dev: `cd waveflix-app/frontend && npm run dev`
+- Frontend build: `cd waveflix-app/frontend && npm run build`
+- Frontend E2E: `cd waveflix-app/frontend && npm run test:e2e`

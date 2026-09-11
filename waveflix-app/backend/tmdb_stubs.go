@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 	"time"
+	"strings"
+	"strconv"
 )
 
 const (
@@ -116,7 +118,7 @@ func checkVidlinkAvailability(media, id string) bool {
 	return resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusTooManyRequests
 }
 
-func checkMajorProvider(media, id string) bool {
+func checkMajorProvider(media, id string, requestedProvider string) bool {
 	if tmdbClient == nil {
 		return false
 	}
@@ -130,40 +132,49 @@ func checkMajorProvider(media, id string) bool {
 		return false
 	}
 
-	idRegion, ok := results["ID"].(map[string]interface{})
-	if !ok {
-		return false
-	}
-
-	majorProviders := map[int]bool{
-		8:    true, // Netflix
-		119:  true, // Amazon Prime
-		350:  true, // Apple TV
-		122:  true, // Disney+
-		158:  true, // Viu
-		483:  true, // MAX Stream
-		489:  true, // Vidio
-		1899: true, // HBO Max
+	majorProviders := make(map[int]bool)
+	if requestedProvider != "" {
+		for _, p := range strings.Split(requestedProvider, "|") {
+			if pid, err := strconv.Atoi(p); err == nil {
+				majorProviders[pid] = true
+			}
+		}
+	} else {
+		majorProviders = map[int]bool{
+			8:    true, // Netflix
+			119:  true, // Amazon Prime
+			350:  true, // Apple TV
+			122:  true, // Disney+
+			158:  true, // Viu
+			483:  true, // MAX Stream
+			489:  true, // Vidio
+			1899: true, // HBO Max
+		}
 	}
 
 	checkList := []string{"flatrate", "rent", "buy", "free", "ads"}
-	for _, t := range checkList {
-		if list, ok := idRegion[t].([]interface{}); ok {
-			for _, item := range list {
-				if provider, ok := item.(map[string]interface{}); ok {
-					if pid, ok := provider["provider_id"].(float64); ok {
-						if majorProviders[int(pid)] {
-							return true
+	for _, regionData := range results {
+		if regionMap, ok := regionData.(map[string]interface{}); ok {
+			for _, t := range checkList {
+				if list, ok := regionMap[t].([]interface{}); ok {
+					for _, item := range list {
+						if provider, ok := item.(map[string]interface{}); ok {
+							if pid, ok := provider["provider_id"].(float64); ok {
+								if majorProviders[int(pid)] {
+									return true
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+
 	return false
 }
 
-func filterByMajorProviderParallel(results []interface{}, defaultMedia string) []interface{} {
+func filterByMajorProviderParallel(results []interface{}, defaultMedia string, requestedProvider string) []interface{} {
 	var mu sync.Mutex
 	filtered := make([]interface{}, 0, len(results))
 	var wg sync.WaitGroup
@@ -209,13 +220,20 @@ func filterByMajorProviderParallel(results []interface{}, defaultMedia string) [
 			wgItem.Add(2)
 			go func() {
 				defer wgItem.Done()
-				isMajor = checkMajorProvider(media, idStr)
+				isMajor = checkMajorProvider(media, idStr, requestedProvider)
 			}()
 			go func() {
 				defer wgItem.Done()
 				isVidlink = checkVidlinkAvailability(media, idStr)
 			}()
 			wgItem.Wait()
+
+			if !isMajor {
+				fmt.Printf("[DEBUG] ID %s (%s) dropped by checkMajorProvider\n", idStr, media)
+			}
+			if !isVidlink {
+				fmt.Printf("[DEBUG] ID %s (%s) dropped by checkVidlinkAvailability\n", idStr, media)
+			}
 
 			if isMajor && isVidlink {
 				mu.Lock()

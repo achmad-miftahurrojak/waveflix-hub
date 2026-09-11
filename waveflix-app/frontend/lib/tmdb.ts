@@ -237,7 +237,7 @@ export async function discover(params: {
     page: 1,
     results: [],
     total_pages: 0,
-  });
+  }, 0);
   data.results = tag(withPoster(data.results), params.media);
   return data;
 }

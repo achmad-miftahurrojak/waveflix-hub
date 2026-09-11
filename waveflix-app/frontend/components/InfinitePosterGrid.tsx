@@ -16,7 +16,7 @@ export default function InfinitePosterGrid({
 }) {
   // Create a stable cache key based on URL search params
   const cacheKey = typeof window !== "undefined" 
-    ? `waveflix:browse:v2:${new URLSearchParams(sp as Record<string, string>).toString()}` 
+    ? `waveflix:browse:v5:${new URLSearchParams(sp as Record<string, string>).toString()}` 
     : "";
 
   const [items, setItems] = useState<TmdbItem[]>(() => {
@@ -96,12 +96,14 @@ export default function InfinitePosterGrid({
       const nextPage = page + 1;
       const res = await fetchBrowsePage(sp, nextPage);
 
-      setItems((prev) => {
-
-        const existingIds = new Set(prev.map(i => i.id));
-        const newItems = res.results.filter(i => !existingIds.has(i.id));
-        return [...prev, ...newItems];
-      });
+      if (res.results && res.results.length > 0) {
+        setItems((prev) => {
+          const newItems = res.results.filter(
+            (r) => !prev.some((p) => p.id === r.id)
+          );
+          return [...prev, ...newItems];
+        });
+      }
       setHasMore(res.hasMore);
       setPage(nextPage);
     } catch (err) {

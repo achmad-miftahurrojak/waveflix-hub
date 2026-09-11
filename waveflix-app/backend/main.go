@@ -21,6 +21,9 @@ func main() {
 	cache = NewRedisCacheManager()
 	log.Println("[main] Cache initialized")
 
+	InitOptimizedTMDB(cache)
+	log.Println("[main] Optimized TMDB initialized")
+
 	messageQueue = NewMessageQueue()
 	log.Println("[main] Message queue initialized")
 
