@@ -9,7 +9,7 @@ const OPTIONS = [
   { value: "terlama", label: "Terlama" },
 ];
 
-export default function BrowseControls({ defaultSort }: { defaultSort: string }) {
+export default function BrowseControls({ defaultSort, showMediaTabs = true }: { defaultSort: string; showMediaTabs?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,7 +25,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
     setOpen(false);
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort_by", val);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleMedia = (val: string) => {
@@ -36,7 +36,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
       params.set("media", val);
     }
     params.delete("page");
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   useEffect(() => {
@@ -54,23 +54,26 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
       className="flex flex-wrap items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 shadow-lg backdrop-blur-xl" 
       ref={ref}
     >
-      <div className="flex items-center gap-1">
-        {(["all", "movie", "tv"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => handleMedia(m)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
-              media === m
-                ? "bg-white text-black shadow-sm"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            {m === "movie" ? "Film" : m === "tv" ? "Series" : "Semua"}
-          </button>
-        ))}
-      </div>
-
-      <div className="mx-1 h-4 w-[1px] bg-white/20" />
+      {showMediaTabs && (
+        <>
+          <div className="flex items-center gap-1">
+            {(["all", "movie", "tv"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => handleMedia(m)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
+                  media === m
+                    ? "bg-white text-black shadow-sm"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {m === "movie" ? "Film" : m === "tv" ? "Series" : "Semua"}
+              </button>
+            ))}
+          </div>
+          <div className="mx-1 h-4 w-[1px] bg-white/20" />
+        </>
+      )}
 
       <div className="relative">
         <button
