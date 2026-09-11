@@ -28,15 +28,12 @@ export default async function BrowsePage({
   const results = initialData.results;
   const initialHasMore = initialData.hasMore;
 
-  let heroSlides: any[] = [];
-  if (sp.sort_by && sp.sort_by !== "terpopuler") {
-    const popularData = await fetchBrowsePage({ ...sp, sort_by: "terpopuler" }, 1);
-    if (popularData.results && popularData.results.length > 0) {
-      heroSlides = await getHeroSlides(popularData.results, 5);
-    }
-  } else if (results && results.length > 0) {
-    heroSlides = await getHeroSlides(results, 5);
-  }
+  // Hero section is always locked to the top popular content — ignores sort & media filter.
+  const heroSp = { ...sp, sort_by: "terpopuler", media: undefined };
+  const heroData = await fetchBrowsePage(heroSp, 1);
+  const heroSlides = heroData.results && heroData.results.length > 0
+    ? await getHeroSlides(heroData.results, 5)
+    : [];
 
   const title = (() => {
     if (sp.collection) {
