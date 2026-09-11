@@ -8,7 +8,7 @@ export default async function NetworksPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const media: MediaType = (sp.media === "tv" || sp.media === "all") ? (sp.media as MediaType) : "movie";
+  const media: MediaType = (sp.media === "movie" || sp.media === "tv") ? (sp.media as MediaType) : "all";
   const tiles = PROVIDERS.map((p) => ({
     label: p.name,
     href: `/browse?media=${media}&provider=${p.id}`,

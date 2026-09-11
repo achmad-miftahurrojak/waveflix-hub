@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { GlassButton } from "@/components/ui/glass-button";
 
 const OPTIONS = [
   { value: "terpopuler", label: "Terpopuler" },
@@ -19,10 +20,23 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
 
   const current = OPTIONS.find((o) => o.value === defaultSort) ?? OPTIONS[0];
 
+  const media = searchParams.get("media") || "all";
+
   const handleSelect = (val: string) => {
     setOpen(false);
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort_by", val);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleMedia = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val === "all") {
+      params.delete("media");
+    } else {
+      params.set("media", val);
+    }
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -37,11 +51,25 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
   }, []);
 
   return (
-    <div className="flex items-center gap-2" ref={ref}>
-      <span className="text-sm text-white/60">Urutkan:</span>
+    <div className="flex flex-wrap items-center gap-4" ref={ref}>
+      <div className="flex gap-2">
+        {(["all", "movie", "tv"] as const).map((m) => (
+          <GlassButton
+            key={m}
+            size="sm"
+            active={media === m}
+            onClick={() => handleMedia(m)}
+          >
+            {m === "movie" ? "Film" : m === "tv" ? "Series" : "Semua"}
+          </GlassButton>
+        ))}
+      </div>
 
-      {}
-      <div className="relative">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-white/60">Urutkan:</span>
+
+        {/* Dropdown Button */}
+        <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="listbox"
@@ -96,6 +124,7 @@ export default function BrowseControls({ defaultSort }: { defaultSort: string })
             })}
           </ul>
         )}
+      </div>
       </div>
     </div>
   );

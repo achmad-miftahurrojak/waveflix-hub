@@ -7,7 +7,7 @@ export async function fetchBrowsePage(
   sp: Record<string, string | undefined>,
   page: number
 ): Promise<{ results: TmdbItem[]; hasMore: boolean }> {
-  const media: MediaType = (sp.media === "tv" || sp.media === "all") ? (sp.media as MediaType) : "movie";
+  const media: MediaType = (sp.media === "movie" || sp.media === "tv") ? (sp.media as MediaType) : "all";
   const isCategory = Boolean(sp.genre || sp.year || sp.country || sp.provider || sp.collection);
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
