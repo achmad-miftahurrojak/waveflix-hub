@@ -177,15 +177,12 @@ export default function Navbar() {
                   {openMore && (
                     <div className="absolute left-0 top-full pt-4">
                       <div className="w-56 rounded-xl border border-white/20 bg-white/5 p-2 backdrop-blur-[15px] backdrop-saturate-200 shadow-[0_4px_30px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.3)]">
-                        {moreMenu.map(({ label, href, icon: Icon }) => (
+                        {moreMenu.map(({ label, href }) => (
                           <Link
                             key={label}
                             href={href}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+                            className="flex items-center rounded-lg px-3 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
                           >
-                            <span className="text-white/60">
-                              <Icon />
-                            </span>
                             {label}
                           </Link>
                         ))}
