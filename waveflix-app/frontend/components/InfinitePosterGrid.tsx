@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import type { TmdbItem } from "@/lib/types";
 import MovieCard from "./MovieCard";
 import { fetchBrowsePage } from "@/app/browse/actions";
@@ -8,16 +9,16 @@ import { fetchBrowsePage } from "@/app/browse/actions";
 export default function InfinitePosterGrid({
   initialItems,
   initialHasMore,
-  sp,
+  sp: _initialSp,
 }: {
   initialItems: TmdbItem[];
   initialHasMore: boolean;
   sp: Record<string, string | undefined>;
 }) {
-  // Create a stable cache key based on URL search params
-  const cacheKey = typeof window !== "undefined" 
-    ? `waveflix:browse:v5:${new URLSearchParams(sp as Record<string, string>).toString()}` 
-    : "";
+  const searchParams = useSearchParams();
+
+  const sp = Object.fromEntries(searchParams.entries()) as Record<string, string | undefined>;
+  const cacheKey = `waveflix:browse:v6:${searchParams.toString()}`;
 
   const [items, setItems] = useState<TmdbItem[]>(() => {
     if (typeof window !== "undefined" && cacheKey) {
@@ -61,14 +62,12 @@ export default function InfinitePosterGrid({
   const [loading, setLoading] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // Save to sessionStorage whenever state changes
   useEffect(() => {
     if (cacheKey && items.length > 0) {
       sessionStorage.setItem(cacheKey, JSON.stringify({ items, hasMore, page }));
     }
   }, [items, hasMore, page, cacheKey]);
 
-  // Reset state when cacheKey changes
   useEffect(() => {
     if (typeof window !== "undefined" && cacheKey) {
       const cached = sessionStorage.getItem(cacheKey);
@@ -108,7 +107,7 @@ export default function InfinitePosterGrid({
       setPage(nextPage);
     } catch (err) {
       console.error("Failed to load more:", err);
-      setHasMore(false); 
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -121,7 +120,7 @@ export default function InfinitePosterGrid({
           loadMore();
         }
       },
-      { rootMargin: "400px" } 
+      { rootMargin: "400px" }
     );
 
     const currentTarget = observerTarget.current;
@@ -132,7 +131,6 @@ export default function InfinitePosterGrid({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  // If we finished loading and the observer is still on screen (because items were too few to push it down), we should fetch again.
   useEffect(() => {
     if (!loading && hasMore && observerTarget.current) {
       const rect = observerTarget.current.getBoundingClientRect();

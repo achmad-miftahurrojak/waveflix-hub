@@ -58,7 +58,7 @@ export default async function BrowsePage({
       {heroSlides.length > 0 && <HeroCarousel slides={heroSlides} />}
 
       <div className={`px-[4%] ${heroSlides.length > 0 ? "pt-8" : "pt-28"}`}>
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative z-20 mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">{title}</h1>
           <BrowseControls defaultSort={sp.sort_by ?? "terpopuler"} />
         </div>
