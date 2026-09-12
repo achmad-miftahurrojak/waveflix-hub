@@ -1,0 +1,16 @@
+# Kredensial — jangan pernah di-commit
+.env
+
+# Binary hasil build
+*.exe
+*.exe~
+main
+
+# Database lokal SQLite & log files
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# User uploads
+uploads/

@@ -1,0 +1,226 @@
+# WaveFlix Hub Production Docker Compose
+# Production-ready setup with PostgreSQL, Redis, monitoring, and auto-scaling
+version: '3.8'
+
+services:
+  # Load Balancer (Nginx)
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+    volumes:
+      - ./nginx/ssl:/etc/ssl/certs
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - waveflix-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database (Primary)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-waveflix}
+      - POSTGRES_USER=${POSTGRES_USER:-waveflix}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/tune-postgres.conf:/etc/postgresql/postgresql.conf
+      - backup_data:/backups
+    ports:
+      - "5432:5432"
+    networks:
+      - waveflix-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-waveflix} -d ${POSTGRES_DB:-waveflix}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres 
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c log_destination=stderr
+      -c log_statement=all
+      -c log_min_duration_statement=1000
+      -c shared_preload_libraries=pg_stat_statements
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - waveflix-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  # Backend API (Scalable)
+  backend:
+    build:
+      context: ./website/backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_TYPE=postgres
+      - DATABASE_URL=postgres://${POSTGRES_USER:-waveflix}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-waveflix}?sslmode=disable
+      - REDIS_URL=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGIN=https://${DOMAIN_NAME:-localhost}
+      - QUEUE_WORKERS=10
+      - PG_MAX_CONNS=50
+      - PORT=8080
+      - TRAKT_CLIENT_ID=${TRAKT_CLIENT_ID:-}
+      - TRAKT_CLIENT_SECRET=${TRAKT_CLIENT_SECRET:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - waveflix-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./website/frontend
+      dockerfile: Dockerfile
+    environment:
+      - BACKEND_URL=http://backend:8080
+      - NEXT_PUBLIC_BACKEND_URL=https://api.${DOMAIN_NAME:-localhost}
+    depends_on:
+      - backend
+    networks:
+      - waveflix-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/postgres
+  
+
+  redis_data:
+    driver: local
+
+  nginx_cache:
+    driver: local
+    
+  nginx_logs:
+    driver: local
+
+networks:
+  waveflix-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Environment variable template for .env file:
+# Copy this to .env and fill in the values
+#
+# # Database Configuration
+# POSTGRES_DB=waveflix
+# POSTGRES_USER=waveflix
+# POSTGRES_PASSWORD=secure_random_password_here
+# REDIS_PASSWORD=redis_secure_password_here
+#
+# # Application Configuration
+# DOMAIN_NAME=yourdomain.com
+# TMDB_API_KEY=your_tmdb_api_key
+# JWT_SECRET=your_jwt_secret_minimum_32_characters
+#
+# # Backup Configuration
+# BACKUP_RETENTION_DAYS=30
+# S3_BUCKET=your-backup-bucket
+# SLACK_WEBHOOK=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+# WEBHOOK_URL=https://your-monitoring-webhook.com/endpoint
+#
+# # Monitoring
+# GRAFANA_PASSWORD=grafana_admin_password
+#
+# # Email Configuration (Optional)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# SMTP_FROM=noreply@yourdomain.com
+#
+# # Storage Paths
+# DATA_PATH=./data
+# BACKUP_PATH=./backups

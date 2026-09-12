@@ -1,0 +1,23 @@
+{
+    "name": "waveflix-hub",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "waveflix-extractor",
+        "waveflix-app/backend",
+        "waveflix-app/frontend",
+        "waveflix-web"
+    ],
+    "scripts": {
+        "predev": "node scripts/kill-ports.js",
+        "dev": "turbo run dev",
+        "build": "turbo run build",
+        "killports": "node scripts/kill-ports.js"
+    },
+    "dependencies": {
+        "framer-motion": "^13.2.0"
+    },
+    "devDependencies": {
+        "turbo": "latest"
+    }
+}

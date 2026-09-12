@@ -1,0 +1,53 @@
+environment: testing
+
+redis:
+  url: "localhost:6379"
+  password: ""
+  db: 2
+  max_retries: 2
+  pool_size: 10
+  pool_timeout: "10s"
+  idle_timeout: "60s"
+  default_ttl: "300s"
+  enabled: true
+
+postgresql:
+  url: "postgres://localhost:5432/waveflix_test"
+  max_connections: 10
+  max_idle_conns: 2
+  conn_max_lifetime: "600s"
+  conn_max_idle_time: "60s"
+  ssl_mode: "disable"
+
+tmdb:
+  api_key: "test_api_key_placeholder"
+  base_url: "https://api.themoviedb.org/3"
+  rate_limit: 20
+  rate_period: "10s"
+  timeout: "5s"
+  max_retries: 2
+  backoff_base: "500ms"
+
+http:
+  max_idle_conns: 50
+  max_idle_conns_per_host: 10
+  max_conns_per_host: 20
+  idle_conn_timeout: "30s"
+  tls_handshake_timeout: "5s"
+  response_header_timeout: "5s"
+  request_timeout: "10s"
+
+monitoring:
+  metrics_interval: "60s"
+  history_retention: "24h"
+  alerting_enabled: false
+  dashboard_enabled: false
+  dashboard_port: 8081
+  metrics_port: 9091
+
+load_testing:
+  max_concurrent_users: 50
+  default_duration: "60s"
+  ramp_up_duration: "10s"
+  metrics_interval: "2s"
+  results_retention: "24h"

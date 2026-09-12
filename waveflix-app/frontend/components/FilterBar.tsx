@@ -1,0 +1,105 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import type { MediaType } from "@/lib/types";
+import { genresFor, COUNTRIES, SORTS, YEARS, COLLECTIONS } from "@/lib/catalog";
+import { useTranslation } from "@/lib/i18n";
+import { GlassButton } from "@/components/ui/glass-button";
+
+export default function FilterBar() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const { t } = useTranslation();
+
+  const media = (sp.get("media") as MediaType) || "all";
+  const genre = sp.get("genre") ?? "";
+  const year = sp.get("year") ?? "";
+  const country = sp.get("country") ?? "";
+  const collection = sp.get("collection") ?? "";
+  const sort = sp.get("sort_by") ?? "popularity.desc";
+
+  const update = (key: string, value: string) => {
+    const params = new URLSearchParams(sp.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    if (key === "media") params.delete("genre"); 
+    if (key === "media" && value === "tv") params.delete("collection");
+    params.delete("page");
+    router.push(`/browse?${params.toString()}`);
+  };
+
+  const selectCls =
+    "rounded-md border border-white/15 bg-surface px-4 py-2 text-sm outline-none focus:border-accent";
+
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="flex gap-2">
+        {(["all", "movie", "tv"] as const).map((m) => (
+          <GlassButton
+            key={m}
+            size="sm"
+            active={media === m}
+            onClick={() => update("media", m)}
+          >
+            {m === "movie" ? t("filter.movies") : m === "tv" ? t("filter.series") : "Semua"}
+          </GlassButton>
+        ))}
+      </div>
+
+      <select value={genre} onChange={(e) => update("genre", e.target.value)} className={selectCls}>
+        <option value="">{t("filter.allGenres")}</option>
+        {genresFor(media).map((g) => (
+          <option key={g.id} value={g.id}>
+            {g.name}
+          </option>
+        ))}
+      </select>
+
+      <select value={year} onChange={(e) => update("year", e.target.value)} className={selectCls}>
+        <option value="">{t("filter.allYears")}</option>
+        {YEARS.map((y) => (
+          <option key={y} value={y}>
+            {y}
+          </option>
+        ))}
+      </select>
+
+      <select value={country} onChange={(e) => update("country", e.target.value)} className={selectCls}>
+        <option value="">{t("filter.allCountries")}</option>
+        {COUNTRIES.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+
+      {media !== "tv" && (
+        <select value={collection} onChange={(e) => update("collection", e.target.value)} className={selectCls}>
+          <option value="">All Collections</option>
+          {COLLECTIONS.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+
+      <select value={sort} onChange={(e) => update("sort_by", e.target.value)} className={selectCls}>
+        {SORTS.map((s) => {
+
+          const sortKey = 
+            s.value === "popularity.desc" ? "sort.popularity" :
+            s.value === "vote_average.desc" ? "sort.vote" :
+            "sort.newest";
+
+          return (
+            <option key={s.value} value={s.value}>
+              {t(sortKey)}
+            </option>
+          );
+        })}
+      </select>
+    </div>
+  );
+}

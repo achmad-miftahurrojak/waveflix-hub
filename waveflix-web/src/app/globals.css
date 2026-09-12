@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F5F5;
+  --color-accent: #5CE1E6;
+  
+  --color-netflix-note: #E8F0FE;
+  --color-netflix-divider: #DBDBDB;
+  --color-netflix-text: #222222;
+  --color-netflix-link: #0071EB;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-netflix-text antialiased;
+  }
+}
