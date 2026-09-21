@@ -20,7 +20,7 @@ function proxyUrl(url: string): string {
   if (url.includes(".m3u8")) return url;
   
   if (url.includes("localhost:8000")) return url;
-  const encoded = btoa(url).replace(/\+/g, "-").replace(/\
+  const encoded = btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   return `${BACKEND_URL}/api/media-proxy?url=${encoded}`;
 }
 
