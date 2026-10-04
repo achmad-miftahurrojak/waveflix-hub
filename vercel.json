@@ -19,8 +19,7 @@
     },
     "waveflix-extractor": {
       "root": "waveflix-extractor",
-      "runtime": "nodejs20.x",
-      "entrypoint": "server.js"
+      "framework": "express"
     },
     "waveflix-web": {
       "root": "waveflix-web", 
