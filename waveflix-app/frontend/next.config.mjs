@@ -1,8 +1,9 @@
 import { withSentryConfig } from '@sentry/nextjs/config';
+import path from 'node:path';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: import.meta.dirname,
+  outputFileTracingRoot: path.resolve(import.meta.dirname, '../../'),
   output: 'standalone', // Enable standalone build for Docker
   images: {
     remotePatterns: [
