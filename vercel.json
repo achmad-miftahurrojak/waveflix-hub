@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "regions": ["iad1"],
+  "projects": [
+    {
+      "name": "waveflix-frontend",
+      "source": "waveflix-app/frontend",
+      "framework": "nextjs",
+      "buildCommand": "npm run build",
+      "outputDirectory": ".next",
+      "installCommand": "npm install",
+      "rootDirectory": "waveflix-app/frontend"
+    },
+    {
+      "name": "waveflix-backend",
+      "source": "waveflix-app/backend", 
+      "runtime": "go",
+      "buildCommand": "go build -o main .",
+      "rootDirectory": "waveflix-app/backend"
+    },
+    {
+      "name": "waveflix-extractor",
+      "source": "waveflix-extractor",
+      "runtime": "nodejs18.x",
+      "buildCommand": "npm install",
+      "outputDirectory": ".",
+      "rootDirectory": "waveflix-extractor"
+    },
+    {
+      "name": "waveflix-web",
+      "source": "waveflix-web",
+      "framework": "nextjs", 
+      "buildCommand": "npm run build",
+      "outputDirectory": ".next",
+      "installCommand": "npm install",
+      "rootDirectory": "waveflix-web"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "waveflix-backend/$1"
+    },
+    {
+      "src": "/landing/(.*)",
+      "dest": "waveflix-web/$1"
+    },
+    {
+      "src": "/landing",
+      "dest": "waveflix-web/"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "waveflix-frontend/$1"
+    }
+  ],
+  "bindings": [
+    {
+      "name": "extractor",
+      "service": "waveflix-extractor"
+    }
+  ],
+  "env": {
+    "BACKEND_URL": "@waveflix-backend.url",
+    "NEXT_PUBLIC_BACKEND_URL": "https://$VERCEL_URL/api",
+    "EXTRACTOR_URL": "@extractor.url",
+    "FRONTEND_URL": "https://$VERCEL_URL"
+  }
+}

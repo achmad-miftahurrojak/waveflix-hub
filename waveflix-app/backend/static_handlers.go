@@ -282,10 +282,4 @@ func handlePreload(w http.ResponseWriter, r *http.Request) {
 }
 
 func setResourceHints(w http.ResponseWriter) {
-
-	w.Header().Set("Link", `<
-	w.Header().Add("Link", `<
-	w.Header().Add("Link", `<
-
-	w.Header().Add("Link", `<
 }

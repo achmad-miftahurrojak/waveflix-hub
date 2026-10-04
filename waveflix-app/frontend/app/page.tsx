@@ -37,7 +37,7 @@ const reasons = [
 
 const footerColumns: { label: string; href: string }[][] = [
   [
-    { label: "FAQ", href: "http://localhost:3001" },
+    { label: "FAQ", href: "http://localhost:3006" },
     { label: "Film & Serial", href: "/browse" },
     { label: "Reality Show", href: "/reality" },
   ],
@@ -116,7 +116,7 @@ export default async function LandingPage() {
       <footer className="mx-auto max-w-6xl px-6 pb-14 pt-10">
         <p className="text-white/60">
           Ada pertanyaan? Lihat{" "}
-          <a href="http://localhost:3001" className="underline hover:text-white" target="_blank" rel="noopener noreferrer">
+          <a href="http://localhost:3006" className="underline hover:text-white" target="_blank" rel="noopener noreferrer">
             FAQ & Pusat Bantuan
           </a>
           .

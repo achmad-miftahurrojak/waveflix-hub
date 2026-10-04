@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 
-const ports = [3000, 3001, 8000, 8081];
+const ports = [3000, 3001, 3005, 8000, 8081];
 
 for (const port of ports) {
   try {

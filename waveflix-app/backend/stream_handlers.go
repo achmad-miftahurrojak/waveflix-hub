@@ -69,10 +69,11 @@ func HandleStreamAPI(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var extractorURL string
+		extractorBaseURL := getenv("EXTRACTOR_URL", "http://localhost:8000")
 		if media == "movie" {
-			extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=movie&id=%s", id)
+			extractorURL = fmt.Sprintf("%s/stream?media=movie&id=%s", extractorBaseURL, id)
 		} else if media == "tv" {
-			extractorURL = fmt.Sprintf("http://localhost:8000/stream?media=tv&id=%s&season=%s&episode=%s", id, season, episode)
+			extractorURL = fmt.Sprintf("%s/stream?media=tv&id=%s&season=%s&episode=%s", extractorBaseURL, id, season, episode)
 		}
 
 		var lastErr error

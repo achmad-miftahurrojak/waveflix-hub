@@ -51,7 +51,7 @@ export const articles: Article[] = [
         <h2 className="text-2xl font-bold mb-4">Mulai Menonton</h2>
         <ol className="list-decimal pl-6 space-y-3">
           <li>
-            Kunjungi <a href="http://localhost:3000" className="text-netflix-link hover:underline font-semibold">Beranda Waveflix App</a>.
+            Kunjungi <a href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3005"} className="text-netflix-link hover:underline font-semibold">Beranda Waveflix App</a>.
           </li>
           <li>Buat akun menggunakan email dan kata sandi pilihanmu. (Tidak memerlukan kartu kredit)</li>
           <li>Mulai jelajahi perpustakaan film tak terbatas!</li>

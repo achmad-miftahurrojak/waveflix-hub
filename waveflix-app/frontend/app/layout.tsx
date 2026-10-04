@@ -25,7 +25,7 @@ const logoFont = Anton({
 import RouteGuard from "@/components/RouteGuard";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3005"),
   title: {
     default: "WAVEFLIX",
     template: "%s",

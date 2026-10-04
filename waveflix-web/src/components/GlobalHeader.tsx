@@ -12,7 +12,7 @@ export default function GlobalHeader() {
       </div>
       <div className="flex items-center gap-4">
         <a
-          href="http://localhost:3000"
+          href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3005"}
           className="px-4 py-2 bg-transparent hover:underline font-semibold text-sm transition"
         >
           Masuk Waveflix

@@ -12,7 +12,7 @@ export default defineConfig({
   reporter: "line",
   timeout: 60000,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3005",
     trace: "on-first-retry",
   },
   projects: [
@@ -25,13 +25,13 @@ export default defineConfig({
     {
       command: "cd ../backend && go run .",
       env: { E2E_TEST_MODE: "1" },
-      url: "http://localhost:8080/health",
+      url: "http://localhost:8081/health",
       reuseExistingServer: true,
       timeout: 120_000,
     },
     {
       command: "npm run dev",
-      url: "http://localhost:3000",
+      url: "http://localhost:3005",
       reuseExistingServer: true,
       timeout: 120_000,
     },

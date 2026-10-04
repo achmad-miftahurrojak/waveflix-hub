@@ -1,6 +1,6 @@
 
 module.exports = {
-  siteUrl: process.env.SITE_URL || 'https://localhost:3000',
+  siteUrl: process.env.SITE_URL || 'https://localhost:3005',
   generateRobotsTxt: true,
   generateIndexSitemap: false,
 
