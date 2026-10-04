@@ -12,6 +12,7 @@
     "backend": {
       "root": "waveflix-app/backend",
       "runtime": "go",
+      "entrypoint": "main.go",
       "bindings": [
         { "type": "service", "service": "waveflix-extractor", "format": "url", "env": "EXTRACTOR_URL" }
       ]
@@ -27,10 +28,6 @@
       "bindings": [
         { "type": "service", "service": "frontend", "format": "url", "env": "NEXT_PUBLIC_FRONTEND_URL" }
       ]
-    },
-    "autoscaler": {
-      "root": "autoscaler",
-      "runtime": "go"
     }
   },
   "rewrites": [
