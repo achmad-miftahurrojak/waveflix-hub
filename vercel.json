@@ -4,6 +4,8 @@
     "frontend": {
       "root": "waveflix-app/frontend",
       "framework": "nextjs",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
       "bindings": [
         { "type": "service", "service": "backend", "format": "url", "env": "BACKEND_URL" },
         { "type": "service", "service": "backend", "format": "url", "env": "NEXT_PUBLIC_BACKEND_URL" }
@@ -12,24 +14,31 @@
     "backend": {
       "root": "waveflix-app/backend",
       "runtime": "go",
+      "buildCommand": "go build -o main .",
       "bindings": [
         { "type": "service", "service": "extractor", "format": "url", "env": "EXTRACTOR_URL" }
       ]
     },
     "extractor": {
       "root": "waveflix-extractor",
-      "framework": "express"
+      "runtime": "nodejs20.x",
+      "buildCommand": "npm install",
+      "installCommand": "npm install",
+      "entrypoint": "server.js"
     },
     "landing": {
       "root": "waveflix-web",
       "framework": "nextjs",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
       "bindings": [
         { "type": "service", "service": "frontend", "format": "url", "env": "NEXT_PUBLIC_FRONTEND_URL" }
       ]
     },
     "autoscaler": {
       "root": "autoscaler",
-      "runtime": "go"
+      "runtime": "go",
+      "buildCommand": "go build -o main ."
     }
   },
   "rewrites": [
