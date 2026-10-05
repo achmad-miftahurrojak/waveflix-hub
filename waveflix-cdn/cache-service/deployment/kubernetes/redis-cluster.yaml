@@ -1,0 +1,319 @@
+---
+# L2 Regional Cache - Redis Cluster
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-l2-cluster
+  namespace: waveflix-cdn
+  labels:
+    app: redis-l2-cluster
+    tier: L2
+spec:
+  serviceName: redis-l2-cluster-headless
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis-l2-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-l2-cluster
+        tier: L2
+    spec:
+      nodeSelector:
+        cache-tier: "L2"
+      containers:
+      - name: redis
+        image: redis:7.0-alpine
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        - --cluster-enabled 
+        - "yes"
+        - --cluster-config-file
+        - /data/nodes.conf
+        - --cluster-node-timeout
+        - "5000"
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "8gb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: cluster
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "1000m"
+          limits:
+            memory: "10Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "redis-cli -h $(hostname) ping"
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-l2-config
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 2Ti
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-l2-cluster
+  namespace: waveflix-cdn
+  labels:
+    app: redis-l2-cluster
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: cluster
+  selector:
+    app: redis-l2-cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-l2-cluster-headless
+  namespace: waveflix-cdn
+  labels:
+    app: redis-l2-cluster
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: cluster
+  selector:
+    app: redis-l2-cluster
+---
+# L3 Origin Cache - Redis Persistent
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-l3
+  namespace: waveflix-cdn
+  labels:
+    app: redis-l3
+    tier: L3
+spec:
+  serviceName: redis-l3-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redis-l3
+  template:
+    metadata:
+      labels:
+        app: redis-l3
+        tier: L3
+    spec:
+      nodeSelector:
+        cache-tier: "L3"
+      containers:
+      - name: redis
+        image: redis:7.0-alpine
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        - --appendonly
+        - "yes"
+        - --save
+        - "900 1"
+        - --save 
+        - "300 10"
+        - --save
+        - "60 10000"
+        - --maxmemory-policy
+        - "volatile-lru"
+        - --tcp-keepalive
+        - "60"
+        - --timeout
+        - "300"
+        ports:
+        - containerPort: 6379
+          name: redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        resources:
+          requests:
+            memory: "16Gi"
+            cpu: "2000m"
+          limits:
+            memory: "20Gi"
+            cpu: "4000m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "redis-cli -h $(hostname) ping"
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-l3-config
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "persistent-ssd"
+      resources:
+        requests:
+          storage: 10Ti
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-l3
+  namespace: waveflix-cdn
+  labels:
+    app: redis-l3
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: redis-l3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-l2-config
+  namespace: waveflix-cdn
+data:
+  redis.conf: |
+    # Redis L2 Regional Cache Configuration
+    bind 0.0.0.0
+    protected-mode no
+    port 6379
+    
+    # Memory and eviction
+    maxmemory 8gb
+    maxmemory-policy allkeys-lru
+    
+    # Persistence (minimal for L2)
+    save ""
+    appendonly yes
+    appendfsync everysec
+    
+    # Cluster
+    cluster-enabled yes
+    cluster-config-file nodes.conf
+    cluster-node-timeout 5000
+    
+    # Performance
+    tcp-keepalive 60
+    timeout 300
+    tcp-backlog 511
+    
+    # Logging
+    loglevel notice
+    logfile ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-l3-config
+  namespace: waveflix-cdn
+data:
+  redis.conf: |
+    # Redis L3 Origin Cache Configuration
+    bind 0.0.0.0
+    protected-mode no
+    port 6379
+    
+    # Memory and eviction
+    maxmemory-policy volatile-lru
+    
+    # Persistence (full persistence for L3)
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    
+    # Performance
+    tcp-keepalive 60
+    timeout 300
+    tcp-backlog 511
+    
+    # Replication
+    replica-read-only yes
+    replica-serve-stale-data yes
+    
+    # Logging
+    loglevel notice
+    logfile ""

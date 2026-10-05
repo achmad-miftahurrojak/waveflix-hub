@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache-service
+  namespace: waveflix-cdn
+  labels:
+    app: cache-service
+    version: v1.0.0
+    tier: cache
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: cache-service
+  template:
+    metadata:
+      labels:
+        app: cache-service
+        version: v1.0.0
+        tier: cache
+    spec:
+      nodeSelector:
+        cache-tier: "enabled"
+      tolerations:
+      - key: "cache-node"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cache-service
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: cache-service
+        image: waveflix/cache-service:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3003
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3003"
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: REGION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/region']
+        - name: CACHE_TIER
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: tier
+        - name: REDIS_L2_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: redis_l2_host
+        - name: REDIS_L2_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: redis_l2_port
+        - name: REDIS_L3_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: redis_l3_host
+        - name: REDIS_L3_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: redis_l3_port
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        - name: COORDINATION_REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: coordination_redis_host
+        - name: ANALYTICS_REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cache-config
+              key: analytics_redis_host
+        - name: NODE_MEMORY_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: cache-config
+          mountPath: /app/config
+          readOnly: true
+        - name: cache-storage
+          mountPath: /app/storage
+      volumes:
+      - name: cache-config
+        configMap:
+          name: cache-config
+      - name: cache-storage
+        emptyDir:
+          sizeLimit: "1Ti"
+      imagePullSecrets:
+      - name: docker-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache-service
+  namespace: waveflix-cdn
+  labels:
+    app: cache-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3003
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: cache-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cache-config
+  namespace: waveflix-cdn
+data:
+  tier: "L1"
+  redis_l2_host: "redis-l2-cluster.waveflix-cdn.svc.cluster.local"
+  redis_l2_port: "6379"
+  redis_l3_host: "redis-l3.waveflix-cdn.svc.cluster.local" 
+  redis_l3_port: "6379"
+  coordination_redis_host: "redis-coordination.waveflix-cdn.svc.cluster.local"
+  analytics_redis_host: "redis-analytics.waveflix-cdn.svc.cluster.local"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+  namespace: waveflix-cdn
+type: Opaque
+data:
+  password: d2F2ZWZsaXgtcmVkaXMtcGFzcw== # waveflix-redis-pass (base64)
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cache-service-pdb
+  namespace: waveflix-cdn
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cache-service

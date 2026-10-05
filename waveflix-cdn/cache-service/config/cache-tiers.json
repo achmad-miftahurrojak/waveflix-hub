@@ -1,0 +1,131 @@
+{
+  "tiers": {
+    "L1": {
+      "name": "Edge Cache",
+      "description": "High-speed in-memory cache at edge nodes",
+      "capacity": "1TB",
+      "capacityBytes": 1099511627776,
+      "ttlDefault": 3600,
+      "priority": 1,
+      "type": "memory",
+      "backend": "lru-cache",
+      "evictionPolicy": "lru",
+      "compression": false,
+      "replication": 1,
+      "regions": [
+        "us-east-1-edge",
+        "us-west-1-edge", 
+        "eu-west-1-edge",
+        "ap-southeast-1-edge",
+        "sa-east-1-edge"
+      ]
+    },
+    "L2": {
+      "name": "Regional Cache",
+      "description": "Distributed cache at regional level",
+      "capacity": "10TB", 
+      "capacityBytes": 10995116277760,
+      "ttlDefault": 86400,
+      "priority": 2,
+      "type": "distributed",
+      "backend": "redis-cluster",
+      "evictionPolicy": "allkeys-lru",
+      "compression": true,
+      "replication": 2,
+      "regions": [
+        "us-east-1-regional",
+        "us-west-1-regional",
+        "eu-west-1-regional", 
+        "ap-southeast-1-regional",
+        "sa-east-1-regional"
+      ],
+      "sharding": {
+        "strategy": "consistent-hash",
+        "nodes": 3,
+        "replicas": 2
+      }
+    },
+    "L3": {
+      "name": "Origin Cache",
+      "description": "Unlimited capacity origin cache",
+      "capacity": "unlimited",
+      "capacityBytes": 9007199254740991,
+      "ttlDefault": 604800,
+      "priority": 3,
+      "type": "persistent",
+      "backend": "redis-persistent",
+      "evictionPolicy": "volatile-lru",
+      "compression": true,
+      "replication": 3,
+      "regions": [
+        "us-east-1-origin",
+        "eu-west-1-origin"
+      ],
+      "persistence": {
+        "enabled": true,
+        "snapshotInterval": 3600,
+        "aofEnabled": true
+      }
+    }
+  },
+  "routing": {
+    "strategy": "intelligent",
+    "weights": {
+      "latency": 0.4,
+      "load": 0.3,
+      "hit_ratio": 0.2,
+      "proximity": 0.1
+    },
+    "failover": {
+      "enabled": true,
+      "timeout": 30,
+      "retries": 3,
+      "circuit_breaker": {
+        "failure_threshold": 5,
+        "recovery_time": 60
+      }
+    }
+  },
+  "optimization": {
+    "cache_warming": {
+      "enabled": true,
+      "strategies": ["popular_content", "predictive", "scheduled"],
+      "popularity_threshold": 100,
+      "prediction_model": "ml_based"
+    },
+    "invalidation": {
+      "strategies": ["ttl", "manual", "event_based"],
+      "batch_size": 1000,
+      "propagation_delay": 5
+    },
+    "compression": {
+      "enabled": true,
+      "algorithms": ["gzip", "brotli", "lz4"],
+      "min_size": 1024
+    }
+  },
+  "monitoring": {
+    "metrics": {
+      "hit_ratio_threshold": 0.85,
+      "response_time_threshold": 100,
+      "memory_usage_threshold": 0.9,
+      "error_rate_threshold": 0.05
+    },
+    "alerts": {
+      "low_hit_ratio": {
+        "enabled": true,
+        "threshold": 0.85,
+        "severity": "warning"
+      },
+      "high_memory": {
+        "enabled": true,
+        "threshold": 0.9,
+        "severity": "critical"
+      },
+      "node_failure": {
+        "enabled": true,
+        "severity": "critical"
+      }
+    }
+  }
+}
