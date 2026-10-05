@@ -7,7 +7,7 @@ set -e  # Exit on any error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BACKEND_DIR="$PROJECT_ROOT/website/backend"
+BACKEND_DIR="$PROJECT_ROOT/waveflix-app/backend"
 DATABASE_DIR="$PROJECT_ROOT/database"
 
 # Colors for output
@@ -23,7 +23,7 @@ POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_DB="${POSTGRES_DB:-waveflix}"
 POSTGRES_USER="${POSTGRES_USER:-waveflix}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-waveflix_secure_password_2024}"
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set before running this script}"
 POSTGRES_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable"
 
 # Function to print colored output
@@ -283,10 +283,10 @@ create_summary() {
 
 ## Important Files
 
-- **Backend Config:** \`website/backend/.env\`
+- **Backend Config:** \`waveflix-app/backend/.env\`
 - **Database Init:** \`database/init.sql\`
 - **Migration Script:** \`database/migrate_sqlite_to_postgres.go\`
-- **SQLite Backup:** \`website/backend/waveflix_backup_*.db\`
+- **SQLite Backup:** \`waveflix-app/backend/waveflix_backup_*.db\`
 
 ## Troubleshooting
 
@@ -346,7 +346,7 @@ main() {
     echo
     print_warning "Next steps:"
     print_warning "1. Review and update .env file with your API keys"
-    print_warning "2. Test the application: cd website/backend && go run ."
+    print_warning "2. Test the application: cd waveflix-app/backend && go run ."
     print_warning "3. Update production deployment to use PostgreSQL"
 }
 

@@ -8,7 +8,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'waveflix') THEN
-        CREATE ROLE waveflix WITH LOGIN PASSWORD 'waveflix_secure_password_2024';
+        CREATE ROLE waveflix WITH LOGIN PASSWORD 'REPLACE_WITH_STRONG_PASSWORD';
     END IF;
 END
 $$;

@@ -11,7 +11,7 @@ POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_DB="${POSTGRES_DB:-waveflix}"
 POSTGRES_USER="${POSTGRES_USER:-waveflix}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-waveflix_secure_password_2024}"
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set before running this script}"
 
 # Alert thresholds
 DAILY_BACKUP_MAX_AGE_HOURS=25    # Alert if daily backup is older than 25 hours

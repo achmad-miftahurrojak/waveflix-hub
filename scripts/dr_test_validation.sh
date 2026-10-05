@@ -14,7 +14,7 @@ TEST_POSTGRES_HOST="${TEST_POSTGRES_HOST:-localhost}"
 TEST_POSTGRES_PORT="${TEST_POSTGRES_PORT:-5433}"
 TEST_POSTGRES_DB="${TEST_POSTGRES_DB:-waveflix_dr_test}"
 TEST_POSTGRES_USER="${TEST_POSTGRES_USER:-waveflix}"
-TEST_POSTGRES_PASSWORD="${TEST_POSTGRES_PASSWORD:-waveflix_secure_password_2024}"
+: "${TEST_POSTGRES_PASSWORD:?TEST_POSTGRES_PASSWORD must be set before running this script}"
 
 TEST_BACKEND_URL="${TEST_BACKEND_URL:-http://localhost:8081}"
 TEST_FRONTEND_URL="${TEST_FRONTEND_URL:-http://localhost:3001}"
@@ -178,7 +178,7 @@ test_database_recovery() {
 
 # Test 4: Application Recovery
 test_application_recovery() {
-    local backend_dir="$PROJECT_ROOT/website/backend"
+    local backend_dir="$PROJECT_ROOT/waveflix-app/backend"
     
     # Check if backend can start with test configuration
     if [ ! -f "$backend_dir/.env" ]; then
@@ -216,9 +216,9 @@ EOF
 # Test 5: Configuration Validation
 test_configuration_validation() {
     local required_files=(
-        "$PROJECT_ROOT/website/backend/.env.example"
-        "$PROJECT_ROOT/website/backend/go.mod"
-        "$PROJECT_ROOT/website/frontend/package.json"
+        "$PROJECT_ROOT/waveflix-app/backend/.env.example"
+        "$PROJECT_ROOT/waveflix-app/backend/go.mod"
+        "$PROJECT_ROOT/waveflix-app/frontend/package.json"
         "$PROJECT_ROOT/database/init.sql"
         "$PROJECT_ROOT/docker-compose.yml"
     )

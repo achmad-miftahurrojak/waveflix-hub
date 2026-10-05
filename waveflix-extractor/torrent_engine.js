@@ -1,11 +1,9 @@
 import torrentStream from 'torrent-stream';
 import fetch from 'node-fetch';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; 
-
-
 async function fetchTMDB(endpoint) {
-    const TMDB_KEY = process.env.TMDB_API_KEY || 'cff0f315183dd0830f0ef2ef924ae25c';
+    const TMDB_KEY = process.env.TMDB_API_KEY;
+    if (!TMDB_KEY) throw new Error('TMDB_API_KEY is required');
     const url = `https://api.themoviedb.org/3${endpoint}?api_key=${TMDB_KEY}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`TMDB error: ${res.status}`);

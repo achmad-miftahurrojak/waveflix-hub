@@ -6,7 +6,7 @@ param(
     [string]$PostgresPort = "5432", 
     [string]$PostgresDB = "waveflix",
     [string]$PostgresUser = "waveflix",
-    [string]$PostgresPassword = "waveflix_secure_password_2024",
+    [string]$PostgresPassword = "",
     [switch]$UseDocker = $false,
     [switch]$SkipBackup = $false
 )
@@ -14,10 +14,14 @@ param(
 # Set error action preference
 $ErrorActionPreference = "Stop"
 
+if ([string]::IsNullOrWhiteSpace($PostgresPassword)) {
+    throw "PostgresPassword must be set before running this script"
+}
+
 # Get script directory
 $ScriptDir = $PSScriptRoot
 $ProjectRoot = Split-Path $ScriptDir -Parent
-$BackendDir = Join-Path $ProjectRoot "website\backend"
+$BackendDir = Join-Path $ProjectRoot "waveflix-app\backend"
 $DatabaseDir = Join-Path $ProjectRoot "database"
 
 # Colors for output (Windows PowerShell compatible)
@@ -243,7 +247,7 @@ function Test-Migration {
     try {
         # Test database connection (if backend supports --test-db flag)
         Write-Info "Testing backend with PostgreSQL..."
-        Write-Info "Please test manually by running: cd website/backend && go run ."
+        Write-Info "Please test manually by running: cd waveflix-app/backend && go run ."
         Write-Success "Manual testing required"
     }
     finally {
@@ -368,7 +372,7 @@ function Main {
     Write-Host ""
     Write-Warning "Next steps:"
     Write-Warning "1. Review and update .env file with your API keys"
-    Write-Warning "2. Test the application: cd website/backend && go run ."
+    Write-Warning "2. Test the application: cd waveflix-app/backend && go run ."
     Write-Warning "3. Update production deployment to use PostgreSQL"
 }
 

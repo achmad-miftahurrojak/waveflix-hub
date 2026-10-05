@@ -1,92 +1,94 @@
+<div align="center">
+
 # WaveFlix Hub
 
-A self-hosted video streaming project with a Go backend, web clients, content extractors, and an HLS service.
+![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-[Features](#features) · [Architecture](#architecture) · [Build and run](#build-and-run) · [Project layout](#project-layout)
+A self-hosted video streaming monorepo with a Go backend, Next.js clients, content extraction, and HLS media services.
+
+[Features](#features) · [Requirements](#requirements) · [Run locally](#run-locally) · [Project layout](#project-layout) · [License](#license)
+
+</div>
 
 ---
 
-## Overview
-
-WaveFlix Hub is a monorepo for developing and running the WaveFlix streaming platform. It includes a Go API, Next.js web applications, a content extractor, and supporting services for local or container-based deployment.
-
 ## Features
 
-- Go backend with SQLite and PostgreSQL support.
-- Next.js clients for the streaming app and project website.
+- Go API with SQLite and PostgreSQL support.
+- Next.js streaming application and project website.
 - Extractor and HLS services for media processing and delivery.
-- Docker Compose configurations for local and production-oriented setups.
-- Kubernetes manifests and operational documentation.
+- npm workspaces and Turborepo for JavaScript projects.
+- Docker Compose and Kubernetes configuration for deployment.
+- Operational guides for backups and disaster recovery.
 
-## Architecture
+## Requirements
 
-```text
-Browser ──> Next.js frontend ──> Go API ──> SQLite or PostgreSQL
-                                   │
-                                   ├──> Extractor service
-                                   └──> HLS service ──> Media storage
-```
-
-The root `package.json` uses npm workspaces and Turborepo to coordinate the JavaScript services. Go services are built from their own modules.
-
-## Build and run
-
-### Requirements
-
-- Node.js 20 or newer and npm
+- Node.js 20 or newer and npm 11 or newer
 - Go 1.25 or newer
-- Docker Compose for the container-based setup
+- Docker Compose for container-based development
 
-### Install dependencies
+## Run locally
 
-```sh
+Clone the repository and install the JavaScript dependencies:
+
+```bash
 git clone https://github.com/achmad-miftahurrojak/waveflix-hub.git
 cd waveflix-hub
 npm install
 ```
 
-Copy the relevant `.env.example` file for the service you want to run, then set local database and API credentials. Keep populated `.env` files out of Git.
+Copy the relevant environment template before starting a service:
 
-### Run services
+```bash
+cp waveflix-app/backend/.env.example waveflix-app/backend/.env
+```
 
-Start the services configured for development:
+Start the JavaScript workspaces:
 
-```sh
+```bash
 npm run dev
+```
+
+Run the backend separately when needed:
+
+```bash
+cd waveflix-app/backend
+go run .
 ```
 
 Build the JavaScript workspaces:
 
-```sh
+```bash
 npm run build
 ```
 
-To start the container setup, configure the variables referenced by `docker-compose.yml` and run:
+For the container setup, configure the variables used by `docker-compose.yml`, then run:
 
-```sh
+```bash
 docker compose up --build
-```
-
-## Project layout
-
-```text
-waveflix-hub/
-├── waveflix-app/
-│   ├── backend/       # Go API and database adapters
-│   └── frontend/      # Next.js streaming application
-├── waveflix-web/      # Next.js project website
-├── waveflix-extractor/ # Content extraction service
-├── waveflix-cdn/      # HLS media service
-├── database/          # Database setup and migration files
-├── docker-compose.yml # Local container setup
-├── k8s/               # Kubernetes deployment manifests
-└── docs/              # Operations and recovery guides
 ```
 
 ## Configuration and security
 
-Use the checked-in `.env.example` files as templates and provide credentials through local environment files or your deployment's secret manager. Kubernetes Secret manifests containing real values, private keys, and generated binaries are not source files and should stay out of Git.
+Use the checked-in `.env.example` files as templates. Keep populated `.env` files, API keys, passwords, private keys, TLS certificates, Kubernetes Secret manifests, local databases, logs, and generated binaries out of Git.
+
+Production credentials belong in the deployment platform's secret manager. Replace every `REPLACE_WITH_*` value before deployment, and provide `JWT_SECRET`, database credentials, Redis credentials, and third-party API keys through the environment.
+
+## Project layout
+
+```text
+waveflix-app/
+├── backend/        # Go API, authentication, and database adapters
+└── frontend/       # Next.js streaming application
+waveflix-web/       # Next.js project website
+waveflix-extractor/ # Content extraction service
+waveflix-cdn/       # HLS and media processing services
+database/           # Database setup and migration files
+docs/               # Operational and recovery guides
+k8s/                # Kubernetes manifests
+docker-compose.yml  # Local container setup
+```
 
 ## License
 
-See [LICENSE](LICENSE).
+[MIT](LICENSE)

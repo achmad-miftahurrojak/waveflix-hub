@@ -13,7 +13,7 @@ POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_DB="${POSTGRES_DB:-waveflix}"
 POSTGRES_USER="${POSTGRES_USER:-waveflix}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-waveflix_secure_password_2024}"
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set before running this script}"
 
 BACKEND_URL="${BACKEND_URL:-http://localhost:8080}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"

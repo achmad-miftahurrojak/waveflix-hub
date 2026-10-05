@@ -46,9 +46,8 @@ services:
   # Backend API (Production optimized)
   backend:
     build:
-      context: ./website/backend
+      context: ./waveflix-app/backend
       dockerfile: Dockerfile
-      target: production
     environment:
       # Database
       - DATABASE_TYPE=postgres
@@ -132,7 +131,7 @@ services:
   # Frontend (Next.js production)
   frontend:
     build:
-      context: ./website/frontend
+      context: ./waveflix-app/frontend
       dockerfile: Dockerfile
       target: runner
       args:

@@ -215,7 +215,7 @@ export POSTGRES_HOST=localhost
 export POSTGRES_PORT=5432
 export POSTGRES_DB=waveflix
 export POSTGRES_USER=waveflix
-export POSTGRES_PASSWORD=waveflix_secure_password_2024
+# export POSTGRES_PASSWORD=replace-with-a-strong-secret
 
 # Backup Configuration
 export BACKUP_DIR=$PROJECT_ROOT/backups

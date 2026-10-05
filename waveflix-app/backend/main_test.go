@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -43,12 +44,13 @@ func TestFirstNonEmpty(t *testing.T) {
 }
 
 func TestJWT(t *testing.T) {
-	t.Setenv("JWT_SECRET", "super-secret-key-minimum-32-characters-long")
+	testSecret := strings.Repeat("t", 32)
+	t.Setenv("JWT_SECRET", testSecret)
 	initJWTSecret()
 
 	secret := jwtSecret()
-	if string(secret) != "super-secret-key-minimum-32-characters-long" {
-		t.Errorf("jwtSecret() = %q; want %q", string(secret), "super-secret-key-minimum-32-characters-long")
+	if string(secret) != testSecret {
+		t.Errorf("jwtSecret() = %q; want %q", string(secret), testSecret)
 	}
 
 	token, err := signToken(123)

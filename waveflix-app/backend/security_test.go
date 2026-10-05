@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -49,7 +50,7 @@ func TestValidateImageDataRejectsSpoofedMime(t *testing.T) {
 }
 
 func TestWriteAuthSetsHttpOnlyCookie(t *testing.T) {
-	t.Setenv("JWT_SECRET", "super-secret-key-minimum-32-characters-long")
+	t.Setenv("JWT_SECRET", strings.Repeat("t", 32))
 	t.Setenv("AUTH_COOKIE_SECURE", "1")
 	initJWTSecret()
 	recorder := httptest.NewRecorder()

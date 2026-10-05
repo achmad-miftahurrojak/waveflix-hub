@@ -4,6 +4,19 @@
 !.env.example
 *.pem
 *.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.keystore
+.npmrc
+.yarnrc
+.yarnrc.yml
+.netrc
+.dockerconfigjson
+.aws/
+terraform.tfstate*
 secrets.json
 credentials.json
 auth.json
@@ -11,6 +24,8 @@ k8s/secrets*.yaml
 **/secrets*.yaml
 **/credentials*.yaml
 waveflix-cdn/hls-service/hls-service
+waveflix-cdn/processing-service/processing-service
+waveflix-cdn/storage-service/storage-service
 
 # Dependencies
 node_modules/
@@ -28,6 +43,11 @@ venv/
 
 # Go
 bin/
+**/bin/
+*.exe
+*.dll
+*.so
+*.dylib
 
 # Logs & Databases
 *.log

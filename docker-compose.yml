@@ -94,7 +94,7 @@ services:
   # Backend API (Scalable)
   backend:
     build:
-      context: ./website/backend
+      context: ./waveflix-app/backend
       dockerfile: Dockerfile
     environment:
       - DATABASE_TYPE=postgres
@@ -145,7 +145,7 @@ services:
   # Frontend (Next.js)
   frontend:
     build:
-      context: ./website/frontend
+      context: ./waveflix-app/frontend
       dockerfile: Dockerfile
     environment:
       - BACKEND_URL=http://backend:8080
@@ -173,6 +173,9 @@ volumes:
       type: none
       o: bind
       device: ${DATA_PATH:-./data}/postgres
+
+  backup_data:
+    driver: local
   
 
   redis_data:

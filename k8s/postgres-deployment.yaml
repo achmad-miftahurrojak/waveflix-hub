@@ -465,7 +465,7 @@ data:
     DO $$
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'backup_user') THEN
-            CREATE ROLE backup_user WITH LOGIN PASSWORD 'backup_secure_password';
+            CREATE ROLE backup_user WITH LOGIN PASSWORD 'REPLACE_WITH_STRONG_BACKUP_PASSWORD';
             GRANT CONNECT ON DATABASE waveflix TO backup_user;
             GRANT USAGE ON SCHEMA public TO backup_user;
             GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_user;
@@ -478,7 +478,7 @@ data:
     DO $$
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'monitoring') THEN
-            CREATE ROLE monitoring WITH LOGIN PASSWORD 'monitoring_password';
+            CREATE ROLE monitoring WITH LOGIN PASSWORD 'REPLACE_WITH_STRONG_MONITORING_PASSWORD';
             GRANT CONNECT ON DATABASE waveflix TO monitoring;
             GRANT USAGE ON SCHEMA public TO monitoring;
             GRANT SELECT ON pg_stat_database TO monitoring;

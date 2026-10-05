@@ -13,7 +13,10 @@ $PostgresHost = $env:POSTGRES_HOST ?? "localhost"
 $PostgresPort = $env:POSTGRES_PORT ?? "5432"
 $PostgresDB = $env:POSTGRES_DB ?? "waveflix"
 $PostgresUser = $env:POSTGRES_USER ?? "waveflix"
-$PostgresPassword = $env:POSTGRES_PASSWORD ?? "waveflix_secure_password_2024"
+if ([string]::IsNullOrWhiteSpace($env:POSTGRES_PASSWORD)) {
+    throw "POSTGRES_PASSWORD must be set before running this script"
+}
+$PostgresPassword = $env:POSTGRES_PASSWORD
 
 # Backup configuration
 $BackupDir = $env:BACKUP_DIR ?? ".\backups"
