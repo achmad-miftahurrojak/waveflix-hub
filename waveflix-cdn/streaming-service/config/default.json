@@ -1,0 +1,87 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0",
+    "https": {
+      "enabled": false,
+      "keyPath": "./certs/server.key",
+      "certPath": "./certs/server.crt"
+    }
+  },
+  "storage": {
+    "baseUrl": "http://storage-service",
+    "apiKey": "your-api-key-here"
+  },
+  "redis": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 6379,
+    "password": null,
+    "db": 0
+  },
+  "cache": {
+    "memoryTTL": 3600,
+    "playlistTTL": 300,
+    "segmentTTL": 86400,
+    "thumbnailTTL": 3600,
+    "l1": {
+      "ttl": 3600,
+      "maxKeys": 100000
+    },
+    "l2": {
+      "enabled": true,
+      "host": "localhost",
+      "port": 6379,
+      "password": null,
+      "db": 1,
+      "ttl": 86400,
+      "maxValueSize": 10485760
+    },
+    "l3": {
+      "path": "/cache/l3",
+      "ttl": 604800
+    }
+  },
+  "rateLimit": {
+    "maxRequests": 1000,
+    "timeWindow": "1 minute",
+    "whitelist": []
+  },
+  "streaming": {
+    "qualityLevels": [
+      {
+        "name": "240p",
+        "bandwidth": 400000,
+        "resolution": "426x240"
+      },
+      {
+        "name": "360p",
+        "bandwidth": 800000,
+        "resolution": "640x360"
+      },
+      {
+        "name": "480p",
+        "bandwidth": 1200000,
+        "resolution": "854x480"
+      },
+      {
+        "name": "720p",
+        "bandwidth": 2500000,
+        "resolution": "1280x720"
+      },
+      {
+        "name": "1080p",
+        "bandwidth": 5000000,
+        "resolution": "1920x1080"
+      },
+      {
+        "name": "4k",
+        "bandwidth": 15000000,
+        "resolution": "3840x2160"
+      }
+    ]
+  },
+  "logging": {
+    "level": "info"
+  }
+}

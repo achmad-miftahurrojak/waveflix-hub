@@ -1,0 +1,14 @@
+{
+  "name": "streaming-service",
+  "version": "1.0.0",
+  "description": "WaveFlix CDN Streaming Service with HTTP/2+HTTP/3 support",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["streaming", "hls", "cdn", "http2", "adaptive-bitrate"],
+  "author": "",
+  "license": "ISC"
+}
