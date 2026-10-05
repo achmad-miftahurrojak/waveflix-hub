@@ -1,0 +1,87 @@
+server:
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+  idle_timeout: 120s
+
+ffmpeg:
+  path: /usr/bin/ffmpeg
+  timeout: 3600s
+  hardware_acceleration: true
+  preset: fast
+  crf: 23
+
+hls:
+  segment_duration: 6
+  playlist_size: 10
+  cleanup_segments: true
+  keep_segments: 50
+
+storage:
+  type: local
+  local:
+    base_path: /tmp/hls
+  s3:
+    bucket: ""
+    region: ""
+    access_key: ""
+    secret_key: ""
+
+processing:
+  max_concurrent_jobs: 5
+  job_timeout: 7200s
+  retry_attempts: 3
+  retry_delay: 30s
+
+quality_profiles:
+  240p:
+    resolution: "426x240"
+    video_bitrate: 400
+    audio_bitrate: 64
+    fps: 24
+    codec: "libx264"
+  360p:
+    resolution: "640x360"
+    video_bitrate: 800
+    audio_bitrate: 96
+    fps: 30
+    codec: "libx264"
+  480p:
+    resolution: "854x480"
+    video_bitrate: 1200
+    audio_bitrate: 128
+    fps: 30
+    codec: "libx264"
+  720p:
+    resolution: "1280x720"
+    video_bitrate: 2500
+    audio_bitrate: 128
+    fps: 30
+    codec: "libx264"
+  1080p:
+    resolution: "1920x1080"
+    video_bitrate: 5000
+    audio_bitrate: 192
+    fps: 30
+    codec: "libx264"
+  4k:
+    resolution: "3840x2160"
+    video_bitrate: 15000
+    audio_bitrate: 256
+    fps: 30
+    codec: "libx265"
+
+cache:
+  playlist_ttl: 300s
+  segment_ttl: 86400s
+  master_playlist_ttl: 3600s
+
+logging:
+  level: info
+  format: json
+  output: stdout
+
+metrics:
+  enabled: true
+  port: 9090
+  path: /metrics

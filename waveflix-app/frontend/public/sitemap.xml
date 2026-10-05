@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-<url><loc>https://localhost:3000/account</loc><lastmod>2026-09-11T16:26:06.195Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/account/settings</loc><lastmod>2026-09-11T16:26:06.196Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/daftar-saya</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/favorit</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/glass-test</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/icon.svg</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/privasi</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/profil/settings</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/profiles</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/riwayat</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/syarat</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://localhost:3000/movie/popular</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
-<url><loc>https://localhost:3000/tv/popular</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
-<url><loc>https://localhost:3000/trending</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
-<url><loc>https://localhost:3000/browse</loc><lastmod>2026-09-11T16:26:06.197Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+<url><loc>https://localhost:3005/account</loc><lastmod>2026-10-04T13:42:12.711Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/account/settings</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/daftar-saya</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/favorit</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/glass-test</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/icon.svg</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/privasi</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/profil/settings</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/profiles</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/riwayat</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/syarat</loc><lastmod>2026-10-04T13:42:12.712Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://localhost:3005/movie/popular</loc><lastmod>2026-10-04T13:42:12.713Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+<url><loc>https://localhost:3005/tv/popular</loc><lastmod>2026-10-04T13:42:12.713Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+<url><loc>https://localhost:3005/trending</loc><lastmod>2026-10-04T13:42:12.713Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+<url><loc>https://localhost:3005/browse</loc><lastmod>2026-10-04T13:42:12.713Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
 </urlset>

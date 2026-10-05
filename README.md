@@ -1,93 +1,92 @@
 # WaveFlix Hub
 
-A comprehensive Video-on-Demand platform featuring automated content extraction, scalable backend services, and responsive web interfaces.
+A self-hosted video streaming project with a Go backend, web clients, content extractors, and an HLS service.
 
-![Go](https://img.shields.io/badge/Go-1.21-00ADD8?logo=go&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=nodedotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
-![Turborepo](https://img.shields.io/badge/Turborepo-2-EF4444?logo=turborepo&logoColor=white)
+[Features](#features) · [Architecture](#architecture) · [Build and run](#build-and-run) · [Project layout](#project-layout)
 
-## Table of Contents
+---
 
-1. [Features](#features)
-2. [Screenshot](#screenshot)
-3. [Getting Started](#getting-started)
-4. [Usage](#usage)
-5. [Directory Structure](#directory-structure)
-6. [API Reference](#api-reference)
-7. [Contributing](#contributing)
-8. [License](#license)
-9. [Contact](#contact)
+## Overview
+
+WaveFlix Hub is a monorepo for developing and running the WaveFlix streaming platform. It includes a Go API, Next.js web applications, a content extractor, and supporting services for local or container-based deployment.
 
 ## Features
 
-- High-Performance Backend: API services written in Go for minimal latency.
-- Automated Extractor: Programmatic content ingestion and processing tools.
-- Modern Web Interface: React-based frontend for seamless user navigation.
-- Monorepo Architecture: Coordinated multi-service development managed by Turborepo.
-- Containerized Deployment: Docker and Kubernetes ready infrastructure.
+- Go backend with SQLite and PostgreSQL support.
+- Next.js clients for the streaming app and project website.
+- Extractor and HLS services for media processing and delivery.
+- Docker Compose configurations for local and production-oriented setups.
+- Kubernetes manifests and operational documentation.
 
-## Screenshot
+## Architecture
 
-![WaveFlix Hub Demo](https://via.placeholder.com/800x450?text=WaveFlix+Hub+Demo)
-
-## Getting Started
-
-### Prerequisites
-
-- Go 1.21 or higher
-- Node.js 18 or higher
-- PostgreSQL database
-- pnpm package manager
-
-### Installation Steps
-
-```bash
-git clone https://github.com/hamin-baek/hamin-baek.git
-cd software/waveflix-hub
-pnpm install
+```text
+Browser ──> Next.js frontend ──> Go API ──> SQLite or PostgreSQL
+                                   │
+                                   ├──> Extractor service
+                                   └──> HLS service ──> Media storage
 ```
 
-### Configuration
+The root `package.json` uses npm workspaces and Turborepo to coordinate the JavaScript services. Go services are built from their own modules.
 
-Create a `.env.local` file in the relevant subdirectories (e.g., `waveflix-app/backend`, `waveflix-app/frontend`) to configure database credentials and external API keys.
+## Build and run
 
-## Usage
+### Requirements
 
-Start the entire ecosystem via Turborepo:
-```bash
-pnpm run dev
+- Node.js 20 or newer and npm
+- Go 1.25 or newer
+- Docker Compose for the container-based setup
+
+### Install dependencies
+
+```sh
+git clone https://github.com/achmad-miftahurrojak/waveflix-hub.git
+cd waveflix-hub
+npm install
 ```
 
-Build all services for production:
-```bash
-pnpm run build
+Copy the relevant `.env.example` file for the service you want to run, then set local database and API credentials. Keep populated `.env` files out of Git.
+
+### Run services
+
+Start the services configured for development:
+
+```sh
+npm run dev
 ```
 
-## Directory Structure
+Build the JavaScript workspaces:
 
-- `waveflix-app/`: Core application logic.
-  - `backend/`: Go-based RESTful API server.
-  - `frontend/`: React-based user interface.
-- `waveflix-extractor/`: Content scraping and ingestion scripts.
-- `waveflix-web/`: Landing pages and administrative web panels.
-- `k8s/`: Kubernetes deployment manifests.
-- `docker-compose.yml`: Local orchestration configuration.
+```sh
+npm run build
+```
 
-## API Reference
+To start the container setup, configure the variables referenced by `docker-compose.yml` and run:
 
-The Go backend exposes a REST API for content retrieval and user management. Ensure the server is running and access the `/api/docs` endpoint for the Swagger specification.
+```sh
+docker compose up --build
+```
 
-## Contributing
+## Project layout
 
-Follow the established branching model and ensure all Turborepo pipeline checks pass before submitting modifications.
+```text
+waveflix-hub/
+├── waveflix-app/
+│   ├── backend/       # Go API and database adapters
+│   └── frontend/      # Next.js streaming application
+├── waveflix-web/      # Next.js project website
+├── waveflix-extractor/ # Content extraction service
+├── waveflix-cdn/      # HLS media service
+├── database/          # Database setup and migration files
+├── docker-compose.yml # Local container setup
+├── k8s/               # Kubernetes deployment manifests
+└── docs/              # Operations and recovery guides
+```
+
+## Configuration and security
+
+Use the checked-in `.env.example` files as templates and provide credentials through local environment files or your deployment's secret manager. Kubernetes Secret manifests containing real values, private keys, and generated binaries are not source files and should stay out of Git.
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Contact
-
-Created by Achmad Miftahurrojak.
-[GitHub](https://github.com/hamin-baek)
+See [LICENSE](LICENSE).

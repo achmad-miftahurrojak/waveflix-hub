@@ -1,22 +1,53 @@
-# File rahasia - jangan commit
+# Credentials & Secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+auth.json
+k8s/secrets*.yaml
+**/secrets*.yaml
+**/credentials*.yaml
+waveflix-cdn/hls-service/hls-service
 
-# Node
+# Dependencies
 node_modules/
 dist/
+build/
+out/
+.turbo/
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+venv/
 
-# Log
+# Go
+bin/
+
+# Logs & Databases
 *.log
+*.sqlite
+*.db
 
-**/.env*
-!**/.env.example
-**/node_modules/
-**/dist/
-node_modules
+# OS & Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
+# AI Agent & Project Planning Files (Not related to the core project)
+.agents/
+AGENTS.md
+SKILL*.md
+*.plan.md
+*_plan.md
+persistence_memory.md
+skills-lock.json
+essay-writer-pro.md
+vidlink_test.json
+.kiro/
