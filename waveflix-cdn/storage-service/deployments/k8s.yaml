@@ -1,0 +1,178 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-service
+  namespace: waveflix-cdn
+  labels:
+    app: storage-service
+    component: storage
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: storage-service
+  template:
+    metadata:
+      labels:
+        app: storage-service
+        component: storage
+    spec:
+      containers:
+      - name: storage-service
+        image: waveflix/storage-service:latest
+        ports:
+        - containerPort: 8082
+          name: http
+        env:
+        - name: PORT
+          value: "8082"
+        - name: HOT_TIER_PATH
+          value: "/storage/hot"
+        - name: WARM_TIER_PATH
+          value: "/storage/warm"
+        - name: COLD_TIER_PATH
+          value: "/storage/cold"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8082
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        volumeMounts:
+        - name: hot-storage
+          mountPath: /storage/hot
+        - name: warm-storage
+          mountPath: /storage/warm
+        - name: cold-storage
+          mountPath: /storage/cold
+      volumes:
+      - name: hot-storage
+        persistentVolumeClaim:
+          claimName: hot-storage-pvc
+      - name: warm-storage
+        persistentVolumeClaim:
+          claimName: warm-storage-pvc
+      - name: cold-storage
+        persistentVolumeClaim:
+          claimName: cold-storage-pvc
+      nodeSelector:
+        workload-type: storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage-service
+  namespace: waveflix-cdn
+  labels:
+    app: storage-service
+spec:
+  selector:
+    app: storage-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8082
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hot-storage-pvc
+  namespace: waveflix-cdn
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: warm-storage-pvc
+  namespace: waveflix-cdn
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Ti
+  storageClassName: standard-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cold-storage-pvc
+  namespace: waveflix-cdn
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Ti
+  storageClassName: cold-hdd
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storage-service-hpa
+  namespace: waveflix-cdn
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storage-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: storage-service-pdb
+  namespace: waveflix-cdn
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: storage-service
